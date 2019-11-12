@@ -17,10 +17,7 @@ import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.util.UIUtils
-import org.knowtiphy.utils.NameSource
-import org.knowtiphy.utils.OS
-import org.knowtiphy.utils.Pair
-import org.knowtiphy.utils.Threads
+import org.knowtiphy.utils.*
 import java.nio.file.Files
 import java.util.*
 import java.util.logging.Level
@@ -103,6 +100,7 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
                 }
                 Threads.startAndWait(threads)
 
+                JenaUtils.printModel(accountsModel, "")
                 RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
                 RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
 

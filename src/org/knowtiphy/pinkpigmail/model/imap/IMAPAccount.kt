@@ -54,6 +54,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
     {
         model.add(name, model.createProperty(Vocabulary.RDF_TYPE), model.createResource(Vocabulary.IMAP_ACCOUNT))
         model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
+        println("EMAIL ADDRESS :: " + emailAddressProperty.get())
         model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
         model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), password.get())
         trustedContentProviders.forEach { model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER), it) }
