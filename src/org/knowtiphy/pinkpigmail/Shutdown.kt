@@ -100,7 +100,6 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
                 }
                 Threads.startAndWait(threads)
 
-                JenaUtils.printModel(accountsModel, "")
                 RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
                 RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
 
