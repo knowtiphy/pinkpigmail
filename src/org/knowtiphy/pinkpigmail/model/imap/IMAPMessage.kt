@@ -8,7 +8,7 @@ import javafx.collections.ObservableList
 import org.apache.jena.query.QueryExecutionFactory
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.babbage.storage.IStorage
-import org.knowtiphy.babbage.storage.Mime
+import org.knowtiphy.babbage.storage.IMAP.Mime
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.utils.JenaUtils
 import java.net.URL

@@ -4,7 +4,7 @@ import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.MessageModel
 import org.knowtiphy.pinkpigmail.model.SendMode
 import org.knowtiphy.babbage.storage.IStorage
-import org.knowtiphy.babbage.storage.Mime
+import org.knowtiphy.babbage.storage.IMAP.Mime
 import org.knowtiphy.babbage.storage.StorageException
 import java.io.IOException
 
@@ -21,7 +21,7 @@ class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFold
     {
         val account = account
         //  TODO -- need to check addresses
-        val model = org.knowtiphy.babbage.storage.MessageModel(account.id,
+        val model = org.knowtiphy.babbage.storage.IMAP.MessageModel(account.id,
                 subjectProperty().get(), toProperty().get(), ccProperty().get(),
                 contentProperty().get(), if (sendMode === SendMode.TEXT) Mime.PLAIN else Mime.HTML,
                 attachments.map { it.location }, copyTo.id)
