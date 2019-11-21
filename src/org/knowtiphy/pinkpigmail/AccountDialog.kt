@@ -14,7 +14,6 @@ import javafx.scene.text.Text
 import org.controlsfx.tools.Borders
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.utils.Pair
-import java.util.*
 
 /**
  *
