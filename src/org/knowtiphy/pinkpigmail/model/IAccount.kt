@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutionException
 /**
  * @author graham
  */
-interface IAccount : ITreeItem, IPeer
+interface IAccount : ITreeItem, IAcc
 {
     val folders: ObservableList<IFolder>
 
@@ -27,8 +27,6 @@ interface IAccount : ITreeItem, IPeer
     val isDisplayMessageMarksAsRead: Boolean
 
     val serverNameProperty: StringProperty
-
-    val emailAddressProperty: StringProperty
 
     val allowHTMLProperty: ReadOnlyBooleanProperty
 
@@ -47,8 +45,6 @@ interface IAccount : ITreeItem, IPeer
     fun unTrustProvider(url: String)
 
     fun isTrustedProvider(url: String): Boolean
-
-    fun save(model: Model, name: Resource)
 
     @Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
     fun getReplyModel(message: IMessage, modelType: ModelType): IMessageModel

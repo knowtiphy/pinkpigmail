@@ -12,6 +12,7 @@ import org.apache.jena.riot.RDFDataMgr
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.model.IAcc
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
@@ -44,7 +45,7 @@ class UISettings
         }
     }
 
-    fun save(model: Model, names: NameSource, account: IAccount)
+    fun save(model: Model, names: NameSource, account: IAcc)
     {
         val ui = model.createResource(names.get())
         model.add(ui, model.createProperty(UIVocabulary.RDF_TYPE), model.createResource(UIVocabulary.UI_SETTING))
@@ -58,9 +59,12 @@ class UISettings
             //  ignore
         }
 
-        for (folder in account.folders)
+        if (account is IAccount)
         {
-            saveFolderSettings(model, ui, names, folder)
+            for (folder in account.folders)
+            {
+                saveFolderSettings(model, ui, names, folder)
+            }
         }
     }
 

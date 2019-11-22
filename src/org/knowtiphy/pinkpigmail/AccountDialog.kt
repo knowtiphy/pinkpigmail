@@ -12,6 +12,7 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import org.controlsfx.tools.Borders
+import org.knowtiphy.pinkpigmail.model.IAcc
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.utils.Pair
 
@@ -21,12 +22,12 @@ import org.knowtiphy.utils.Pair
  */
 object AccountDialog
 {
-    fun create(accounts: Collection<IAccount>): Pair<Map<IAccount, StringProperty>, Group>
+    fun create(accounts: Collection<IAcc>): Pair<Map<IAcc, StringProperty>, Group>
     {
         val box = VBox()
         box.spacing = 10.0
 
-        val properties = HashMap<IAccount, StringProperty>()
+        val properties = HashMap<IAcc, StringProperty>()
         var i = 0
         for (account in accounts)
         {

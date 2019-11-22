@@ -16,6 +16,7 @@ import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.model.IAcc
 import org.knowtiphy.pinkpigmail.util.UIUtils
 import org.knowtiphy.utils.*
 import java.nio.file.Files
@@ -29,7 +30,7 @@ import kotlin.system.exitProcess
  */
 class Shutdown(private val storage: IStorage, private val uiSettings: UISettings)
 {
-    private var dialog: Pair<Map<IAccount, StringProperty>, Group>? = null
+    private var dialog: Pair<Map<IAcc, StringProperty>, Group>? = null
     private val names = NameSource(Vocabulary.NBASE)
     private val accountsModel = createModel()
     private val uiModel = createModel()
@@ -42,7 +43,7 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
         return model
     }
 
-    private fun close(account: IAccount): Thread
+    private fun close(account: IAcc): Thread
     {
         val message = dialog!!.fst()[account] ?: error("")
 
@@ -74,7 +75,7 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
     }
 
     //	on shutdown save settings and close all folders and accounts
-    fun shutdown(primaryStage: Stage, accounts: Collection<IAccount>)
+    fun shutdown(primaryStage: Stage, accounts: Collection<IAcc>)
     {
         val stage = UIUtils.stage()
         stage.initStyle(StageStyle.UNDECORATED)

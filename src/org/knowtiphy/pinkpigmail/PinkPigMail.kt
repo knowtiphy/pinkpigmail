@@ -24,10 +24,6 @@ import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
-import org.knowtiphy.pinkpigmail.model.EmailAddress
-import org.knowtiphy.pinkpigmail.model.IAccount
-import org.knowtiphy.pinkpigmail.model.IFolder
-import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.owlorm.javafx.Peer
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
@@ -38,6 +34,8 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.model.*
+import org.knowtiphy.pinkpigmail.model.caldav.CalDavAccount
 import org.knowtiphy.pinkpigmail.util.*
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
@@ -61,7 +59,7 @@ class PinkPigMail : Application(), IStorageListener
 
         const val STYLE_SHEET = "styles.css"
 
-        val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
+        val accounts: ObservableList<IAcc> = FXCollections.observableArrayList()
 
         val storage: IStorage by lazy {
             val dir = Paths.get(OS.getAppDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
@@ -80,7 +78,8 @@ class PinkPigMail : Application(), IStorageListener
         init
         {
             //  set up Peer constructors
-            Peer.add(Vocabulary.IMAP_ACCOUNT, { id -> IMAPAccount(id, storage)})
+            Peer.add(Vocabulary.IMAP_ACCOUNT, { id -> IMAPAccount(id, storage) })
+            Peer.add(Vocabulary.CALDAV_ACCOUNT, { id -> CalDavAccount(id, storage) })
             Peer.add(Vocabulary.IMAP_FOLDER, { id -> IMAPFolder(id, storage) })
             Peer.add(Vocabulary.IMAP_MESSAGE, { id -> IMAPMessage(id, storage) })
         }
@@ -108,7 +107,22 @@ class PinkPigMail : Application(), IStorageListener
             stmtIt.forEach {
                 val account = Peer.PEERS[it.subject.toString()]
                 if (account != null && !accounts.contains(account))
-                    accounts.add(account as IMAPAccount?)
+                {
+                    println("XXXXXXXXXXXXXXXXXX IMAP ADDING " + account)
+                    accounts.add(account as IAcc?)
+                }
+            }
+            //	handle adding of accounts -- possibly better to do a listener on the peers
+            val stmtIt1 = added.listStatements(null, added.getProperty(Vocabulary.RDF_TYPE),
+                    added.getResource(Vocabulary.CALDAV_ACCOUNT))
+            stmtIt1.forEach {
+                val account = Peer.PEERS[it.subject.toString()]
+                println("XXXXXXXXXXXXXXXXXXXXXX CALDAV ADDING " + account)
+                if (account != null && !accounts.contains(account))
+                {
+                    println("XXXXXXXXXXXXXXXXXXXXXX CALDAV ADDING " + account)
+                    accounts.add(account as IAcc?)
+                }
             }
         } catch (ex: Exception)
         {
@@ -149,11 +163,13 @@ class PinkPigMail : Application(), IStorageListener
         uiSettings.heightProperty.bind(primaryStage.heightProperty())
 
         //  on adding of a new account, add an account view for it
-        accounts.addListener { c: Change<out IAccount> ->
+        accounts.addListener { c: Change<out IAcc> ->
             while (c.next())
             {
                 println(c.addedSubList)
-                c.addedSubList.forEach { addAccountView(primaryStage, it) }
+                //  TODO -- total hack
+                if (!c.addedSubList.isEmpty() && c.addedSubList.get(0) is IAccount)
+                    c.addedSubList.forEach { addAccountView(primaryStage, it as IAccount) }
             }
         }
 
