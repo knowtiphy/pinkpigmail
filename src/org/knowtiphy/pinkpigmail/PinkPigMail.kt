@@ -46,6 +46,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -97,7 +98,7 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted) { it -> it.predicate.toString().contains("Date") }
+    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted) { it -> it.subject.toString().contains("CALDAV") }
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
@@ -384,8 +385,6 @@ class PinkPigMail : Application(), IStorageListener
 
         //  when a folder is added to the accounts folder list add an item to the account view
         //  and add a folder view for the folder
-        println(mailAccount)
-        println(mailAccount.folders)
 
         mailAccount.folders.addListener { c: Change<out IFolder> ->
             //            println("Adding folders" + mailAccount)
@@ -448,6 +447,10 @@ class PinkPigMail : Application(), IStorageListener
 
     override fun start(primaryStage: Stage)
     {
+        val  timeZone : TimeZone= TimeZone.getDefault()
+
+        println("TZ = " + timeZone)
+
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
         //  TODO -- have to make this work
         // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))

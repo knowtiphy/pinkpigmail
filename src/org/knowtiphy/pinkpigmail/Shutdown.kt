@@ -3,8 +3,10 @@ package org.knowtiphy.pinkpigmail
 import javafx.application.Platform
 import javafx.beans.property.StringProperty
 import javafx.concurrent.Task
+import javafx.geometry.Insets
 import javafx.scene.Group
 import javafx.scene.Scene
+import javafx.scene.layout.Pane
 import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
@@ -81,8 +83,11 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
         stage.title = Strings.SHUTTING_DOWN
         stage.initOwner(primaryStage)
         dialog = AccountDialog.create(accounts)
-        stage.scene = Scene((dialog ?: return).snd())
+        val pane =  Pane(dialog!!.snd())
+        pane.padding = Insets(100.0, 100.0, 100.0, 100.0)
+        stage.scene = Scene(pane)
         stage.isAlwaysOnTop = true
+        stage.sizeToScene()
         stage.centerOnScreen()
         stage.initModality(Modality.APPLICATION_MODAL)
 

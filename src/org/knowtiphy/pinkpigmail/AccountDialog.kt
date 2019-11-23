@@ -24,14 +24,14 @@ object AccountDialog
     fun create(accounts: Collection<IAccount>): Pair<Map<IAccount, StringProperty>, Group>
     {
         val box = VBox()
-        box.spacing = 5.0
+        box.spacing = 20.0
 
         val properties = HashMap<IAccount, StringProperty>()
         var i = 0
         for (account in accounts)
         {
             val row = GridPane()
-            row.hgap = 10.0
+            row.hgap = 20.0
             row.alignment = Pos.CENTER_LEFT
 
             val progressSpinner = ProgressIndicator()
@@ -45,7 +45,7 @@ object AccountDialog
             //  TODO -- size this correctly
             val label = Label()
             label.textProperty().bindBidirectional(message)
-            label.setPrefSize(300.0, 150.0)
+          //  label.setPrefSize(300.0, 150.0)
             label.alignment = Pos.CENTER_LEFT
 
             row.addRow(i++, progressSpinner, serverName, label)
