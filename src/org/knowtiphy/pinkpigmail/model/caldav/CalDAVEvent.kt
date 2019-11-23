@@ -25,6 +25,8 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun setStartDate(stmt: Statement)
     {
+        val dtt = stmt.literal.datatype
+        System.out.println("START " + dtt)
         val dt = stmt.literal.value as XSDDateTime
         System.out.println("START " + dt.toString())
         event.changeStartDate(LocalDate.of(dt.years, dt.months, dt.days))
@@ -33,6 +35,9 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun setEndDate(stmt: Statement)
     {
+        val dtt = stmt.literal.datatype
+        System.out.println("END " + dtt)
+
         val dt = stmt.literal.value as XSDDateTime
         System.out.println("END " + dt.toString())
         event.changeEndDate(LocalDate.of(dt.years, dt.months, dt.days))

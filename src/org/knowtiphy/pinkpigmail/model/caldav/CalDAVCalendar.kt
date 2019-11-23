@@ -14,7 +14,7 @@ class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, s
     {
         declareU(Vocabulary.HAS_NAME) { calendar.name = it.literal.string }
         declareU(Vocabulary.CONTAINS, ::addEvent)
-        calendar.setStyle(Calendar.Style.STYLE2)
+        calendar.setStyle(Calendar.Style.STYLE1)
     }
 
     private fun addEvent(stmt: Statement)

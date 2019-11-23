@@ -97,7 +97,7 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
+    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted) { it -> it.predicate.toString().contains("Date") }
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()

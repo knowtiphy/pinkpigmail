@@ -43,7 +43,11 @@ class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
     private fun addCalendar(stmt: Statement)
     {
         val calendar = PEERS[stmt.getObject().toString()] as CalDAVCalendar
-        source.calendars.add(calendar.calendar)
+        //  TODO -- should possibly do something better here
+        if (!calendar.calendar.name.equals("Outbox") && !calendar.calendar.name.equals("Inbox"))
+        {
+            source.calendars.add(calendar.calendar)
+        }
     }
 }
 

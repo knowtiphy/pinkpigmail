@@ -30,10 +30,9 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
 
         init
         {
-            println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             try
             {
-                SUN_HTTP_HANDLER = Class.forName("sun.net.www.protocol.http.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
+                //SUN_HTTP_HANDLER = Class.forName("sun.net.www.protocol.http.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
             } catch (ex: ClassNotFoundException)
             {
                 SUN_HTTP_HANDLER = null
@@ -52,8 +51,8 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
         {
             try
             {
-                SUN_HTTPS_HANDLER =
-                        Class.forName("sun.net.www.protocol.https.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
+//                SUN_HTTPS_HANDLER =
+//                        Class.forName("sun.net.www.protocol.https.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
             } catch (ex: ClassNotFoundException)
             {
                 SUN_HTTPS_HANDLER = null
@@ -70,9 +69,9 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
 
         init
         {
-            HANDLERS["http"] = { state -> CustomHttpStreamHandler(SUN_HTTP_HANDLER!!, state) }
-            HANDLERS["https"] = { state -> CustomHttpStreamHandler(SUN_HTTPS_HANDLER!!, state) }
-            HANDLERS["cid"] = { x -> CustomCIDStreamHandler(x) }
+//            HANDLERS["http"] = { state -> CustomHttpStreamHandler(SUN_HTTP_HANDLER!!, state) }
+//            HANDLERS["https"] = { state -> CustomHttpStreamHandler(SUN_HTTPS_HANDLER!!, state) }
+//            HANDLERS["cid"] = { x -> CustomCIDStreamHandler(x) }
         }
     }
 }
