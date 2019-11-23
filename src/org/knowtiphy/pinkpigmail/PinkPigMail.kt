@@ -1,13 +1,9 @@
 package org.knowtiphy.pinkpigmail
 
-import com.calendarfx.model.Calendar
-import com.calendarfx.model.CalendarSource
-import com.calendarfx.model.Entry
 import com.calendarfx.view.CalendarView
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
-import javafx.beans.binding.ListBinding
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -24,35 +20,31 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.apache.jena.rdf.model.Model
-import org.knowtiphy.pinkpigmail.cell.*
-import org.knowtiphy.pinkpigmail.cell.DateCell
-import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
-import org.knowtiphy.pinkpigmail.mailview.HTMLState
-import org.knowtiphy.pinkpigmail.model.imap.IMAPMailAccount
-import org.knowtiphy.owlorm.javafx.Peer
-import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
-import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
-import org.knowtiphy.pinkpigmail.resources.Icons
-import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.Peer
+import org.knowtiphy.pinkpigmail.cell.*
+import org.knowtiphy.pinkpigmail.cell.DateCell
+import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.model.caldav.CalDavAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CalDavCalendar
 import org.knowtiphy.pinkpigmail.model.caldav.CalDavEvent
+import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
+import org.knowtiphy.pinkpigmail.model.imap.IMAPMailAccount
+import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
+import org.knowtiphy.pinkpigmail.resources.Icons
+import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
-import tornadofx.bind
 import tornadofx.remainingWidth
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
-import java.time.LocalTime
 import java.util.concurrent.Executors
 
 /**
@@ -83,15 +75,18 @@ class PinkPigMail : Application(), IStorageListener
 
         val htmlState = HTMLState()
 
-        //  set up Peer constructors
         init
         {
-            Peer.add(Vocabulary.IMAP_ACCOUNT, { id -> IMAPMailAccount(id, storage) })
-            Peer.add(Vocabulary.IMAP_FOLDER, { id -> IMAPFolder(id, storage) })
-            Peer.add(Vocabulary.IMAP_MESSAGE, { id -> IMAPMessage(id, storage) })
-            Peer.add(Vocabulary.CALDAV_ACCOUNT, { id -> CalDavAccount(id, storage) })
-            Peer.add(Vocabulary.CALDAV_CALENDAR, { id -> CalDavCalendar(id, storage) })
-            Peer.add(Vocabulary.CALDAV_EVENT, { id -> CalDavEvent(id, storage) })
+            //  peer constructors
+            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPMailAccount(id, storage) }
+            Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
+            Peer.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDavAccount(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> CalDavCalendar(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> CalDavEvent(id, storage) }
+            //  peer roots
+            Peer.addRoot(Vocabulary.IMAP_ACCOUNT) { id -> accounts.add(id as IAccount) }
+            Peer.addRoot(Vocabulary.CALDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
         }
 
         val service = Executors.newCachedThreadPool()
@@ -100,37 +95,9 @@ class PinkPigMail : Application(), IStorageListener
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model)
     {
-//        val stmtIt1 = added.listStatements(null, added.getProperty(Vocabulary.CONTAINS), null as Resource?)
-//        while (stmtIt1.hasNext())
-//        {
-//            val s = stmtIt1.next()
-//            if (s.subject.toString().contains("Account"))
-//                println(s)
-//        }
-
         try
         {
             Peer.delta(added, deleted)
-            //	handle adding of accounts -- possibly better to do a listener on the peers
-            val stmtIt = added.listStatements(null, added.getProperty(Vocabulary.RDF_TYPE),
-                    added.getResource(Vocabulary.IMAP_ACCOUNT))
-            stmtIt.forEach {
-                val account = Peer.PEERS[it.subject.toString()]
-                if (account != null && !accounts.contains(account))
-                {
-                    accounts.add(account as IAccount?)
-                }
-            }
-            //	handle adding of accounts -- possibly better to do a listener on the peers
-            val stmtIt1 = added.listStatements(null, added.getProperty(Vocabulary.RDF_TYPE),
-                    added.getResource(Vocabulary.CALDAV_ACCOUNT))
-            stmtIt1.forEach {
-                val account = Peer.PEERS[it.subject.toString()]
-                if (account != null && !accounts.contains(account))
-                {
-                    accounts.add(account as IAccount?)
-                }
-            }
         } catch (ex: Exception)
         {
             Fail.failNoMessage(ex)
@@ -144,7 +111,7 @@ class PinkPigMail : Application(), IStorageListener
     override fun start(primaryStage: Stage)
     {
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
-       // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
+        // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
         UIUtils.resizable(rooTabPane)
         UIUtils.resizable(root)
@@ -175,7 +142,7 @@ class PinkPigMail : Application(), IStorageListener
             {
                 println(c.addedSubList)
                 //  TODO -- total hack
-                c.addedSubList.forEach { Platform.runLater {addAccountView(primaryStage, it) }}
+                c.addedSubList.forEach { Platform.runLater { addAccountView(primaryStage, it) } }
             }
         }
 
@@ -440,7 +407,7 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun addAccountView(stage: Stage, account: IAccount)
     {
-        if(account is IMailAccount)
+        if (account is IMailAccount)
             addMailAccountView(stage, account)
         else
             addCalendarView(stage, account as CalDavAccount)

@@ -20,24 +20,26 @@ class CalDavEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
         declareU(Vocabulary.HAS_SUMMARY) { event.title = it.literal.string }
         declareU(Vocabulary.HAS_DATE_START, ::setStartDate)
         declareU(Vocabulary.HAS_DATE_END, ::setEndDate)
-    }
-
-    private fun localDateTime(dt: XSDDateTime): Pair<LocalDate, LocalTime>
-    {
-        return Pair(LocalDate.of(dt.years, dt.months, dt.days), LocalTime.of(dt.hours, dt.minutes))
+        declareU(Vocabulary.HAS_DURATION, ::setDuration)
     }
 
     private fun setStartDate(stmt: Statement)
     {
-        val p = localDateTime(stmt.literal.value as XSDDateTime)
-        event.changeStartDate(p.first)
-        event.changeStartTime(p.second)
+        val dt = stmt.literal.value as XSDDateTime
+        event.changeStartDate(LocalDate.of(dt.years, dt.months, dt.days))
+        event.changeStartTime(LocalTime.of(dt.hours, dt.minutes))
     }
 
     private fun setEndDate(stmt: Statement)
     {
-        val p = localDateTime(stmt.literal.value as XSDDateTime)
-        event.changeEndDate(p.first)
-        event.changeEndTime(p.second)
+        val dt = stmt.literal.value as XSDDateTime
+        event.changeEndDate(LocalDate.of(dt.years, dt.months, dt.days))
+        event.changeEndTime(LocalTime.of(dt.hours, dt.minutes))
+    }
+
+    private fun setDuration(stmt: Statement)
+    {
+        println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        println(stmt)
     }
 }
