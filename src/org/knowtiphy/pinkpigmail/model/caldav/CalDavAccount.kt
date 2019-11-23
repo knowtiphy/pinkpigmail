@@ -1,5 +1,8 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
+import com.calendarfx.model.Calendar
+import com.calendarfx.model.CalendarSource
+import com.calendarfx.model.Entry
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
@@ -9,13 +12,15 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import java.time.LocalTime
 
 /**
  * @author graham
  */
-class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IAcc
+class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IAccount
 {
-    val events: ObservableList<IFolder> = FXCollections.observableArrayList()
+    val source = CalendarSource()
+
     val serverNameProperty = SimpleStringProperty()
     val serverHeaderProperty = SimpleStringProperty()
     val passwordProperty = SimpleStringProperty()
@@ -28,11 +33,11 @@ class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
         declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareU(Vocabulary.CONTAINS, ::addCalendar)
+
     }
 
     override fun save(model: Model, name: Resource)
     {
-        println("SAVING CALDAV ACCOUNT")
         model.add(name, model.createProperty(Vocabulary.RDF_TYPE), model.createResource(Vocabulary.CALDAV_ACCOUNT))
         model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
         model.add(name, model.createProperty(Vocabulary.HAS_SERVER_HEADER), serverHeaderProperty.get())
@@ -42,25 +47,9 @@ class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
 
     private fun addCalendar(stmt: Statement)
     {
-        println("add Calendar")
-        println(stmt)
-//        val folder = PEERS[stmt.getObject().toString()] as IMAPFolder
-//        println(folder)
-//        if (!folders.contains(folder))
-//        {
-//            folder.imapAccount = this
-//
-//            val name = folder.nameProperty.get() ?: return
-//            when
-//            {
-//                Patterns.TRASH_PATTERN.matcher(name).matches() -> trashFolder = folder
-//                Patterns.JUNK_PATTERN.matcher(name).matches() -> junkFolder = folder
-//                Patterns.SENT_PATTERN.matcher(name).matches() -> sentFolder = folder
-//                Patterns.DRAFTS_PATTERN.matcher(name).matches() -> draftsFolder = folder
-//            }
-//
-//            folders.add(folder)
-//        }
+        println("XXXXXXXXXXXXXXXX ADD CALENDAR " + stmt)
+        val calendar = PEERS[stmt.getObject().toString()] as CalDavCalendar
+        source.calendars.add(calendar.calendar)
     }
 }
 

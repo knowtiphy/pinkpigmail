@@ -7,7 +7,6 @@ import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
-import javafx.collections.SetChangeListener
 import javafx.concurrent.Task
 import javafx.concurrent.Worker
 import javafx.geometry.Insets
@@ -22,7 +21,7 @@ import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import org.knowtiphy.pinkpigmail.mailview.MailViewer
 import org.knowtiphy.pinkpigmail.model.EmailAddress
-import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.IMailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -71,7 +70,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
     private val trustSenderAction = ActionHelper.create(Icons.trustSender(Icons.DEFAULT_SIZE),
             {
                 val message = messageProperty.get() ?: return@create
-                message.account.trustSender(message.from)
+                message.mailAccount.trustSender(message.from)
             }, Strings.TRUST_SENDER)
 
     private val loadRemote = ButtonHelper.regular(loadRemoteAction)
@@ -89,7 +88,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
         if (document != null)
         {
             val message = messageProperty.get()!!
-            val account = message.account
+            val account = message.mailAccount
             trustContentMenu.items.clear()
             val externalRefs = HTMLUtils.computeExternalReferences(document)
             for (ref in externalRefs)
@@ -97,7 +96,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
                 val checkMenuItem = CheckMenuItem(ref)
                 checkMenuItem.isSelected = account.isTrustedProvider(ref)
                 checkMenuItem.selectedProperty().addListener { _, _, newValue ->
-                    (if (newValue) IAccount::trustProvider else IAccount::unTrustProvider)(account, ref)
+                    (if (newValue) IMailAccount::trustProvider else IMailAccount::unTrustProvider)(account, ref)
                 }
                 trustContentMenu.items.add(checkMenuItem)
             }
@@ -192,7 +191,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
             {
                 override fun call(): Void?
                 {
-                    val account = message.account
+                    val account = message.mailAccount
                     println("getting content")
 
                     val part = message.getContent(account.allowHTMLProperty.get())
@@ -213,9 +212,9 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
                             trustSenderAction.disabledProperty().bind(Bindings.createBooleanBinding(
                                     UIUtils.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
 
-                            fromText.text = EmailAddress.format(message.account, message.from)
+                            fromText.text = EmailAddress.format(message.mailAccount, message.from)
                             subjectText.text = Format.formatN(message.subjectProperty.get())
-                            toText.text = EmailAddress.format(message.account, message.to)
+                            toText.text = EmailAddress.format(message.mailAccount, message.to)
                             receivedOn.text = Format.format(message.receivedOnProperty.get())
 
                             try

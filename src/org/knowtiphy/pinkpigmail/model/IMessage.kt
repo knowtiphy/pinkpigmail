@@ -16,7 +16,7 @@ import java.util.concurrent.Future
  */
 interface IMessage : IPeer
 {
-    val account: IAccount
+    val mailAccount: IMailAccount
 
     val folder: IFolder
 

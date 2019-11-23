@@ -8,10 +8,9 @@ import javafx.scene.media.AudioClip
 import javafx.scene.media.MediaException
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.pinkpigmail.Fail
-import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.IMailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.owlorm.javafx.Peer
 import org.knowtiphy.pinkpigmail.model.PPPeer
 import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.babbage.storage.IStorage
@@ -22,9 +21,9 @@ import org.knowtiphy.babbage.storage.Vocabulary
  */
 class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage), IFolder
 {
-    var imapAccount: IMAPAccount? = null
+    var imapAccount: IMAPMailAccount? = null
 
-    override val account: IAccount by lazy {
+    override val mailAccount: IMailAccount by lazy {
         imapAccount!!
     }
 
@@ -48,37 +47,37 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
 
     override fun markMessagesAsRead(messages: Collection<IMessage>)
     {
-        storage.markMessagesAsRead(account.id, id, ids(messages), true)
+        storage.markMessagesAsRead(mailAccount.id, id, ids(messages), true)
     }
 
     override fun markMessagesAsJunk(messages: Collection<IMessage>)
     {
         val ids = ids(messages)
-        if (isJunk || !account.isMoveJunkMessagesToJunk)
+        if (isJunk || !mailAccount.isMoveJunkMessagesToJunk)
         {
-            storage.markMessagesAsJunk(account.id, id, ids, true)
+            storage.markMessagesAsJunk(mailAccount.id, id, ids, true)
         } else
         {
             disable(messages)
-            storage.moveMessagesToJunk(account.id, id, ids, imapAccount?.junkFolder?.id, true)
+            storage.moveMessagesToJunk(mailAccount.id, id, ids, imapAccount?.junkFolder?.id, true)
         }
     }
 
     override fun markMessagesAsNotJunk(messages: Collection<IMessage>)
     {
-        storage.markMessagesAsJunk(account.id, id, ids(messages), false)
+        storage.markMessagesAsJunk(mailAccount.id, id, ids(messages), false)
     }
 
     override fun deleteMessages(messages: Collection<IMessage>)
     {
         disable(messages)
         val ids = ids(messages)
-        if (isTrash || !account.isMoveDeletedMessagesToTrash)
+        if (isTrash || !mailAccount.isMoveDeletedMessagesToTrash)
         {
-            storage.deleteMessages(account.id, id, ids)
+            storage.deleteMessages(mailAccount.id, id, ids)
         } else
         {
-            storage.copyMessages(account.id, id, ids, imapAccount?.trashFolder?.id, true)
+            storage.copyMessages(mailAccount.id, id, ids, imapAccount?.trashFolder?.id, true)
         }
     }
 

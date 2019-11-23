@@ -35,7 +35,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val loadRemoteProperty = SimpleBooleanProperty(false)
 
     override lateinit var folder: IFolder
-    override val account by lazy { folder.account }
+    override val mailAccount by lazy { folder.mailAccount }
 
     private var future: Future<*>? = null
 
@@ -58,7 +58,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     {
         if (future == null)
         {
-            future = storage.ensureMessageContentLoaded(folder.account.id, folder.id, id)
+            future = storage.ensureMessageContentLoaded(folder.mailAccount.id, folder.id, id)
         }
 
         return future!!

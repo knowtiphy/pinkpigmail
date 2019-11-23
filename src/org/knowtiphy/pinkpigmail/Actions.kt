@@ -4,7 +4,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
-import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.IMailAccount
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.ModelType
@@ -27,7 +27,7 @@ object Actions
 {
     @Throws(ExecutionException::class, InterruptedException::class)
     @JvmStatic
-    fun configureAccount(account: IAccount)
+    fun configureAccount(mailAccount: IMailAccount)
     {
 //        val root = VBox()
 //
@@ -66,11 +66,11 @@ object Actions
 
     @Throws(ExecutionException::class, InterruptedException::class)
     @JvmStatic
-    fun composeMail(account: IAccount)
+    fun composeMail(mailAccount: IMailAccount)
     {
         try
         {
-            val model = account.getSendModel(ModelType.COMPOSE)
+            val model = mailAccount.getSendModel(ModelType.COMPOSE)
             ComposeMessage.compose(model) { Operation.perform { model.send() } }
         } catch (ex: StorageException)
         {
@@ -118,7 +118,7 @@ object Actions
     {
         try
         {
-            val model = message.account.getReplyModel(message, if (all) ModelType.REPLY_ALL else ModelType.REPLY)
+            val model = message.mailAccount.getReplyModel(message, if (all) ModelType.REPLY_ALL else ModelType.REPLY)
             ComposeMessage.compose(model) { Operation.perform { model.send() } }
         } catch (ex: StorageException)
         {
@@ -132,7 +132,7 @@ object Actions
     {
         try
         {
-            val model = message.account.getReplyModel(message, ModelType.FORWARD)
+            val model = message.mailAccount.getReplyModel(message, ModelType.FORWARD)
             ComposeMessage.compose(model) { Operation.perform { model.send() } }
         } catch (ex: StorageException)
         {

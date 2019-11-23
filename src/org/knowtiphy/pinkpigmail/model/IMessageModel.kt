@@ -11,7 +11,7 @@ import java.io.IOException
  */
 interface IMessageModel
 {
-    val account: IAccount
+    val mailAccount: IMailAccount
 
     val copyTo: IFolder
 

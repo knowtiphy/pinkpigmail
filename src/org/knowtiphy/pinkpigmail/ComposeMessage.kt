@@ -71,7 +71,7 @@ object ComposeMessage
     fun compose(model: IMessageModel, send: () -> Unit)
     {
         val stage = UIUtils.getStage(800.0, 700.0)
-        stage.title = Strings.FROM + " : " + model.account.emailAddressProperty.get()
+        stage.title = Strings.FROM + " : " + model.mailAccount.emailAddressProperty.get()
 
         val toolBar = HBox()
         val root = VBox(header(model), toolBar)

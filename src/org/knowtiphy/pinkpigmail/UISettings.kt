@@ -9,10 +9,10 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
-import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.IMailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.IAcc
+import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
@@ -45,7 +45,7 @@ class UISettings
         }
     }
 
-    fun save(model: Model, names: NameSource, account: IAcc)
+    fun save(model: Model, names: NameSource, account: IAccount)
     {
         val ui = model.createResource(names.get())
         model.add(ui, model.createProperty(UIVocabulary.RDF_TYPE), model.createResource(UIVocabulary.UI_SETTING))
@@ -59,7 +59,7 @@ class UISettings
             //  ignore
         }
 
-        if (account is IAccount)
+        if (account is IMailAccount)
         {
             for (folder in account.folders)
             {

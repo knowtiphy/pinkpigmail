@@ -11,7 +11,7 @@ import org.knowtiphy.owlorm.javafx.IPeer
  */
 interface IFolder : ITreeItem, IPeer
 {
-    val account: IAccount
+    val mailAccount: IMailAccount
 
     val messages: ObservableList<IMessage>
 

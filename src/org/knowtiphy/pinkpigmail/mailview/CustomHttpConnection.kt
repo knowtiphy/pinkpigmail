@@ -23,8 +23,8 @@ class CustomHttpConnection(private val handler: URLStreamHandler, private val st
         {
             val message = state.message!!
             if (message.loadRemoteProperty.get() ||
-                    message.account.isTrustedProvider(HTMLUtils.extractNonFilePart(url)) ||
-                    message.account.isTrustedSender(message.from))
+                    message.mailAccount.isTrustedProvider(HTMLUtils.extractNonFilePart(url)) ||
+                    message.mailAccount.isTrustedSender(message.from))
             {
                 return URL(null, url.toString(), handler).openConnection().getInputStream()
             }

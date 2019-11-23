@@ -29,7 +29,7 @@ class EmailAddress(val personal: String?, val address: String) : Comparable<Emai
         }
 
         @JvmStatic
-        fun format(account: IAccount, addresses: List<EmailAddress>): String
+        fun format(mailAccount: IMailAccount, addresses: List<EmailAddress>): String
         {
             if (addresses.isEmpty())
             {
@@ -38,16 +38,16 @@ class EmailAddress(val personal: String?, val address: String) : Comparable<Emai
             val builder = StringBuilder()
             for (i in 0 until addresses.size - 1)
             {
-                builder.append(addresses[i].format(account))
+                builder.append(addresses[i].format(mailAccount))
                 builder.append(", ")
             }
-            builder.append(addresses[addresses.size - 1].format(account))
+            builder.append(addresses[addresses.size - 1].format(mailAccount))
 
             return builder.toString()
         }
     }
 
-    fun format(account: IAccount) = if (account.isTrustedSender(listOf(this))) (personal ?: address) else address
+    fun format(mailAccount: IMailAccount) = if (mailAccount.isTrustedSender(listOf(this))) (personal ?: address) else address
 
     override fun equals(other: Any?): Boolean
     {

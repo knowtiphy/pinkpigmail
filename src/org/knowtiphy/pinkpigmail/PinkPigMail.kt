@@ -1,8 +1,13 @@
 package org.knowtiphy.pinkpigmail
 
+import com.calendarfx.model.Calendar
+import com.calendarfx.model.CalendarSource
+import com.calendarfx.model.Entry
+import com.calendarfx.view.CalendarView
 import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
+import javafx.beans.binding.ListBinding
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -19,12 +24,11 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
-import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
+import org.knowtiphy.pinkpigmail.model.imap.IMAPMailAccount
 import org.knowtiphy.owlorm.javafx.Peer
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
@@ -36,15 +40,19 @@ import org.knowtiphy.babbage.storage.StorageFactory
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.model.caldav.CalDavAccount
+import org.knowtiphy.pinkpigmail.model.caldav.CalDavCalendar
+import org.knowtiphy.pinkpigmail.model.caldav.CalDavEvent
 import org.knowtiphy.pinkpigmail.util.*
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
+import tornadofx.bind
 import tornadofx.remainingWidth
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
+import java.time.LocalTime
 import java.util.concurrent.Executors
 
 /**
@@ -59,7 +67,7 @@ class PinkPigMail : Application(), IStorageListener
 
         const val STYLE_SHEET = "styles.css"
 
-        val accounts: ObservableList<IAcc> = FXCollections.observableArrayList()
+        val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
         val storage: IStorage by lazy {
             val dir = Paths.get(OS.getAppDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
@@ -75,13 +83,15 @@ class PinkPigMail : Application(), IStorageListener
 
         val htmlState = HTMLState()
 
+        //  set up Peer constructors
         init
         {
-            //  set up Peer constructors
-            Peer.add(Vocabulary.IMAP_ACCOUNT, { id -> IMAPAccount(id, storage) })
-            Peer.add(Vocabulary.CALDAV_ACCOUNT, { id -> CalDavAccount(id, storage) })
+            Peer.add(Vocabulary.IMAP_ACCOUNT, { id -> IMAPMailAccount(id, storage) })
             Peer.add(Vocabulary.IMAP_FOLDER, { id -> IMAPFolder(id, storage) })
             Peer.add(Vocabulary.IMAP_MESSAGE, { id -> IMAPMessage(id, storage) })
+            Peer.add(Vocabulary.CALDAV_ACCOUNT, { id -> CalDavAccount(id, storage) })
+            Peer.add(Vocabulary.CALDAV_CALENDAR, { id -> CalDavCalendar(id, storage) })
+            Peer.add(Vocabulary.CALDAV_EVENT, { id -> CalDavEvent(id, storage) })
         }
 
         val service = Executors.newCachedThreadPool()
@@ -90,13 +100,13 @@ class PinkPigMail : Application(), IStorageListener
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model)
     {
-        val stmtIt1 = added.listStatements(null, added.getProperty(Vocabulary.CONTAINS), null as Resource?)
-        while (stmtIt1.hasNext())
-        {
-            val s = stmtIt1.next()
-            if (s.subject.toString().contains("Account"))
-                println(s)
-        }
+//        val stmtIt1 = added.listStatements(null, added.getProperty(Vocabulary.CONTAINS), null as Resource?)
+//        while (stmtIt1.hasNext())
+//        {
+//            val s = stmtIt1.next()
+//            if (s.subject.toString().contains("Account"))
+//                println(s)
+//        }
 
         try
         {
@@ -108,8 +118,7 @@ class PinkPigMail : Application(), IStorageListener
                 val account = Peer.PEERS[it.subject.toString()]
                 if (account != null && !accounts.contains(account))
                 {
-                    println("XXXXXXXXXXXXXXXXXX IMAP ADDING " + account)
-                    accounts.add(account as IAcc?)
+                    accounts.add(account as IAccount?)
                 }
             }
             //	handle adding of accounts -- possibly better to do a listener on the peers
@@ -117,11 +126,9 @@ class PinkPigMail : Application(), IStorageListener
                     added.getResource(Vocabulary.CALDAV_ACCOUNT))
             stmtIt1.forEach {
                 val account = Peer.PEERS[it.subject.toString()]
-                println("XXXXXXXXXXXXXXXXXXXXXX CALDAV ADDING " + account)
                 if (account != null && !accounts.contains(account))
                 {
-                    println("XXXXXXXXXXXXXXXXXXXXXX CALDAV ADDING " + account)
-                    accounts.add(account as IAcc?)
+                    accounts.add(account as IAccount?)
                 }
             }
         } catch (ex: Exception)
@@ -137,7 +144,7 @@ class PinkPigMail : Application(), IStorageListener
     override fun start(primaryStage: Stage)
     {
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
-        URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
+       // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
         UIUtils.resizable(rooTabPane)
         UIUtils.resizable(root)
@@ -163,13 +170,12 @@ class PinkPigMail : Application(), IStorageListener
         uiSettings.heightProperty.bind(primaryStage.heightProperty())
 
         //  on adding of a new account, add an account view for it
-        accounts.addListener { c: Change<out IAcc> ->
+        accounts.addListener { c: Change<out IAccount> ->
             while (c.next())
             {
                 println(c.addedSubList)
                 //  TODO -- total hack
-                if (!c.addedSubList.isEmpty() && c.addedSubList.get(0) is IAccount)
-                    c.addedSubList.forEach { addAccountView(primaryStage, it as IAccount) }
+                c.addedSubList.forEach { Platform.runLater {addAccountView(primaryStage, it) }}
             }
         }
 
@@ -214,7 +220,7 @@ class PinkPigMail : Application(), IStorageListener
             htmlState.message = message
             messageView.setMessage(message)
             //	don't mark junk as read
-            if (message.account.isDisplayMessageMarksAsRead && !message.junkProperty.get())
+            if (message.mailAccount.isDisplayMessageMarksAsRead && !message.junkProperty.get())
             {
                 message.folder.markMessagesAsRead(listOf(message))
             }
@@ -224,7 +230,7 @@ class PinkPigMail : Application(), IStorageListener
     private fun createPerAccountToolBar(pad: AccountViewModel): HBox
     {
         val config = ActionHelper.create(Icons.configure(Icons.DEFAULT_SIZE),
-                { Actions.configureAccount(pad.account) }, Strings.CONFIGURE_ACCOUNT, false)
+                { Actions.configureAccount(pad.mailAccount) }, Strings.CONFIGURE_ACCOUNT, false)
         val layout = ActionHelper.create(Icons.switchHorizontal(Icons.DEFAULT_SIZE),
                 {
                     val p = pad.currentFolderViewModel().visiblePerspective
@@ -237,7 +243,7 @@ class PinkPigMail : Application(), IStorageListener
         val forward = ActionHelper.create(Icons.forward(Icons.DEFAULT_SIZE),
                 { Actions.forwardMail(pad.currentMessage()) }, Strings.FORWARD)
         val compose = ActionHelper.create(Icons.compose(Icons.DEFAULT_SIZE),
-                { Actions.composeMail(pad.account) }, Strings.COMPOSE, false)
+                { Actions.composeMail(pad.mailAccount) }, Strings.COMPOSE, false)
         val delete = ActionHelper.create(Icons.delete(Icons.DEFAULT_SIZE),
                 {
                     //  move to the next message
@@ -348,7 +354,7 @@ class PinkPigMail : Application(), IStorageListener
         val fromColumn = TableColumn<IMessage, IMessage>(Strings.FROM)
         fromColumn.setCellValueFactory(cellValueFactory)
         with(fromColumn) {
-            setCellFactory { AddressCell(folder.account) { it.from } }
+            setCellFactory { AddressCell(folder.mailAccount) { it.from } }
             prefWidth = 300.0
             //  TODO
             comparator = Comparators.cmp<EmailAddress> { it.from[0] }
@@ -432,9 +438,32 @@ class PinkPigMail : Application(), IStorageListener
         return accountView
     }
 
-    private fun addAccountView(primaryStage: Stage, account: IAccount)
+    private fun addAccountView(stage: Stage, account: IAccount)
     {
-        val pad = AccountViewModel(account)
+        if(account is IMailAccount)
+            addMailAccountView(stage, account)
+        else
+            addCalendarView(stage, account as CalDavAccount)
+    }
+
+    private fun addCalendarView(primaryStage: Stage, account: CalDavAccount)
+    {
+        val calendarView = CalendarView()
+        calendarView.calendarSources.add(account.source)
+
+        val tab = Tab()
+        with(tab) {
+            content = calendarView
+            textProperty().bind(account.emailAddressProperty)
+            closableProperty().set(false)
+        }
+
+        rooTabPane.tabs.add(tab)
+    }
+
+    private fun addMailAccountView(primaryStage: Stage, mailAccount: IMailAccount)
+    {
+        val pad = AccountViewModel(mailAccount)
 
         val accountsRoot = TreeItem<IFolder>()
         val accountView = createAccountView(pad, accountsRoot)
@@ -448,11 +477,11 @@ class PinkPigMail : Application(), IStorageListener
 
         //  when a folder is added to the accounts folder list add an item to the account view
         //  and add a folder view for the folder
-        println(account)
-        println(account.folders)
+        println(mailAccount)
+        println(mailAccount.folders)
 
-        account.folders.addListener { c: Change<out IFolder> ->
-            println("Adding folders" + account)
+        mailAccount.folders.addListener { c: Change<out IFolder> ->
+            println("Adding folders" + mailAccount)
             while (c.next())
             {
                 c.addedSubList.forEach {
@@ -483,7 +512,7 @@ class PinkPigMail : Application(), IStorageListener
         val tab = Tab()
         with(tab) {
             content = box
-            textProperty().bind(account.emailAddressProperty)
+            textProperty().bind(mailAccount.emailAddressProperty)
             closableProperty().set(false)
         }
 

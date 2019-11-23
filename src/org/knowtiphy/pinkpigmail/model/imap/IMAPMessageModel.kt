@@ -11,7 +11,7 @@ import java.io.IOException
 /*
  * @author graham
  */
-class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFolder,
+class IMAPMessageModel(storage: IStorage, account: IMAPMailAccount, copyTo: IMAPFolder,
                        replyToMessage: IMessage?, sendMode: SendMode,
                        subject: String?, to: String?, content: String?) : MessageModel(storage, account,
         replyToMessage, sendMode, subject, to, content, copyTo)
@@ -19,7 +19,7 @@ class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFold
     @Throws(StorageException::class, IOException::class)
     override fun send()
     {
-        val account = account
+        val account = mailAccount
         //  TODO -- need to check addresses
         val model = org.knowtiphy.babbage.storage.IMAP.MessageModel(account.id,
                 subjectProperty().get(), toProperty().get(), ccProperty().get(),

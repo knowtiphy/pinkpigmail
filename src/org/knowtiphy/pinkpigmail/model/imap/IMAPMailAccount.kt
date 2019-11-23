@@ -20,7 +20,7 @@ import javax.mail.internet.InternetAddress
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IAccount
+class IMAPMailAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IMailAccount
 {
     override val allowHTMLProperty = SimpleBooleanProperty(true)
     override val folders: ObservableList<IFolder> = FXCollections.observableArrayList()
@@ -148,7 +148,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
             builder.append(" ").append(Strings.ON)
             builder.append(message.sentOnProperty.get().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
         }
-        val niceFrom = EmailAddress.format(message.account, message.from)
+        val niceFrom = EmailAddress.format(message.mailAccount, message.from)
         builder.append(" ").append(niceFrom)
         //        if (!niceFrom.contains("@"))
         //        {

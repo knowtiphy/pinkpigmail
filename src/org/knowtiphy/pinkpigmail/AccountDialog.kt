@@ -12,7 +12,6 @@ import javafx.scene.layout.VBox
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
 import org.controlsfx.tools.Borders
-import org.knowtiphy.pinkpigmail.model.IAcc
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.utils.Pair
 
@@ -22,17 +21,17 @@ import org.knowtiphy.utils.Pair
  */
 object AccountDialog
 {
-    fun create(accounts: Collection<IAcc>): Pair<Map<IAcc, StringProperty>, Group>
+    fun create(accounts: Collection<IAccount>): Pair<Map<IAccount, StringProperty>, Group>
     {
         val box = VBox()
-        box.spacing = 10.0
+        box.spacing = 5.0
 
-        val properties = HashMap<IAcc, StringProperty>()
+        val properties = HashMap<IAccount, StringProperty>()
         var i = 0
         for (account in accounts)
         {
             val row = GridPane()
-            row.hgap = 20.0
+            row.hgap = 10.0
             row.alignment = Pos.CENTER_LEFT
 
             val progressSpinner = ProgressIndicator()
