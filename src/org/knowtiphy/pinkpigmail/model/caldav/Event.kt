@@ -7,10 +7,11 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.PPPeer
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 
-class CalDavEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
+class Event(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
 {
     val event = Entry<String>("")
     lateinit var calendar: Calendar
@@ -39,7 +40,16 @@ class CalDavEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun setDuration(stmt: Statement)
     {
-        println("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-        println(stmt)
+        val dt = stmt.literal.lexicalForm
+        val duration = Duration.parse(dt.toString())
+        println("-----------XXXXX ---------")
+        println(duration)
+        println(event.startTime)
+        println(event.startTime.plus(duration))
+        println(event.startDate)
+        println("-----------XXXXX ---------")
+        val endTime = event.startTime.plus(duration)
+        event.changeEndTime(endTime)
+        event.changeEndDate(event.startDate)
     }
 }

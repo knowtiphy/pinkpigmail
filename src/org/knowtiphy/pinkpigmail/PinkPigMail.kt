@@ -29,9 +29,9 @@ import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.*
-import org.knowtiphy.pinkpigmail.model.caldav.CalDavAccount
-import org.knowtiphy.pinkpigmail.model.caldav.CalDavCalendar
-import org.knowtiphy.pinkpigmail.model.caldav.CalDavEvent
+import org.knowtiphy.pinkpigmail.model.caldav.Account
+import org.knowtiphy.pinkpigmail.model.caldav.Calendar
+import org.knowtiphy.pinkpigmail.model.caldav.Event
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMailAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
@@ -45,6 +45,8 @@ import tornadofx.remainingWidth
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
+import java.time.LocalTime
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
@@ -75,87 +77,31 @@ class PinkPigMail : Application(), IStorageListener
 
         val htmlState = HTMLState()
 
+        //val viewCreator = HashMap<Class<*>, KFunction2<Stage, IAccount, Unit>>()
+
         init
         {
             //  peer constructors
             Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPMailAccount(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDavAccount(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> CalDavCalendar(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> CalDavEvent(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> Account(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> Calendar(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> Event(id, storage) }
             //  peer roots
             Peer.addRoot(Vocabulary.IMAP_ACCOUNT) { id -> accounts.add(id as IAccount) }
             Peer.addRoot(Vocabulary.CALDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
         }
 
-        val service = Executors.newCachedThreadPool()
+        val service: ExecutorService = Executors.newCachedThreadPool()
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model)
-    {
-        try
-        {
-            Peer.delta(added, deleted)
-        } catch (ex: Exception)
-        {
-            Fail.failNoMessage(ex)
-        }
-    }
+    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
     private val root = VBox(appToolBar, rooTabPane)
-
-    override fun start(primaryStage: Stage)
-    {
-        Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
-        // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
-
-        UIUtils.resizable(rooTabPane)
-        UIUtils.resizable(root)
-        VBox.setVgrow(rooTabPane, Priority.ALWAYS)
-        VBox.setVgrow(appToolBar, Priority.NEVER)
-
-        with(primaryStage) {
-            scene = Scene(root)
-            scene.stylesheets.add(PinkPigMail::class.java.getResource(STYLE_SHEET).toExternalForm())
-            title = "Pink Pig Mail"
-            icons.add(Image(Icons.thePig128()))
-            width = uiSettings.widthProperty.get()
-            height = uiSettings.heightProperty.get()
-            setOnCloseRequest {
-                //  what happens if we close due to an error in boot -- couldn't the accounts model be
-                //  empty and hence we lose the accounts file?
-                Shutdown(storage, uiSettings).shutdown(primaryStage, accounts)
-                it.consume()
-            }
-        }
-
-        uiSettings.widthProperty.bind(primaryStage.widthProperty())
-        uiSettings.heightProperty.bind(primaryStage.heightProperty())
-
-        //  on adding of a new account, add an account view for it
-        accounts.addListener { c: Change<out IAccount> ->
-            while (c.next())
-            {
-                println(c.addedSubList)
-                //  TODO -- total hack
-                c.addedSubList.forEach { Platform.runLater { addAccountView(primaryStage, it) } }
-            }
-        }
-
-        storage.addListener(this)
-
-        //val map = storage?.addListener(this)
-        //  wait for sync to finish
-        //map?.forEach { s, f -> print(s); f.get() }
-        //	hopefully everything is loaded before this?
-        htmlState.isAllowJars = false
-
-        primaryStage.show()
-    }
 
     private fun loadAhead(fvm: FolderViewModel)
     {
@@ -405,22 +351,16 @@ class PinkPigMail : Application(), IStorageListener
         return accountView
     }
 
-    private fun addAccountView(stage: Stage, account: IAccount)
-    {
-        if (account is IMailAccount)
-            addMailAccountView(stage, account)
-        else
-            addCalendarView(stage, account as CalDavAccount)
-    }
-
-    private fun addCalendarView(primaryStage: Stage, account: CalDavAccount)
+    private fun addCalendarView(primaryStage: Stage, account: Account)
     {
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
+        calendarView.setRequestedTime(LocalTime.now());
 
         val tab = Tab()
         with(tab) {
             content = calendarView
+            graphic = Icons.calendar(Icons.MEDIUM_SIZE)
             textProperty().bind(account.emailAddressProperty)
             closableProperty().set(false)
         }
@@ -428,7 +368,7 @@ class PinkPigMail : Application(), IStorageListener
         rooTabPane.tabs.add(tab)
     }
 
-    private fun addMailAccountView(primaryStage: Stage, mailAccount: IMailAccount)
+    private fun addMailView(primaryStage: Stage, mailAccount: IMailAccount)
     {
         val pad = AccountViewModel(mailAccount)
 
@@ -448,11 +388,11 @@ class PinkPigMail : Application(), IStorageListener
         println(mailAccount.folders)
 
         mailAccount.folders.addListener { c: Change<out IFolder> ->
-            println("Adding folders" + mailAccount)
+            //            println("Adding folders" + mailAccount)
             while (c.next())
             {
                 c.addedSubList.forEach {
-                    println("Actually Adding folder" + it)
+                    //                    println("Actually Adding folder" + it)
                     val fvm = FolderViewModel()
                     pad.addFolderViewModel(it, fvm)
                     val treeItem = TreeItem<IFolder>(it)
@@ -479,6 +419,7 @@ class PinkPigMail : Application(), IStorageListener
         val tab = Tab()
         with(tab) {
             content = box
+            graphic = Icons.mail(Icons.MEDIUM_SIZE)
             textProperty().bind(mailAccount.emailAddressProperty)
             closableProperty().set(false)
         }
@@ -497,6 +438,62 @@ class PinkPigMail : Application(), IStorageListener
 
         //  message load-ahead
         pad.messagesSelected.filter { it.selectionModel!!.selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
+    }
+
+    private val viewCreator = mapOf(
+            IMAPMailAccount::class.java to
+                    { stage: Stage, account: IAccount -> addMailView(stage, account as IMailAccount) },
+            org.knowtiphy.pinkpigmail.model.caldav.Account::class.java to
+                    { stage: Stage, account: IAccount -> addCalendarView(stage, account as org.knowtiphy.pinkpigmail.model.caldav.Account) })
+
+    override fun start(primaryStage: Stage)
+    {
+        Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
+        //  TODO -- have to make this work
+        // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
+
+        UIUtils.resizable(rooTabPane)
+        UIUtils.resizable(root)
+        VBox.setVgrow(rooTabPane, Priority.ALWAYS)
+        VBox.setVgrow(appToolBar, Priority.NEVER)
+
+        with(primaryStage) {
+            scene = Scene(root)
+            scene.stylesheets.add(PinkPigMail::class.java.getResource(STYLE_SHEET).toExternalForm())
+            title = "Pink Pig Mail"
+            icons.add(Image(Icons.thePig128()))
+            width = uiSettings.widthProperty.get()
+            height = uiSettings.heightProperty.get()
+            setOnCloseRequest {
+                //  what happens if we close due to an error in boot -- couldn't the accounts model be
+                //  empty and hence we lose the accounts file?
+                Shutdown(storage, uiSettings).shutdown(primaryStage, accounts)
+                it.consume()
+            }
+        }
+
+        uiSettings.widthProperty.bind(primaryStage.widthProperty())
+        uiSettings.heightProperty.bind(primaryStage.heightProperty())
+
+        //  on adding of a new account, add an account view for it
+        accounts.addListener { c: Change<out IAccount> ->
+            while (c.next())
+            {
+                c.addedSubList.forEach {
+                    Platform.runLater { viewCreator[it::class.java]?.let { it1 -> it1(primaryStage, it) } }
+                }
+            }
+        }
+
+        storage.addListener(this)
+
+        //val map = storage?.addListener(this)
+        //  wait for sync to finish
+        //map?.forEach { s, f -> print(s); f.get() }
+        //	hopefully everything is loaded before this?
+        htmlState.isAllowJars = false
+
+        primaryStage.show()
     }
 }
 

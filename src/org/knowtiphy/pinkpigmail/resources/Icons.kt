@@ -132,6 +132,18 @@ object Icons
     fun deleted(size: Int = Icons.SMALL_SIZE): Glyph = Fonts.FONT.create(FontAwesome.Glyph.CLOSE).color(Icons.ICON_COLOR).size(size.toDouble())
 
     @JvmStatic
+    fun calendar(size: Int = Icons.SMALL_SIZE): Glyph
+    {
+        return Fonts.FONT.create(FontAwesome.Glyph.CALENDAR).color(ICON_COLOR).size(size.toDouble())
+    }
+
+    @JvmStatic
+    fun mail(size: Int = Icons.SMALL_SIZE): Glyph
+    {
+        return Fonts.FONT.create(FontAwesome.Glyph.ENVELOPE).color(ICON_COLOR).size(size.toDouble())
+    }
+
+    @JvmStatic
     fun thePig128(): InputStream
     {
         return Resources::class.java.getResourceAsStream("cubed_piggy-128.png")

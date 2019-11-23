@@ -1,30 +1,26 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
-import com.calendarfx.model.Calendar
 import com.calendarfx.model.CalendarSource
-import com.calendarfx.model.Entry
 import javafx.beans.property.SimpleStringProperty
-import javafx.collections.FXCollections
-import javafx.collections.ObservableList
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.rdf.model.Statement
-import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import java.time.LocalTime
+import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.PPPeer
 
 /**
  * @author graham
  */
-class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IAccount
+class Account(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IAccount
 {
     val source = CalendarSource()
 
+    override val emailAddressProperty = SimpleStringProperty()
     val serverNameProperty = SimpleStringProperty()
     val serverHeaderProperty = SimpleStringProperty()
     val passwordProperty = SimpleStringProperty()
-    override val emailAddressProperty = SimpleStringProperty()
 
     init
     {
@@ -33,7 +29,6 @@ class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
         declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareU(Vocabulary.CONTAINS, ::addCalendar)
-
     }
 
     override fun save(model: Model, name: Resource)
@@ -47,8 +42,7 @@ class CalDavAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
 
     private fun addCalendar(stmt: Statement)
     {
-        println("XXXXXXXXXXXXXXXX ADD CALENDAR " + stmt)
-        val calendar = PEERS[stmt.getObject().toString()] as CalDavCalendar
+        val calendar = PEERS[stmt.getObject().toString()] as Calendar
         source.calendars.add(calendar.calendar)
     }
 }
