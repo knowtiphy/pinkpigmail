@@ -3,13 +3,13 @@ package org.knowtiphy.pinkpigmail
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.pinkpigmail.model.IMailAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.reactfx.EventSource
 
 //  the view-model for the account view
-class AccountViewModel(val mailAccount: IMailAccount)
+class AccountViewModel(val mailAccount: IEmailAccount)
 {
     private var currentFolder: IFolder? = null
     private val folderViewModels = HashMap<IFolder, FolderViewModel>()

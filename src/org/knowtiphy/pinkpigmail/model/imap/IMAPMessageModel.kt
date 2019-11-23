@@ -11,7 +11,7 @@ import java.io.IOException
 /*
  * @author graham
  */
-class IMAPMessageModel(storage: IStorage, account: IMAPMailAccount, copyTo: IMAPFolder,
+class IMAPMessageModel(storage: IStorage, account: IMAPEmailAccount, copyTo: IMAPFolder,
                        replyToMessage: IMessage?, sendMode: SendMode,
                        subject: String?, to: String?, content: String?) : MessageModel(storage, account,
         replyToMessage, sendMode, subject, to, content, copyTo)

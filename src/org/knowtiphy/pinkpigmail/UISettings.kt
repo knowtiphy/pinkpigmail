@@ -9,7 +9,7 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
-import org.knowtiphy.pinkpigmail.model.IMailAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.IAccount
@@ -59,7 +59,7 @@ class UISettings
             //  ignore
         }
 
-        if (account is IMailAccount)
+        if (account is IEmailAccount)
         {
             for (folder in account.folders)
             {

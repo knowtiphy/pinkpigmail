@@ -48,7 +48,7 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
 
         return Thread {
             Platform.runLater { message.set("Saving account information") }
-            account.save(accountsModel, accountsModel.createResource(names.get()))
+            //account.save(accountsModel, accountsModel.createResource(names.get()))
 
             Platform.runLater { message.set("Saving UI settings") }
 
@@ -100,8 +100,8 @@ class Shutdown(private val storage: IStorage, private val uiSettings: UISettings
                 }
                 Threads.startAndWait(threads)
 
-                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
-                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
+//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
+//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
 
                 //stage.close();
                 exitProcess(1)

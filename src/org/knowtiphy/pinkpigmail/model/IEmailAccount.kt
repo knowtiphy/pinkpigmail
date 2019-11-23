@@ -10,7 +10,7 @@ import java.util.concurrent.ExecutionException
 /**
  * @author graham
  */
-interface IMailAccount : ITreeItem, IAccount
+interface IEmailAccount : ITreeItem, IAccount
 {
     val folders: ObservableList<IFolder>
 

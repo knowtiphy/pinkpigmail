@@ -4,7 +4,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
-import org.knowtiphy.pinkpigmail.model.IMailAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.ModelType
@@ -27,7 +27,7 @@ object Actions
 {
     @Throws(ExecutionException::class, InterruptedException::class)
     @JvmStatic
-    fun configureAccount(mailAccount: IMailAccount)
+    fun configureAccount(mailAccount: IEmailAccount)
     {
 //        val root = VBox()
 //
@@ -66,7 +66,7 @@ object Actions
 
     @Throws(ExecutionException::class, InterruptedException::class)
     @JvmStatic
-    fun composeMail(mailAccount: IMailAccount)
+    fun composeMail(mailAccount: IEmailAccount)
     {
         try
         {

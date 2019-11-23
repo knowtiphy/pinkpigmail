@@ -30,6 +30,7 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
 
         init
         {
+            println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
             try
             {
                 SUN_HTTP_HANDLER = Class.forName("sun.net.www.protocol.http.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler

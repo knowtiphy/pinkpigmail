@@ -11,7 +11,7 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalTime
 
-class Event(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
+class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
 {
     val event = Entry<String>("")
     lateinit var calendar: Calendar
@@ -21,12 +21,12 @@ class Event(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
         declareU(Vocabulary.HAS_SUMMARY) { event.title = it.literal.string }
         declareU(Vocabulary.HAS_DATE_START, ::setStartDate)
         declareU(Vocabulary.HAS_DATE_END, ::setEndDate)
-        declareU(Vocabulary.HAS_DURATION, ::setDuration)
     }
 
     private fun setStartDate(stmt: Statement)
     {
         val dt = stmt.literal.value as XSDDateTime
+        System.out.println("START " + dt.toString())
         event.changeStartDate(LocalDate.of(dt.years, dt.months, dt.days))
         event.changeStartTime(LocalTime.of(dt.hours, dt.minutes))
     }
@@ -34,6 +34,7 @@ class Event(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
     private fun setEndDate(stmt: Statement)
     {
         val dt = stmt.literal.value as XSDDateTime
+        System.out.println("END " + dt.toString())
         event.changeEndDate(LocalDate.of(dt.years, dt.months, dt.days))
         event.changeEndTime(LocalTime.of(dt.hours, dt.minutes))
     }

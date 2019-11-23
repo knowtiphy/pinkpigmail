@@ -21,7 +21,7 @@ import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
 import org.knowtiphy.pinkpigmail.mailview.MailViewer
 import org.knowtiphy.pinkpigmail.model.EmailAddress
-import org.knowtiphy.pinkpigmail.model.IMailAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -96,7 +96,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
                 val checkMenuItem = CheckMenuItem(ref)
                 checkMenuItem.isSelected = account.isTrustedProvider(ref)
                 checkMenuItem.selectedProperty().addListener { _, _, newValue ->
-                    (if (newValue) IMailAccount::trustProvider else IMailAccount::unTrustProvider)(account, ref)
+                    (if (newValue) IEmailAccount::trustProvider else IEmailAccount::unTrustProvider)(account, ref)
                 }
                 trustContentMenu.items.add(checkMenuItem)
             }

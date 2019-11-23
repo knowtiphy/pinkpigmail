@@ -8,7 +8,7 @@ import javafx.scene.media.AudioClip
 import javafx.scene.media.MediaException
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.pinkpigmail.Fail
-import org.knowtiphy.pinkpigmail.model.IMailAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.PPPeer
@@ -21,9 +21,9 @@ import org.knowtiphy.babbage.storage.Vocabulary
  */
 class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage), IFolder
 {
-    var imapAccount: IMAPMailAccount? = null
+    var imapAccount: IMAPEmailAccount? = null
 
-    override val mailAccount: IMailAccount by lazy {
+    override val mailAccount: IEmailAccount by lazy {
         imapAccount!!
     }
 

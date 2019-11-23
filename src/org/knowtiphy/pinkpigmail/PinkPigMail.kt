@@ -29,11 +29,11 @@ import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.*
-import org.knowtiphy.pinkpigmail.model.caldav.Account
-import org.knowtiphy.pinkpigmail.model.caldav.Calendar
-import org.knowtiphy.pinkpigmail.model.caldav.Event
+import org.knowtiphy.pinkpigmail.model.caldav.CalDAVAccount
+import org.knowtiphy.pinkpigmail.model.caldav.CalDAVCalendar
+import org.knowtiphy.pinkpigmail.model.caldav.CalDAVEvent
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
-import org.knowtiphy.pinkpigmail.model.imap.IMAPMailAccount
+import org.knowtiphy.pinkpigmail.model.imap.IMAPEmailAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -82,12 +82,12 @@ class PinkPigMail : Application(), IStorageListener
         init
         {
             //  peer constructors
-            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPMailAccount(id, storage) }
+            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPEmailAccount(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> Account(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> Calendar(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> Event(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDAVAccount(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> CalDAVCalendar(id, storage) }
+            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> CalDAVEvent(id, storage) }
             //  peer roots
             Peer.addRoot(Vocabulary.IMAP_ACCOUNT) { id -> accounts.add(id as IAccount) }
             Peer.addRoot(Vocabulary.CALDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
@@ -351,11 +351,11 @@ class PinkPigMail : Application(), IStorageListener
         return accountView
     }
 
-    private fun addCalendarView(primaryStage: Stage, account: Account)
+    private fun addCalendarView(primaryStage: Stage, account: ICalendarAccount)
     {
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
-        calendarView.setRequestedTime(LocalTime.now());
+        calendarView.requestedTime = LocalTime.now()
 
         val tab = Tab()
         with(tab) {
@@ -368,7 +368,7 @@ class PinkPigMail : Application(), IStorageListener
         rooTabPane.tabs.add(tab)
     }
 
-    private fun addMailView(primaryStage: Stage, mailAccount: IMailAccount)
+    private fun addMailView(primaryStage: Stage, mailAccount: IEmailAccount)
     {
         val pad = AccountViewModel(mailAccount)
 
@@ -441,10 +441,10 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     private val viewCreator = mapOf(
-            IMAPMailAccount::class.java to
-                    { stage: Stage, account: IAccount -> addMailView(stage, account as IMailAccount) },
-            org.knowtiphy.pinkpigmail.model.caldav.Account::class.java to
-                    { stage: Stage, account: IAccount -> addCalendarView(stage, account as org.knowtiphy.pinkpigmail.model.caldav.Account) })
+            IMAPEmailAccount::class to
+                    { stage: Stage, account: IAccount -> addMailView(stage, account as IEmailAccount) },
+            CalDAVAccount::class to
+                    { stage: Stage, account: IAccount -> addCalendarView(stage, account as ICalendarAccount) })
 
     override fun start(primaryStage: Stage)
     {
@@ -480,7 +480,7 @@ class PinkPigMail : Application(), IStorageListener
             while (c.next())
             {
                 c.addedSubList.forEach {
-                    Platform.runLater { viewCreator[it::class.java]?.let { it1 -> it1(primaryStage, it) } }
+                    Platform.runLater { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } }
                 }
             }
         }
