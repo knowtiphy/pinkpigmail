@@ -7,5 +7,6 @@ import org.knowtiphy.pinkpigmail.ITreeItem
 interface ICalendarAccount : ITreeItem, IAccount
 {
     val emailAddressProperty: StringProperty
+
     val source: CalendarSource
 }

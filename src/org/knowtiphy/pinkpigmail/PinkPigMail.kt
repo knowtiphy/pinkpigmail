@@ -23,6 +23,7 @@ import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.apache.jena.rdf.model.Model
 import org.controlsfx.glyphfont.Glyph
+import org.knowtiphy.babbage.storage.IMAP.IMAPAdapter
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
@@ -51,6 +52,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.logging.Logger
 
 /**
  * @author graham
@@ -61,6 +63,8 @@ class PinkPigMail : Application(), IStorageListener
     companion object
     {
         private const val MESSAGE_STORAGE = "messages"
+
+        val LOGGER = Logger.getLogger(IMAPAdapter::class.java.name)
 
         const val STYLE_SHEET = "styles.css"
 
@@ -80,6 +84,8 @@ class PinkPigMail : Application(), IStorageListener
 
         init
         {
+           // LoggerUtils.setGlobalLoggerLevel(Level.FINE)
+
             //  peer constructors
             Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
@@ -96,10 +102,10 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
-//            Peer.delta(added, deleted) { it.subject.toString().contains("Account")
-//                    && it.predicate.toString().contains("contains")
-//                    && it.`object`.toString().contains("Folder")}
+    override fun delta(added: Model, deleted: Model) = //Peer.delta(added, deleted)
+            Peer.delta(added, deleted) { //it.subject.toString().contains("Account")
+                     it.predicate.toString().contains("type")
+                    && it.`object`.toString().contains("IMAPAccount")}
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
@@ -371,9 +377,8 @@ class PinkPigMail : Application(), IStorageListener
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
-        val tab = initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE),
-                if (account.nickNameProperty.get() != null) account.nickNameProperty else account.emailAddressProperty)
-        rooTabPane.tabs.add(tab)
+        rooTabPane.tabs.add(initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE),
+                if (account.nickNameProperty.get() != null) account.nickNameProperty else account.emailAddressProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
@@ -422,13 +427,11 @@ class PinkPigMail : Application(), IStorageListener
         VBox.setVgrow(toolBar, Priority.NEVER)
         VBox.setVgrow(folderArea, Priority.ALWAYS)
 
-        val tab = initTab(box, Icons.mail(Icons.MEDIUM_SIZE), account.nickNameProperty)
-
-        rooTabPane.tabs.add(tab)
+        rooTabPane.tabs.add(initTab(box, Icons.mail(Icons.MEDIUM_SIZE), account.nickNameProperty))
 
         folderArea.setDividerPositions(uiSettings.verticalPosition[0].position)
 
-        //  this is necessary to try to work around a JavaFX bug with setting split pane positions
+        //  TODO is this is necessary to try to work around a JavaFX bug with setting split pane positions?
         primaryStage.setOnShown {
             Platform.runLater {
                 folderArea.setDividerPositions(uiSettings.verticalPosition[0].position)
