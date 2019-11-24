@@ -2,6 +2,7 @@ package org.knowtiphy.pinkpigmail.model.caldav
 
 import com.calendarfx.model.CalendarSource
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableValue
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.rdf.model.Statement
@@ -32,6 +33,10 @@ class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
         declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareU(Vocabulary.CONTAINS, ::addCalendar)
+        emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
+            if (nickNameProperty.get() == null)
+                nickNameProperty.set(newValue)
+        }
     }
 
     override fun save(model: Model, name: Resource)
