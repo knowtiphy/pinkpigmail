@@ -1,18 +1,16 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
-import com.calendarfx.model.Calendar
 import com.calendarfx.model.Entry
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.PPPeer
-import java.time.*
-import java.time.format.DateTimeFormatter
+import org.knowtiphy.utils.JenaUtils
 
 class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
 {
     val event = Entry<String>("")
-    lateinit var calendar: Calendar
+//    lateinit var calendar: Calendar
 
     init
     {
@@ -23,14 +21,14 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun setStartDate(stmt: Statement)
     {
-        val dt = ZonedDateTime.parse(stmt.literal.string, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+        val dt = JenaUtils.getLDT(stmt.literal)
         event.changeStartDate(dt.toLocalDate())
         event.changeStartTime(dt.toLocalTime())
     }
 
     private fun setEndDate(stmt: Statement)
     {
-        val dt = ZonedDateTime.parse(stmt.literal.string, DateTimeFormatter.ISO_DATE_TIME).withZoneSameInstant(ZoneId.systemDefault()).toLocalDateTime()
+        val dt = JenaUtils.getLDT(stmt.literal)
         event.changeEndDate(dt.toLocalDate())
         event.changeEndTime(dt.toLocalTime())
     }

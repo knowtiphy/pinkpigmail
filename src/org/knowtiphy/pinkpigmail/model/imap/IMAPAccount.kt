@@ -7,11 +7,11 @@ import javafx.collections.ObservableList
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.rdf.model.Statement
-import org.knowtiphy.pinkpigmail.model.*
-import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.model.*
+import org.knowtiphy.pinkpigmail.resources.Strings
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ExecutionException
@@ -20,7 +20,7 @@ import javax.mail.internet.InternetAddress
 /**
  * @author graham
  */
-class IMAPEmailAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IEmailAccount
 {
     override val allowHTMLProperty = SimpleBooleanProperty(true)
     override val folders: ObservableList<IFolder> = FXCollections.observableArrayList()
@@ -54,7 +54,6 @@ class IMAPEmailAccount(accountId: String, storage: IStorage) : PPPeer(accountId,
     {
         model.add(name, model.createProperty(Vocabulary.RDF_TYPE), model.createResource(Vocabulary.IMAP_ACCOUNT))
         model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
-        println("EMAIL ADDRESS :: " + emailAddressProperty.get())
         model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
         model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), password.get())
         trustedContentProviders.forEach { model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER), it) }
@@ -200,24 +199,21 @@ class IMAPEmailAccount(accountId: String, storage: IStorage) : PPPeer(accountId,
 
     private fun addFolder(stmt: Statement)
     {
-        println("addFolder")
-        val folder = PEERS[stmt.getObject().toString()] as IMAPFolder
-        println(folder)
-        if (!folders.contains(folder))
+        val folder = peer(stmt.getObject().asResource())!! as IMAPFolder
+        assert(!folders.contains(folder)) { folder.id }
+
+        folder.imapAccount = this
+        folders.add(folder)
+
+        val name = folder.nameProperty.get() ?: return
+        when
         {
-            folder.imapAccount = this
-
-            val name = folder.nameProperty.get() ?: return
-            when
-            {
-                Patterns.TRASH_PATTERN.matcher(name).matches() -> trashFolder = folder
-                Patterns.JUNK_PATTERN.matcher(name).matches() -> junkFolder = folder
-                Patterns.SENT_PATTERN.matcher(name).matches() -> sentFolder = folder
-                Patterns.DRAFTS_PATTERN.matcher(name).matches() -> draftsFolder = folder
-            }
-
-            folders.add(folder)
+            Patterns.TRASH_PATTERN.matcher(name).matches() -> trashFolder = folder
+            Patterns.JUNK_PATTERN.matcher(name).matches() -> junkFolder = folder
+            Patterns.SENT_PATTERN.matcher(name).matches() -> sentFolder = folder
+            Patterns.DRAFTS_PATTERN.matcher(name).matches() -> draftsFolder = folder
         }
+
     }
 }
 

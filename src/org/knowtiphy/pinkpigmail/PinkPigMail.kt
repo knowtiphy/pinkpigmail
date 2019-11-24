@@ -32,8 +32,8 @@ import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.model.caldav.CalDAVAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CalDAVCalendar
 import org.knowtiphy.pinkpigmail.model.caldav.CalDAVEvent
+import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
-import org.knowtiphy.pinkpigmail.model.imap.IMAPEmailAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -46,7 +46,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -83,7 +82,7 @@ class PinkPigMail : Application(), IStorageListener
         init
         {
             //  peer constructors
-            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPEmailAccount(id, storage) }
+            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
             Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDAVAccount(id, storage) }
@@ -98,7 +97,10 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted) { it -> it.subject.toString().contains("CALDAV") }
+    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
+//            Peer.delta(added, deleted) { it.subject.toString().contains("Account")
+//                    && it.predicate.toString().contains("contains")
+//                    && it.`object`.toString().contains("Folder")}
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
@@ -352,7 +354,7 @@ class PinkPigMail : Application(), IStorageListener
         return accountView
     }
 
-    private fun addCalendarView(primaryStage: Stage, account: ICalendarAccount)
+    private fun addCalendarView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICalendarAccount)
     {
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
@@ -440,17 +442,13 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     private val viewCreator = mapOf(
-            IMAPEmailAccount::class to
+            IMAPAccount::class to
                     { stage: Stage, account: IAccount -> addMailView(stage, account as IEmailAccount) },
             CalDAVAccount::class to
                     { stage: Stage, account: IAccount -> addCalendarView(stage, account as ICalendarAccount) })
 
     override fun start(primaryStage: Stage)
     {
-        val  timeZone : TimeZone= TimeZone.getDefault()
-
-        println("TZ = " + timeZone)
-
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
         //  TODO -- have to make this work
         // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
@@ -499,4 +497,3 @@ class PinkPigMail : Application(), IStorageListener
         primaryStage.show()
     }
 }
-

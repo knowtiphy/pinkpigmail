@@ -7,21 +7,21 @@ import javafx.collections.ObservableList
 import javafx.scene.media.AudioClip
 import javafx.scene.media.MediaException
 import org.apache.jena.rdf.model.Statement
+import org.knowtiphy.babbage.storage.IStorage
+import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.Fail
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.PPPeer
 import org.knowtiphy.pinkpigmail.resources.Resources
-import org.knowtiphy.babbage.storage.IStorage
-import org.knowtiphy.babbage.storage.Vocabulary
 
 /**
  * @author graham
  */
 class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage), IFolder
 {
-    var imapAccount: IMAPEmailAccount? = null
+    var imapAccount: IMAPAccount? = null
 
     override val mailAccount: IEmailAccount by lazy {
         imapAccount!!
@@ -95,13 +95,14 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
 
     private fun deleteMessage(stmt: Statement)
     {
-        messages.remove(PEERS[stmt.getObject().toString()])
+        messages.remove(peer(stmt.getObject().asResource())!!)
     }
 
     private fun addMessage(stmt: Statement)
     {
-        val message = PEERS[stmt.getObject().toString()] as IMAPMessage
+        val message = peer(stmt.getObject().asResource())!! as IMAPMessage
         message.folder = this
+        assert(!messages.contains(message)) { message.id }
         messages.add(message)
         if (Patterns.INBOX_PATTERN.matcher(nameProperty.get()).matches() && !message.readProperty.get())
         {

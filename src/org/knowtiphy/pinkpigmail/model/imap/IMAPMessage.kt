@@ -6,10 +6,10 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.apache.jena.query.QueryExecutionFactory
-import org.knowtiphy.pinkpigmail.model.*
-import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IMAP.Mime
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.utils.JenaUtils
 import java.net.URL
 import java.time.LocalDate
@@ -83,11 +83,9 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
         try
         {
             val mimeType = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(context.model, id, Vocabulary.HAS_MIME_TYPE))
-            println("mimeType = " + mimeType)
-            //  TODO -- this replace stuff should be done in the database
+            //  TODO this replace stuff should be done in the database
             val content = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(context.model,
                     id, Vocabulary.HAS_CONTENT)).replace("\\\"", "\"")
-            println("content = " + content)
             return IMAPPart(id, storage, mimeType, content)
         } finally
         {

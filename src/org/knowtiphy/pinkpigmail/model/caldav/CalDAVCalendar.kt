@@ -19,8 +19,7 @@ class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, s
 
     private fun addEvent(stmt: Statement)
     {
-        val event = PEERS[stmt.getObject().toString()] as CalDAVEvent
-        event.calendar = calendar
+        val event = peer(stmt.`object`.asResource())!! as CalDAVEvent
         calendar.addEntry(event.event)
     }
 }
