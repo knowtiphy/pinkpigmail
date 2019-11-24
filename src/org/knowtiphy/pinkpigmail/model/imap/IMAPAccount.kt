@@ -2,6 +2,7 @@ package org.knowtiphy.pinkpigmail.model.imap
 
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.apache.jena.rdf.model.Model
@@ -22,6 +23,7 @@ import javax.mail.internet.InternetAddress
  */
 class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IEmailAccount
 {
+    override val nickNameProperty = SimpleStringProperty()
     override val allowHTMLProperty = SimpleBooleanProperty(true)
     override val folders: ObservableList<IFolder> = FXCollections.observableArrayList()
     override val trustedContentProviders: ObservableList<String> = FXCollections.observableArrayList()
@@ -45,9 +47,14 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
         declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
         declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
         declareU(Vocabulary.HAS_PASSWORD, password)
+        declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
         declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
         declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.STMT_TO_EMAIL_ADDRESS)
         declareU(Vocabulary.CONTAINS, ::addFolder)
+        emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
+            if (nickNameProperty.get() == null)
+                nickNameProperty.set(newValue)
+        }
     }
 
     override fun save(model: Model, name: Resource)
@@ -213,7 +220,6 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
             Patterns.SENT_PATTERN.matcher(name).matches() -> sentFolder = folder
             Patterns.DRAFTS_PATTERN.matcher(name).matches() -> draftsFolder = folder
         }
-
     }
 }
 

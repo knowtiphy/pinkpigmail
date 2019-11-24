@@ -5,8 +5,9 @@ import java.util.logging.Logger
 
 class ErrorHandler : Thread.UncaughtExceptionHandler
 {
-    private val log = Logger.getLogger("ErrorHandler")
+    private val log = Logger.getLogger(ErrorHandler::class.qualifiedName)
 
+    @Suppress("unused")
     class ErrorEvent(val thread: Thread, val error: Throwable)
     {
         internal var consumed = false
@@ -16,14 +17,11 @@ class ErrorHandler : Thread.UncaughtExceptionHandler
         }
     }
 
-    companion object
-    {
-        // By default, all error org.knowtiphy.pinkpigmail.messages are shown. Override to decide if certain errors should be handled another way.
-        // Call consume to avoid error dialog.
-        var filter: (ErrorEvent) -> Unit = { }
-    }
+    // By default, all error messages are shown. Override to decide if certain errors should be handled another way.
+    // Call consume to avoid error dialog.
+    private val filter: (ErrorEvent) -> Unit = { }
 
-    override fun uncaughtException(t: Thread, error: Throwable)
+    override fun uncaughtException(thread: Thread, error: Throwable)
     {
         log.log(Level.SEVERE, "Uncaught error", error)
 
@@ -32,9 +30,8 @@ class ErrorHandler : Thread.UncaughtExceptionHandler
             log.log(Level.INFO, "Detected cycle handling error, aborting.", error)
         } else
         {
-            val event = ErrorEvent(t, error)
+            val event = ErrorEvent(thread, error)
             filter(event)
-
             if (!event.consumed)
             {
                 event.consume()

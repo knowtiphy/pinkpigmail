@@ -8,6 +8,7 @@ import javafx.scene.control.TextArea
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
 import org.knowtiphy.pinkpigmail.resources.Strings
+import org.knowtiphy.pinkpigmail.util.UIUtils
 
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -53,7 +54,7 @@ object Fail
             textArea.isWrapText = true
 
             val expContent = GridPane()
-            expContent.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+            UIUtils.resizable(expContent)
             expContent.addColumn(0, label, textArea)
             GridPane.setHgrow(label, Priority.ALWAYS)
             GridPane.setVgrow(label, Priority.NEVER)

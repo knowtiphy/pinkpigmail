@@ -3,8 +3,8 @@ package org.knowtiphy.pinkpigmail.model
 import javafx.beans.property.ReadOnlyBooleanProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.pinkpigmail.ITreeItem
 import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.pinkpigmail.ITreeItem
 import java.util.concurrent.ExecutionException
 
 /**
@@ -23,6 +23,8 @@ interface IEmailAccount : ITreeItem, IAccount
     val isDisplayMessageMarksAsRead: Boolean
 
     val serverNameProperty: StringProperty
+
+    val emailAddressProperty: StringProperty
 
     val allowHTMLProperty: ReadOnlyBooleanProperty
 

@@ -5,12 +5,14 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
 import javafx.collections.ObservableList
 import javafx.collections.transformation.SortedList
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
+import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.control.*
 import javafx.scene.control.TableColumn.CellDataFeatures
@@ -20,6 +22,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.apache.jena.rdf.model.Model
+import org.controlsfx.glyphfont.Glyph
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
@@ -69,15 +72,11 @@ class PinkPigMail : Application(), IStorageListener
             StorageFactory.getLocal(dir, OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE))
         }
 
-        //val storage = ClientStorage()
-
         val uiSettings: UISettings by lazy {
             UISettings.read(Constants.UI_FILE)
         }
 
         val htmlState = HTMLState()
-
-        //val viewCreator = HashMap<Class<*>, KFunction2<Stage, IAccount, Unit>>()
 
         init
         {
@@ -304,7 +303,7 @@ class PinkPigMail : Application(), IStorageListener
         return headersView
     }
 
-    private fun createFolderPerspective(fvm: FolderViewModel, folder: IFolder, orientation: Orientation): SplitPane
+    private fun createFolderPerspective(fvm: FolderViewModel, folder: IFolder, @Suppress("SameParameterValue") orientation: Orientation): SplitPane
     {
         val messageView = MessageView(service)
         UIUtils.resizable(messageView)
@@ -354,26 +353,32 @@ class PinkPigMail : Application(), IStorageListener
         return accountView
     }
 
+    private fun initTab(box: Node, icon: Glyph, label: StringProperty): Tab
+    {
+        val tab = Tab()
+        with(tab) {
+            content = box
+            graphic = icon
+            textProperty().bind(label)
+            closableProperty().set(false)
+        }
+
+        return tab
+    }
+
     private fun addCalendarView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICalendarAccount)
     {
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
-
-        val tab = Tab()
-        with(tab) {
-            content = calendarView
-            graphic = Icons.calendar(Icons.MEDIUM_SIZE)
-            textProperty().bind(account.emailAddressProperty)
-            closableProperty().set(false)
-        }
-
+        val tab = initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE),
+                if (account.nickNameProperty.get() != null) account.nickNameProperty else account.emailAddressProperty)
         rooTabPane.tabs.add(tab)
     }
 
-    private fun addMailView(primaryStage: Stage, mailAccount: IEmailAccount)
+    private fun addMailView(primaryStage: Stage, account: IEmailAccount)
     {
-        val pad = AccountViewModel(mailAccount)
+        val pad = AccountViewModel(account)
 
         val accountsRoot = TreeItem<IFolder>()
         val accountView = createAccountView(pad, accountsRoot)
@@ -388,7 +393,7 @@ class PinkPigMail : Application(), IStorageListener
         //  when a folder is added to the accounts folder list add an item to the account view
         //  and add a folder view for the folder
 
-        mailAccount.folders.addListener { c: Change<out IFolder> ->
+        account.folders.addListener { c: Change<out IFolder> ->
             //            println("Adding folders" + mailAccount)
             while (c.next())
             {
@@ -417,13 +422,7 @@ class PinkPigMail : Application(), IStorageListener
         VBox.setVgrow(toolBar, Priority.NEVER)
         VBox.setVgrow(folderArea, Priority.ALWAYS)
 
-        val tab = Tab()
-        with(tab) {
-            content = box
-            graphic = Icons.mail(Icons.MEDIUM_SIZE)
-            textProperty().bind(mailAccount.emailAddressProperty)
-            closableProperty().set(false)
-        }
+        val tab = initTab(box, Icons.mail(Icons.MEDIUM_SIZE), account.nickNameProperty)
 
         rooTabPane.tabs.add(tab)
 

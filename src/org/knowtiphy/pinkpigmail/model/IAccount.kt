@@ -9,5 +9,5 @@ interface IAccount : IPeer
 {
     fun save(model: Model, name: Resource)
 
-    val emailAddressProperty: StringProperty
+    val nickNameProperty: StringProperty
 }

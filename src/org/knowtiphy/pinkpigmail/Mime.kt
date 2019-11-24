@@ -51,6 +51,7 @@ object Mime
     fun glyph(mimeType: String, size: Int): Node
     {
         val g = GLYPHS[mimeType]
+        //  TODO need a default icon
         return g?.invoke(size) ?: Icons.attach(size)
     }
 

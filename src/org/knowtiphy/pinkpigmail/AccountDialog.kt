@@ -37,7 +37,7 @@ object AccountDialog
             val progressSpinner = ProgressIndicator()
             progressSpinner.setMaxSize(150.0, 150.0)
 
-            val serverName = Text(account.emailAddressProperty.get())
+            val serverName = Text("FOO")//account.emailAddressProperty.get())
             serverName.style = "-fx-font-weight: bold"
 
             val message = SimpleStringProperty()

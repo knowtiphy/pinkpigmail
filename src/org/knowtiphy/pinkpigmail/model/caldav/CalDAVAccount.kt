@@ -15,9 +15,11 @@ import org.knowtiphy.pinkpigmail.model.PPPeer
  */
 class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), ICalendarAccount
 {
-    override val source = CalendarSource()
-    override val emailAddressProperty = SimpleStringProperty()
+    override val nickNameProperty = SimpleStringProperty()
 
+    override val source = CalendarSource()
+
+    override val emailAddressProperty = SimpleStringProperty()
     private val serverNameProperty = SimpleStringProperty()
     private val serverHeaderProperty = SimpleStringProperty()
     private val passwordProperty = SimpleStringProperty()
@@ -27,6 +29,7 @@ class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
         declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
         declareU(Vocabulary.HAS_SERVER_HEADER, serverHeaderProperty)
         declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
+        declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareU(Vocabulary.CONTAINS, ::addCalendar)
     }
