@@ -42,6 +42,7 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.utils.LoggerUtils
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
@@ -52,6 +53,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.logging.Level
 import java.util.logging.Logger
 
 /**
@@ -84,7 +86,7 @@ class PinkPigMail : Application(), IStorageListener
 
         init
         {
-           // LoggerUtils.setGlobalLoggerLevel(Level.FINE)
+           LoggerUtils.setGlobalLoggerLevel(Level.FINE)
 
             //  peer constructors
             Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
@@ -103,8 +105,8 @@ class PinkPigMail : Application(), IStorageListener
 
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model) = //Peer.delta(added, deleted)
-            Peer.delta(added, deleted) { //it.subject.toString().contains("Account")
-                     it.predicate.toString().contains("type")
+            Peer.delta(added, deleted) { it.subject.toString().contains("orange")
+                    && it.predicate.toString().contains("type")
                     && it.`object`.toString().contains("IMAPAccount")}
 
     private val appToolBar = HBox()
