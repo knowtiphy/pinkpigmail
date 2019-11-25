@@ -379,8 +379,7 @@ class PinkPigMail : Application(), IStorageListener
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
-        rooTabPane.tabs.add(initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE),
-                if (account.nickNameProperty.get() != null) account.nickNameProperty else account.emailAddressProperty))
+        rooTabPane.tabs.add(initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE), account.nickNameProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
