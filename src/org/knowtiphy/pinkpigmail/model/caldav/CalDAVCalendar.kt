@@ -14,6 +14,8 @@ class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, s
     {
         declareU(Vocabulary.HAS_NAME) { calendar.name = it.literal.string }
         declareU(Vocabulary.CONTAINS, ::addEvent)
+        declareD(Vocabulary.CONTAINS, ::deleteEvent)
+
         calendar.setStyle(Calendar.Style.STYLE1)
     }
 
@@ -22,4 +24,10 @@ class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, s
         val event = peer(stmt.`object`.asResource())!! as CalDAVEvent
         calendar.addEntry(event.event)
     }
+
+    private fun deleteEvent(stmt: Statement)
+    {
+        calendar.removeEntry((peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
+    }
+
 }
