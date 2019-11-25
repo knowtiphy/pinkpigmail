@@ -5,6 +5,7 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -115,7 +116,10 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
+    override fun delta(added: Model, deleted: Model)
+    {
+        Peer.delta(added, deleted)
+    }
 //            Peer.delta(added, deleted) {
 //                it.subject.toString().contains("orange")
 //                        && it.predicate.toString().contains("type")
@@ -125,6 +129,17 @@ class PinkPigMail : Application(), IStorageListener
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
     private val root = VBox(appToolBar, rooTabPane)
+    private val booting =  WaitSpinner()
+    private val bootProperty = SimpleBooleanProperty()
+    private val mainFlipper = Flipper(bootProperty, 4000.0)
+
+    init
+    {
+        //booting.setBackground(Background(BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)))
+        mainFlipper.addNode(true, root)
+        mainFlipper.addNode(false, booting)
+        bootProperty.set(false)
+    }
 
     private fun loadAhead(fvm: FolderViewModel)
     {
@@ -471,11 +486,14 @@ class PinkPigMail : Application(), IStorageListener
 
         UIUtils.resizable(rooTabPane)
         UIUtils.resizable(root)
+        UIUtils.resizable(mainFlipper)
+        UIUtils.resizable(booting)
+
         VBox.setVgrow(rooTabPane, Priority.ALWAYS)
         VBox.setVgrow(appToolBar, Priority.NEVER)
 
         with(primaryStage) {
-            scene = Scene(root)
+            scene = Scene(mainFlipper)
             scene.stylesheets.add(PinkPigMail::class.java.getResource(STYLE_SHEET).toExternalForm())
             title = "Pink Pig Mail"
             icons.add(Image(Icons.thePig128()))
@@ -502,14 +520,17 @@ class PinkPigMail : Application(), IStorageListener
             }
         }
 
-        storage.addListener(this)
-
-        //val map = storage?.addListener(this)
-        //  wait for sync to finish
-        //map?.forEach { s, f -> print(s); f.get() }
+        val synchTasks = storage.addListener(this)
         //	hopefully everything is loaded before this?
         htmlState.isAllowJars = false
 
         primaryStage.show()
+
+        Thread {
+            System.err.println("WAITING FOR SYNCH")
+            synchTasks.forEach { it.value.get() }
+            System.err.println("DONE SYNCH")
+            Platform.runLater { bootProperty.set(true) }
+        }.start()
     }
 }
