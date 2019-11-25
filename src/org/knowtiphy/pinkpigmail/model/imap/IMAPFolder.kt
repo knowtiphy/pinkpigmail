@@ -42,7 +42,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
         declareU(Vocabulary.HAS_UNREAD_MESSAGE_COUNT, unreadMessageCountProperty)
         declareU(Vocabulary.HAS_NAME, nameProperty)
         declareU(Vocabulary.CONTAINS, ::addMessage)
-        declareD(Vocabulary.CONTAINS, ::deleteMessage)
+        declareD(Vocabulary.CONTAINS, messages)
     }
 
     override fun markMessagesAsRead(messages: Collection<IMessage>)
@@ -91,11 +91,6 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
     private fun ids(msgList: Collection<IMessage>): List<String>
     {
         return msgList.map { x -> x.id }
-    }
-
-    private fun deleteMessage(stmt: Statement)
-    {
-        messages.remove(peer(stmt.getObject().asResource())!!)
     }
 
     private fun addMessage(stmt: Statement)

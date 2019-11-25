@@ -10,7 +10,6 @@ import org.knowtiphy.utils.JenaUtils
 class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
 {
     val event = Entry<String>("")
-//    lateinit var calendar: Calendar
 
     init
     {

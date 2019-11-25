@@ -51,6 +51,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
         declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
         declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.STMT_TO_EMAIL_ADDRESS)
         declareU(Vocabulary.CONTAINS, ::addFolder)
+        declareD(Vocabulary.CONTAINS, folders)
         emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
             if (nickNameProperty.get() == null)
                 nickNameProperty.set(newValue)

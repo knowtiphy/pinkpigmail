@@ -33,6 +33,7 @@ class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
         declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareU(Vocabulary.CONTAINS, ::addCalendar)
+        declareD(Vocabulary.CONTAINS, ::deleteCalendar)
         emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
             if (nickNameProperty.get() == null)
                 nickNameProperty.set(newValue)
@@ -50,11 +51,16 @@ class CalDAVAccount(accountId: String, storage: IStorage) : PPPeer(accountId, st
 
     private fun addCalendar(stmt: Statement)
     {
-        val calendar = peer(stmt.getObject().asResource())!! as CalDAVCalendar
+        val calendar = peer(stmt.getObject().asResource()) as CalDAVCalendar
         //  TODO should possibly do something better here
         if (calendar.calendar.name != "Outbox" && calendar.calendar.name != "Inbox")
         {
             source.calendars.add(calendar.calendar)
         }
+    }
+
+    private fun deleteCalendar(stmt: Statement)
+    {
+        source.calendars.remove((peer(stmt.`object`.asResource()) as CalDAVCalendar).calendar)
     }
 }
