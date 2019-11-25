@@ -42,18 +42,18 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
-import org.knowtiphy.utils.LoggerUtils
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
+import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.logging.Level
+import java.util.logging.LogManager
 import java.util.logging.Logger
 
 /**
@@ -62,6 +62,19 @@ import java.util.logging.Logger
 
 class PinkPigMail : Application(), IStorageListener
 {
+    init
+    {
+        val stream = PinkPigMail::class.java.getResourceAsStream("logging.properties")
+        try
+        {
+            LogManager.getLogManager().readConfiguration(stream);
+        } catch (ex: IOException)
+        {
+            ex.printStackTrace();
+        }
+        //LOGGER = Logger.getLogger(MyClass3.class.getName());
+    }
+
     companion object
     {
         private const val MESSAGE_STORAGE = "messages"
@@ -86,8 +99,6 @@ class PinkPigMail : Application(), IStorageListener
 
         init
         {
-           LoggerUtils.setGlobalLoggerLevel(Level.FINE)
-
             //  peer constructors
             Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
             Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
@@ -104,10 +115,12 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) = //Peer.delta(added, deleted)
-            Peer.delta(added, deleted) { it.subject.toString().contains("orange")
-                    && it.predicate.toString().contains("type")
-                    && it.`object`.toString().contains("IMAPAccount")}
+    override fun delta(added: Model, deleted: Model) = Peer.delta(added, deleted)
+//            Peer.delta(added, deleted) {
+//                it.subject.toString().contains("orange")
+//                        && it.predicate.toString().contains("type")
+//                        && it.`object`.toString().contains("IMAPAccount")
+//            }
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
@@ -152,13 +165,13 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun createPerAccountToolBar(pad: AccountViewModel): HBox
     {
-        val config = ActionHelper.create(Icons.configure(Icons.DEFAULT_SIZE),
-                { Actions.configureAccount(pad.mailAccount) }, Strings.CONFIGURE_ACCOUNT, false)
-        val layout = ActionHelper.create(Icons.switchHorizontal(Icons.DEFAULT_SIZE),
-                {
-                    val p = pad.currentFolderViewModel().visiblePerspective
-                    p.set(if (p.get() == FolderSettings.HORIZONTAL_VIEW) FolderSettings.VERTICAL_VIEW else FolderSettings.HORIZONTAL_VIEW)
-                }, Strings.SWITCH_HORIZONTAL, false)
+//        val config = ActionHelper.create(Icons.configure(Icons.DEFAULT_SIZE),
+//                { Actions.configureAccount(pad.mailAccount) }, Strings.CONFIGURE_ACCOUNT, false)
+//      val layout = ActionHelper.create(Icons.switchHorizontal(Icons.DEFAULT_SIZE),
+//                {
+//                    val p = pad.currentFolderViewModel().visiblePerspective
+//                    p.set(if (p.get() == FolderSettings.HORIZONTAL_VIEW) FolderSettings.VERTICAL_VIEW else FolderSettings.HORIZONTAL_VIEW)
+//                }, Strings.SWITCH_HORIZONTAL, false)
         val reply = ActionHelper.create(Icons.reply(Icons.DEFAULT_SIZE),
                 { Actions.replyToMessage(pad.currentMessage(), false) }, Strings.REPLY)
         val replyAll = ActionHelper.create(Icons.replyAll(Icons.DEFAULT_SIZE),
@@ -200,12 +213,12 @@ class PinkPigMail : Application(), IStorageListener
         val middleButtons = HBox(ButtonHelper.regular(compose), replyGroup, markGroup)
         middleButtons.spacing = 15.0
 
-        val configButton = ButtonHelper.regular(config)
-        val layoutButton = ButtonHelper.regular(layout)
+        //val configButton = ButtonHelper.regular(config)
+//        val layoutButton = ButtonHelper.regular(layout)
 
         val toolBar = HBox()
 
-        toolBar.children.addAll(configButton, spacer1, middleButtons, spacer2, layoutButton)
+        toolBar.children.addAll(spacer1, middleButtons, spacer2)
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
         toolBar.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
 
