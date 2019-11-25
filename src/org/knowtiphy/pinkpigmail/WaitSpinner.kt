@@ -5,12 +5,12 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressIndicator
 import javafx.scene.layout.VBox
 
-class WaitSpinner : VBox()
+class WaitSpinner(message : String): VBox()
 {
     init
     {
         val progress = ProgressIndicator()
-        val message = Label("Synchronizing Accounts -- Please Wait")
+        val message = Label(message)
         children.addAll(progress, message)
         spacing = 25.0
         alignment = Pos.CENTER

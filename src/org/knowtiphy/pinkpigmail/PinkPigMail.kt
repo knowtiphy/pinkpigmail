@@ -5,7 +5,7 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.beans.property.SimpleBooleanProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -23,6 +23,9 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.riot.Lang
+import org.apache.jena.riot.RDFDataMgr
 import org.controlsfx.glyphfont.Glyph
 import org.knowtiphy.babbage.storage.IMAP.IMAPAdapter
 import org.knowtiphy.babbage.storage.IStorage
@@ -43,6 +46,7 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
@@ -54,8 +58,10 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.logging.Level
 import java.util.logging.LogManager
 import java.util.logging.Logger
+import kotlin.system.exitProcess
 
 /**
  * @author graham
@@ -129,16 +135,18 @@ class PinkPigMail : Application(), IStorageListener
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
     private val root = VBox(appToolBar, rooTabPane)
-    private val booting =  WaitSpinner()
-    private val bootProperty = SimpleBooleanProperty()
+    private val booting = WaitSpinner("Synchronizing Accounts -- Please Wait")
+    private val shutdown = WaitSpinner("Closing Accounts -- Please Wait")
+    private val bootProperty = SimpleIntegerProperty()
     private val mainFlipper = Flipper(bootProperty, 4000.0)
 
     init
     {
         //booting.setBackground(Background(BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)))
-        mainFlipper.addNode(true, root)
-        mainFlipper.addNode(false, booting)
-        bootProperty.set(false)
+        mainFlipper.addNode(2, shutdown)
+        mainFlipper.addNode(1, root)
+        mainFlipper.addNode(0, booting)
+        bootProperty.set(0)
     }
 
     private fun loadAhead(fvm: FolderViewModel)
@@ -478,6 +486,25 @@ class PinkPigMail : Application(), IStorageListener
             CalDAVAccount::class to
                     { stage: Stage, account: IAccount -> addCalendarView(stage, account as ICalendarAccount) })
 
+    private fun saveUISettings()
+    {
+        val names = NameSource(Vocabulary.NBASE)
+        val uiModel = ModelFactory.createDefaultModel()
+        uiModel.setNsPrefix("n", Vocabulary.NBASE)
+        uiModel.setNsPrefix("o", Vocabulary.TBASE)
+        accounts.forEach {
+            try
+            {
+                uiSettings.save(uiModel, names, it)
+            } catch (ex: Exception)
+            {
+                Logger.getLogger(PinkPigMail::class.java.name).log(Level.SEVERE, null, ex)
+            }
+        }
+
+        RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
+    }
+
     override fun start(primaryStage: Stage)
     {
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
@@ -500,10 +527,26 @@ class PinkPigMail : Application(), IStorageListener
             width = uiSettings.widthProperty.get()
             height = uiSettings.heightProperty.get()
             setOnCloseRequest {
-                //  what happens if we close due to an error in boot -- couldn't the accounts model be
-                //  empty and hence we lose the accounts file?
-                Shutdown(storage, uiSettings).shutdown(primaryStage, accounts)
-                it.consume()
+                bootProperty.set(2)
+                Platform.runLater {
+                    saveUISettings()
+println("AAAAAAAAAAAAAAAAAA")
+                    //  shutdown the storage layer
+                    try
+                    {
+                        storage.close()
+                    } catch (ex: Exception)
+                    {
+                        ex.printStackTrace()
+                        //  ignore
+                    }
+                    println("BBBBBBBBB")
+
+//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
+
+                    primaryStage.close();
+                    exitProcess(1)
+                }
             }
         }
 
@@ -530,7 +573,7 @@ class PinkPigMail : Application(), IStorageListener
             System.err.println("WAITING FOR SYNCH")
             synchTasks.forEach { it.value.get() }
             System.err.println("DONE SYNCH")
-            Platform.runLater { bootProperty.set(true) }
+            Platform.runLater { bootProperty.set(1) }
         }.start()
     }
 }
