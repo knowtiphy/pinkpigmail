@@ -15,17 +15,16 @@ class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, s
         declareU(Vocabulary.HAS_NAME) { calendar.name = it.literal.string }
         declareU(Vocabulary.CONTAINS, ::addEvent)
         declareD(Vocabulary.CONTAINS, ::deleteEvent)
-
         calendar.setStyle(Calendar.Style.STYLE1)
     }
 
     private fun addEvent(stmt: Statement)
     {
-        calendar.addEntry((peer(stmt.`object`.asResource())!! as CalDAVEvent).event)
+        calendar.addEntry((peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
     }
 
     private fun deleteEvent(stmt: Statement)
     {
-        calendar.removeEntry((peer(stmt.`object`.asResource()) as CalDAVEvent).event)
+        calendar.removeEntry((peer(stmt.getObject().asResource()) as CalDAVEvent).event)
     }
 }

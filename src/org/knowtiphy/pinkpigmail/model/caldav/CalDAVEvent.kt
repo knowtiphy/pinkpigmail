@@ -21,6 +21,9 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
     private fun setStartDate(stmt: Statement)
     {
         val dt = JenaUtils.getLDT(stmt.literal)
+        println("START DATE = "+ dt)
+        println("START DATE = "+ dt.toLocalDate())
+        println("START DATE = "+ dt.toLocalTime())
         event.changeStartDate(dt.toLocalDate())
         event.changeStartTime(dt.toLocalTime())
     }
@@ -28,7 +31,10 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
     private fun setEndDate(stmt: Statement)
     {
         val dt = JenaUtils.getLDT(stmt.literal)
-        event.changeEndDate(dt.toLocalDate())
+        println("END DATE = "+ dt)
+        println("END DATE = "+ dt.toLocalDate())
+        println("END TIME = "+ dt.toLocalTime())
+event.changeEndDate(dt.toLocalDate())
         event.changeEndTime(dt.toLocalTime())
     }
 }

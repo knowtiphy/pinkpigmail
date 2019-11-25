@@ -119,15 +119,15 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model)
-    {
-        Peer.delta(added, deleted)
+    override fun delta(added: Model, deleted: Model) {
+//        Peer.delta(added, deleted)
+//    }
+        Peer.delta(added, deleted) {
+            //   it.subject.toString().contains("orange") &&
+            it.predicate.toString().contains("startsAt") ||it.predicate.toString().contains("endsAt")
+            //  && it.`object`.toString().contains("Event")
+        }
     }
-//            Peer.delta(added, deleted) {
-//                it.subject.toString().contains("orange")
-//                        && it.predicate.toString().contains("type")
-//                        && it.`object`.toString().contains("IMAPAccount")
-//            }
 
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
