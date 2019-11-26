@@ -10,18 +10,6 @@ import java.util.*
  */
 class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHandlerFactory
 {
-    override fun createURLStreamHandler(protocol: String): URLStreamHandler?
-    {
-        if (HANDLERS.containsKey(protocol))
-        {
-            return HANDLERS[protocol]?.invoke(state)
-        }
-
-        //  have to allow jars, even though it's dangerous
-        //  TODO why can't we put the jar -> null in the map?
-        return if(protocol == "jar") null else FallbackURLStreamHandler()
-    }
-
     companion object
     {
         private val HANDLERS = HashMap<String, (HTMLState) -> URLStreamHandler>()
@@ -32,5 +20,20 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
             HANDLERS["https"] = { state -> CustomHttpStreamHandler(state) }
             HANDLERS["cid"] = { x -> CustomCIDStreamHandler(x) }
         }
+    }
+
+    override fun createURLStreamHandler(protocol: String): URLStreamHandler?
+    {
+        //  have to allow jars, even though it's dangerous
+        //  TODO why can't we put the jar -> null in the map?
+        if (protocol == "jar")
+            return null
+
+        if (HANDLERS.containsKey(protocol))
+        {
+            return HANDLERS[protocol]?.invoke(state)
+        }
+
+        return FallbackURLStreamHandler()
     }
 }

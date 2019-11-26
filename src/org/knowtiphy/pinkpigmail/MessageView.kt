@@ -34,7 +34,7 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService) : Flipper<Number>(SimpleIntegerProperty())
+class MessageView(private val service: ExecutorService) : FlipperOld<Number>(SimpleIntegerProperty())
 {
     private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 

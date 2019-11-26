@@ -19,38 +19,34 @@ import org.w3c.dom.events.EventTarget
 class MailViewer : GridPane()
 {
     val webView = WebView()
+
     private var content: String? = null
     private var mimeType: String? = null
 
     init
     {
-        webView.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
-
-        //  webView is final so stick it in a gird
         addRow(0, webView)
         setHgrow(webView, Priority.ALWAYS)
         setVgrow(webView, Priority.ALWAYS)
 
-        webView.engine.isJavaScriptEnabled = false
-
-        //	load some content to create a worker in the webView, for the next step
-        webView.engine.load("<html></html>")
-        webView.engine.loadWorker.stateProperty().addListener { _: ObservableValue<out State>, _: State, newState: State ->
-            if (newState == State.SUCCEEDED)
-            {
-                val doc = webView.engine.document
-                val nodeList = doc.getElementsByTagName("a")
-                for (i in 0 until nodeList.length)
+        with(webView)
+        {
+            setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+            engine.isJavaScriptEnabled = false
+            engine.setOnError { event: WebErrorEvent -> Fail.failNoMessage(event.exception) }
+            //	load some content to create a worker in the webView, for the next step
+            engine.load("<html></html>")
+            engine.loadWorker.stateProperty().addListener { _: ObservableValue<out State>, _: State, newState: State ->
+                if (newState == State.SUCCEEDED)
                 {
-                    //System.err.println(nodeList.item(i));
-                    (nodeList.item(i) as EventTarget).addEventListener(EVENT_TYPE_CLICK, INTERCEPT, false)
-                    //					((EventTarget) nodeList.item(i)).addEventListener(EVENT_TYPE_MOUSEOVER, intercept, false);
-                    //					((EventTarget) nodeList.item(i)).addEventListener(EVENT_TYPE_MOUSEOUT, intercept, false);
+                    val nodeList = webView.engine.document.getElementsByTagName("a")
+                    for (i in 0 until nodeList.length)
+                    {
+                        (nodeList.item(i) as EventTarget).addEventListener(EVENT_TYPE_CLICK, INTERCEPT, false)
+                    }
                 }
             }
         }
-
-        webView.engine.setOnError { event: WebErrorEvent -> Fail.failNoMessage(event.exception) }
     }
 
     fun loadContent(content: String, mimeType: String?)

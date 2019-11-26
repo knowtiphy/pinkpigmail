@@ -5,7 +5,6 @@ import javafx.application.Application
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -135,18 +134,13 @@ class PinkPigMail : Application(), IStorageListener
     private val appToolBar = HBox()
     private val rooTabPane = TabPane()
     private val root = VBox(appToolBar, rooTabPane)
-    private val bootPane = WaitSpinner("Synchronizing Accounts -- Please Wait")
-    private val shutdownPane = WaitSpinner("Closing Accounts -- Please Wait")
-    private val bootProperty = SimpleIntegerProperty()
-    private val mainFlipper = Flipper(bootProperty, 4000.0)
+    private val bootPane = UIUtils.boxIt(WaitSpinner("Synchronizing Accounts"))
+    private val shutdownPane = UIUtils.boxIt(WaitSpinner("Closing Accounts"))
+    private val mainFlipper = Flipper()
 
     init
     {
-        //booting.setBackground(Background(BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY)))
-        mainFlipper.addNode(2, shutdownPane)
-        mainFlipper.addNode(1, root)
-        mainFlipper.addNode(0, bootPane)
-        bootProperty.set(0)
+        mainFlipper.children.addAll(shutdownPane, root, bootPane)
     }
 
     private fun loadAhead(fvm: FolderViewModel)
@@ -352,7 +346,7 @@ class PinkPigMail : Application(), IStorageListener
         return splitPane
     }
 
-    private fun createFolderView(fvm: FolderViewModel, folder: IFolder): Flipper<String>
+    private fun createFolderView(fvm: FolderViewModel, folder: IFolder): FlipperOld<String>
     {
         val fSettings = uiSettings.getFolderSettings(folder)
 
@@ -366,7 +360,7 @@ class PinkPigMail : Application(), IStorageListener
         Bindings.bindContent<SplitPane.Divider>(fSettings.horizontalPositions, hPerspective.dividers)
         //  Bindings.bindContent<SplitPane.Divider>(fSettings.verticalPositions, vPerspective.dividers)
 
-        val flipper = Flipper<String>(fvm.visiblePerspective)
+        val flipper = FlipperOld<String>(fvm.visiblePerspective)
         UIUtils.resizable(flipper)
 
         flipper.addNode(FolderSettings.HORIZONTAL_VIEW, hPerspective)
@@ -421,7 +415,7 @@ class PinkPigMail : Application(), IStorageListener
         val accountView = createAccountView(pad, accountsRoot)
         val toolBar = createPerAccountToolBar(pad)
 
-        val folderViews = Flipper<IFolder>(pad.visibleView)
+        val folderViews = FlipperOld<IFolder>(pad.visibleView)
         UIUtils.resizable(folderViews)
 
         val folderArea = SplitPane(accountView, folderViews)
@@ -493,7 +487,7 @@ class PinkPigMail : Application(), IStorageListener
     private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
     {
         Thread.setDefaultUncaughtExceptionHandler { _, _ -> ; }
-        bootProperty.set(2)
+        mainFlipper.flip(bootPane)
         val t = Thread {
             try
             {
@@ -563,7 +557,7 @@ class PinkPigMail : Application(), IStorageListener
         //  sync and switch to main pane when done
         Thread {
             storage.addListener(this).forEach { it.value.get() }
-            Platform.runLater { bootProperty.set(1) }
+            Platform.runLater { mainFlipper.flip(root) }
         }.start()
 
         primaryStage.show()
