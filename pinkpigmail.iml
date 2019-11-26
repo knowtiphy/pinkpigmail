@@ -129,5 +129,6 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="javafx12" level="application" />
+    <orderEntry type="library" name="com.squareup.okhttp:okhttp:1.2.0" level="project" />
   </component>
 </module>

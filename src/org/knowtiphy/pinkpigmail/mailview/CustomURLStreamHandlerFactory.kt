@@ -17,61 +17,20 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
             return HANDLERS[protocol]?.invoke(state)
         }
 
-        //	have to allow this through to load jars, but that is dangerous
-        return if (state.isAllowJars && protocol == "jar")
-        {
-            null
-        } else FallbackURLStreamHandler()
+        //  have to allow jars, even though it's dangerous
+        //  TODO why can't we put the jar -> null in the map?
+        return if(protocol == "jar") null else FallbackURLStreamHandler()
     }
 
     companion object
     {
-        private var SUN_HTTP_HANDLER: URLStreamHandler? = null
-
-        init
-        {
-            try
-            {
-                //SUN_HTTP_HANDLER = Class.forName("sun.net.www.protocol.http.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
-            } catch (ex: ClassNotFoundException)
-            {
-                SUN_HTTP_HANDLER = null
-            } catch (ex: IllegalAccessException)
-            {
-                SUN_HTTP_HANDLER = null
-            } catch (ex: InstantiationException)
-            {
-                SUN_HTTP_HANDLER = null
-            }
-        }
-
-        private var SUN_HTTPS_HANDLER: URLStreamHandler? = null
-
-        init
-        {
-            try
-            {
-//                SUN_HTTPS_HANDLER =
-//                        Class.forName("sun.net.www.protocol.https.Handler").getDeclaredConstructor().newInstance() as URLStreamHandler
-            } catch (ex: ClassNotFoundException)
-            {
-                SUN_HTTPS_HANDLER = null
-            } catch (ex: IllegalAccessException)
-            {
-                SUN_HTTPS_HANDLER = null
-            } catch (ex: InstantiationException)
-            {
-                SUN_HTTPS_HANDLER = null
-            }
-        }
-
         private val HANDLERS = HashMap<String, (HTMLState) -> URLStreamHandler>()
 
         init
         {
-//            HANDLERS["http"] = { state -> CustomHttpStreamHandler(SUN_HTTP_HANDLER!!, state) }
-//            HANDLERS["https"] = { state -> CustomHttpStreamHandler(SUN_HTTPS_HANDLER!!, state) }
-//            HANDLERS["cid"] = { x -> CustomCIDStreamHandler(x) }
+            HANDLERS["http"] = { state -> CustomHttpStreamHandler(state) }
+            HANDLERS["https"] = { state -> CustomHttpStreamHandler(state) }
+            HANDLERS["cid"] = { x -> CustomCIDStreamHandler(x) }
         }
     }
 }

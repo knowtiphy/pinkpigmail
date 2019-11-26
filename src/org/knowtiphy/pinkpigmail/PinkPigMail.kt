@@ -35,6 +35,7 @@ import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.Peer
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
+import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.model.caldav.CalDAVAccount
@@ -52,6 +53,7 @@ import org.reactfx.EventStreams
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
 import java.io.IOException
+import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDate
@@ -119,12 +121,13 @@ class PinkPigMail : Application(), IStorageListener
     }
 
     //  all UI model updates go through this code
-    override fun delta(added: Model, deleted: Model) {
+    override fun delta(added: Model, deleted: Model)
+    {
 //        Peer.delta(added, deleted)
 //    }
         Peer.delta(added, deleted) {
             //   it.subject.toString().contains("orange") &&
-            it.predicate.toString().contains("startsAt") ||it.predicate.toString().contains("endsAt")
+            it.predicate.toString().contains("startsAt") || it.predicate.toString().contains("endsAt")
             //  && it.`object`.toString().contains("Event")
         }
     }
@@ -338,7 +341,7 @@ class PinkPigMail : Application(), IStorageListener
 
 //        sort on date received --why we need to do this when the thing is a sorted list?
 //        possibly due to data streaming in ....
-                headersView.sortOrder.add(receivedCol)
+        headersView.sortOrder.add(receivedCol)
 
         return headersView
     }
@@ -493,7 +496,7 @@ class PinkPigMail : Application(), IStorageListener
     //  shutdown sequence
     private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
     {
-        Thread.setDefaultUncaughtExceptionHandler { _, _ -> ;}
+        Thread.setDefaultUncaughtExceptionHandler { _, _ -> ; }
         bootProperty.set(2)
         try
         {
@@ -515,7 +518,7 @@ class PinkPigMail : Application(), IStorageListener
         }
 //                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
 
-       // primaryStage.close()
+        //primaryStage .close()
         exitProcess(1)
     }
 
@@ -524,7 +527,7 @@ class PinkPigMail : Application(), IStorageListener
     {
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
         //  TODO -- have to make this work
-        // URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
+        URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
         UIUtils.resizable(rooTabPane)
         UIUtils.resizable(root)
