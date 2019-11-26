@@ -56,7 +56,10 @@ class EmailAddress(val personal: String?, val address: String) : Comparable<Emai
 
         other as EmailAddress
 
-        if (address != other.address) return false
+        if (address != other.address)
+        {
+            return false
+        }
 
         return true
     }

@@ -12,19 +12,10 @@ import java.time.format.FormatStyle
  */
 object Format
 {
-    @JvmStatic
-    fun format(p: ObservableValue<*>): String
-    {
-        return if (p.value == null) "" else p.value.toString()
-    }
+    fun format(p: ObservableValue<*>) = if (p.value == null) "" else p.value.toString()
 
-    @JvmStatic
-    fun formatN(o: Any?): String
-    {
-        return o?.toString() ?: ""
-    }
+    fun formatN(o: Any?) = o?.toString() ?: ""
 
-    @JvmStatic
     fun format(date: ZonedDateTime?): String
     {
         return when (date)

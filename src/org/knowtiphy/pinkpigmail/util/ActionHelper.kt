@@ -10,9 +10,9 @@ import org.knowtiphy.pinkpigmail.Fail
  */
 object ActionHelper
 {
-    private fun create(g: Node, handler: (ActionEvent) -> Unit, txt: String?, tip: String, disabled: Boolean): Action
+    private fun create(g: Node, handler: (ActionEvent) -> Unit, text: String?, tip: String, disabled: Boolean): Action
     {
-        val action = Action(null) { e ->
+        val action = Action(text) { e ->
             try
             {
                 handler.invoke(e)
@@ -24,7 +24,6 @@ object ActionHelper
 
         with(action) {
             graphic = g
-            text = txt
             longText = tip
             isDisabled = disabled
         }
@@ -32,13 +31,6 @@ object ActionHelper
         return action
     }
 
-    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true): Action
-    {
-        return create(g, handler, null, tip, disabled)
-    }
-
-    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String): Action
-    {
-        return create(g, handler, null, tip, false)
-    }
+    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true) = create(g, handler, null, tip, disabled)
+    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String) = create(g, handler, null, tip, false)
 }
