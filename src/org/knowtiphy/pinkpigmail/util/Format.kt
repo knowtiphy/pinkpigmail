@@ -2,7 +2,7 @@ package org.knowtiphy.pinkpigmail.util
 
 import javafx.beans.value.ObservableValue
 import org.knowtiphy.pinkpigmail.resources.Strings
-import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -25,13 +25,13 @@ object Format
     }
 
     @JvmStatic
-    fun format(date: LocalDate?): String
+    fun format(date: ZonedDateTime?): String
     {
         return when (date)
         {
             null -> ""
-            LocalDate.now() -> Strings.TODAY
-            LocalDate.now().minusDays(1) -> Strings.YESTERDAY
+            ZonedDateTime.now() -> Strings.TODAY
+            ZonedDateTime.now().minusDays(1) -> Strings.YESTERDAY
             else -> date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
         }//	TODO -- settable formatting?
     }

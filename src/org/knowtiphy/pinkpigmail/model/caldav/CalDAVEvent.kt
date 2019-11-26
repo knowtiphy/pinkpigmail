@@ -6,7 +6,7 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.PPPeer
 import org.knowtiphy.utils.JenaUtils
-import java.time.LocalDateTime
+import java.time.ZonedDateTime
 
 class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
 {
@@ -14,8 +14,8 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     //  calendarfx can't handle setting the end date before the start date, so store them locally, and update when
     //  we have both
-    var startDate: LocalDateTime? = null
-    var endDate: LocalDateTime? = null
+    var startDate: ZonedDateTime? = null
+    var endDate: ZonedDateTime? = null
 
     init
     {

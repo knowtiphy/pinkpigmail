@@ -56,8 +56,8 @@ import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.logging.LogManager
@@ -320,7 +320,7 @@ class PinkPigMail : Application(), IStorageListener
         with(receivedCol) {
             setCellFactory { DateCell { it.receivedOnProperty } }
             prefWidth = 200.0
-            comparator = Comparators.cmp<LocalDate> { it.receivedOnProperty.get() }
+            comparator = Comparators.cmp<ZonedDateTime> { it.receivedOnProperty.get() }
             sortType = TableColumn.SortType.DESCENDING
         }
 

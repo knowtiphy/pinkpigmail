@@ -12,7 +12,7 @@ import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.utils.JenaUtils
 import java.net.URL
-import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.util.*
 import java.util.concurrent.Future
 
@@ -25,8 +25,8 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val answeredProperty = SimpleBooleanProperty()
     override val junkProperty = SimpleBooleanProperty()
     override val subjectProperty = SimpleStringProperty()
-    override val sentOnProperty = SimpleObjectProperty<LocalDate>()
-    override val receivedOnProperty = SimpleObjectProperty<LocalDate>()
+    override val sentOnProperty = SimpleObjectProperty<ZonedDateTime>()
+    override val receivedOnProperty = SimpleObjectProperty<ZonedDateTime>()
     override val from: ObservableList<EmailAddress> = FXCollections.observableArrayList()
     override val to: ObservableList<EmailAddress> = FXCollections.observableArrayList()
     override val cc: ObservableList<EmailAddress> = FXCollections.observableArrayList()

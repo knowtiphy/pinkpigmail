@@ -4,11 +4,11 @@ import javafx.beans.property.BooleanProperty
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.pinkpigmail.model.imap.IMAPCIDPart
-import org.knowtiphy.owlorm.javafx.IPeer
 import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.owlorm.javafx.IPeer
+import org.knowtiphy.pinkpigmail.model.imap.IMAPCIDPart
 import java.net.URL
-import java.time.LocalDate
+import java.time.ZonedDateTime
 import java.util.concurrent.Future
 
 /**
@@ -42,9 +42,9 @@ interface IMessage : IPeer
 
     val subjectProperty: StringProperty
 
-    val sentOnProperty: ObjectProperty<LocalDate>
+    val sentOnProperty: ObjectProperty<ZonedDateTime>
 
-    val receivedOnProperty: ObjectProperty<LocalDate>
+    val receivedOnProperty: ObjectProperty<ZonedDateTime>
 
     val loadRemoteProperty: BooleanProperty
 
