@@ -129,6 +129,16 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="javafx12" level="application" />
-    <orderEntry type="library" name="com.squareup.okhttp:okhttp:1.2.0" level="project" />
+    <orderEntry type="module-library">
+      <library name="com.squareup.okhttp:okhttp:1.2.0" type="repository">
+        <properties maven-id="com.squareup.okhttp:okhttp:1.2.0" />
+        <CLASSES>
+          <root url="jar://$MAVEN_REPOSITORY$/com/squareup/okhttp/okhttp/1.2.0/okhttp-1.2.0.jar!/" />
+          <root url="jar://$MAVEN_REPOSITORY$/com/squareup/okhttp/okhttp-protocols/1.2.0/okhttp-protocols-1.2.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
