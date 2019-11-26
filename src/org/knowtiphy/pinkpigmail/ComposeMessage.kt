@@ -14,11 +14,11 @@ import javafx.scene.layout.VBox
 import javafx.scene.web.HTMLEditor
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.model.SendMode
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.UIUtils
@@ -138,7 +138,7 @@ object ComposeMessage
         }
 
         val sendB = ButtonHelper
-                .regular(ActionHelper.create(Icons.send(Icons.MEDIUM_SIZE), sendAction, Strings.SEND, false))
+                .regular(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
         val attachB = SplitMenuButton()
         attachB.setOnAction {
             val files = attachFile(stage)
@@ -161,7 +161,7 @@ object ComposeMessage
                 }
             }
         }
-        attachB.graphic = Icons.attach(Icons.MEDIUM_SIZE)
+        attachB.graphic = Icons.attach()
         try
         {
             Attachments.addRemoveMenu(model.attachments, attachB.items)
@@ -173,7 +173,7 @@ object ComposeMessage
             Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
         }
 
-        val saveB = ButtonHelper.regular(ActionHelper.create(Icons.save(Icons.MEDIUM_SIZE), saveAction, Strings.SAVE_TO_DRAFTS, false))
+        val saveB = ButtonHelper.regular(ActionHelper.create(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
 
         toolBar.spacing = 1.0
         toolBar.children.addAll(sendB, attachB, saveB)

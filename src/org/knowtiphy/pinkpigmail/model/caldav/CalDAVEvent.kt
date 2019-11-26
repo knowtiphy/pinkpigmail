@@ -12,6 +12,8 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 {
     val event = Entry<String>("")
 
+    //  calendarfx can't handle setting the end date before the start date, so store them locally, and update when
+    //  we have both
     var startDate: LocalDateTime? = null
     var endDate: LocalDateTime? = null
 
@@ -24,9 +26,9 @@ class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun update()
     {
+        //  calendarfx can't handle setting the end date before the start date
         if (startDate != null && endDate != null)
         {
-//            println("SET EVENT TIME " + id + " :: " + startDate + "::" +endDate)
             event.changeStartDate(startDate!!.toLocalDate())
             event.changeStartTime(startDate!!.toLocalTime())
             event.changeEndDate(endDate!!.toLocalDate())

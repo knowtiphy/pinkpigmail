@@ -62,12 +62,12 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
     private val to = Label(Strings.TO)
     private val subject = Label(Strings.SUBJECT)
 
-    private val loadRemoteAction = ActionHelper.create(Icons.loadRemote(Icons.DEFAULT_SIZE),
+    private val loadRemoteAction = ActionHelper.create(Icons.loadRemote(),
             {
                 (messageProperty.get() ?: return@create).loadRemoteProperty.set(true)
             }, Strings.LOAD_REMOTE_CONTENT)
 
-    private val trustSenderAction = ActionHelper.create(Icons.trustSender(Icons.DEFAULT_SIZE),
+    private val trustSenderAction = ActionHelper.create(Icons.trustSender(),
             {
                 val message = messageProperty.get() ?: return@create
                 message.mailAccount.trustSender(message.from)
@@ -125,7 +125,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
         //loading.background = Background(BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets(0.0)))
         UIUtils.resizable(loading)
 
-        attachmentsMenu.graphic = Icons.attach(Icons.MEDIUM_SIZE)
+        attachmentsMenu.graphic = Icons.attach()
 
         UIUtils.resizable(viewer)
         viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
@@ -171,7 +171,7 @@ class MessageView(private val service: ExecutorService) : Flipper<Number>(Simple
 
         viewer.webView.engine.documentProperty().addListener(listener)
 
-        trustContentMenu.graphic = Icons.trustContentProvider(Icons.MEDIUM_SIZE)
+        trustContentMenu.graphic = Icons.trustContentProvider()
 
         messageProperty.addListener { _ -> newMessage() }
     }

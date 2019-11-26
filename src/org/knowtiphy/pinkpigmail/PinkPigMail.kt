@@ -188,36 +188,32 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun createPerAccountToolBar(pad: AccountViewModel): HBox
     {
-//        val config = ActionHelper.create(Icons.configure(Icons.DEFAULT_SIZE),
+//        val config = ActionHelper.create(Icons.configure(),
 //                { Actions.configureAccount(pad.mailAccount) }, Strings.CONFIGURE_ACCOUNT, false)
-//      val layout = ActionHelper.create(Icons.switchHorizontal(Icons.DEFAULT_SIZE),
+//      val layout = ActionHelper.create(Icons.switchHorizontal(),
 //                {
 //                    val p = pad.currentFolderViewModel().visiblePerspective
 //                    p.set(if (p.get() == FolderSettings.HORIZONTAL_VIEW) FolderSettings.VERTICAL_VIEW else FolderSettings.HORIZONTAL_VIEW)
 //                }, Strings.SWITCH_HORIZONTAL, false)
-        val reply = ActionHelper.create(Icons.reply(Icons.DEFAULT_SIZE),
-                { Actions.replyToMessage(pad.currentMessage(), false) }, Strings.REPLY)
-        val replyAll = ActionHelper.create(Icons.replyAll(Icons.DEFAULT_SIZE),
-                { Actions.replyToMessage(pad.currentMessage(), true) }, Strings.REPLY_ALL)
-        val forward = ActionHelper.create(Icons.forward(Icons.DEFAULT_SIZE),
-                { Actions.forwardMail(pad.currentMessage()) }, Strings.FORWARD)
-        val compose = ActionHelper.create(Icons.compose(Icons.DEFAULT_SIZE),
-                { Actions.composeMail(pad.mailAccount) }, Strings.COMPOSE, false)
-        val delete = ActionHelper.create(Icons.delete(Icons.DEFAULT_SIZE),
+        val reply = ActionHelper.create(Icons.reply(), { Actions.replyToMessage(pad.currentMessage(), false) }, Strings.REPLY)
+        val replyAll = ActionHelper.create(Icons.replyAll(), { Actions.replyToMessage(pad.currentMessage(), true) }, Strings.REPLY_ALL)
+        val forward = ActionHelper.create(Icons.forward(), { Actions.forwardMail(pad.currentMessage()) }, Strings.FORWARD)
+        val compose = ActionHelper.create(Icons.compose(), { Actions.composeMail(pad.mailAccount) }, Strings.COMPOSE, false)
+        val delete = ActionHelper.create(Icons.delete(),
                 {
                     //  move to the next message
                     val indices = pad.currentFolderViewModel().selectionModel!!.selectedIndices
                     Actions.deleteMessages(pad.currentMessages())
                     pad.currentFolderViewModel().selectionModel!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
                 }, Strings.DELETE)
-        val markJunk = ActionHelper.create(Icons.markJunk(Icons.DEFAULT_SIZE),
+        val markJunk = ActionHelper.create(Icons.markJunk(),
                 {
                     //  move to the next message
                     val indices = pad.currentFolderViewModel().selectionModel!!.selectedIndices
                     Actions.markMessagesAsJunk(pad.currentMessages())
                     pad.currentFolderViewModel().selectionModel!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
                 }, Strings.MARK_JUNK)
-        val markNotJunk = ActionHelper.create(Icons.markNotJunk(Icons.DEFAULT_SIZE),
+        val markNotJunk = ActionHelper.create(Icons.markNotJunk(),
                 { Actions.markMessagesAsNotJunk(pad.currentMessages()) }, Strings.MARK_NOT_JUNK)
 
         val singleMessageActions = arrayOf(reply, replyAll, forward)
@@ -414,7 +410,7 @@ class PinkPigMail : Application(), IStorageListener
         val calendarView = CalendarView()
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
-        rooTabPane.tabs.add(initTab(calendarView, Icons.calendar(Icons.MEDIUM_SIZE), account.nickNameProperty))
+        rooTabPane.tabs.add(initTab(calendarView, Icons.calendar(), account.nickNameProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
@@ -463,7 +459,7 @@ class PinkPigMail : Application(), IStorageListener
         VBox.setVgrow(toolBar, Priority.NEVER)
         VBox.setVgrow(folderArea, Priority.ALWAYS)
 
-        rooTabPane.tabs.add(initTab(box, Icons.mail(Icons.MEDIUM_SIZE), account.nickNameProperty))
+        rooTabPane.tabs.add(initTab(box, Icons.mail(), account.nickNameProperty))
 
         folderArea.setDividerPositions(uiSettings.verticalPosition[0].position)
 
@@ -498,27 +494,30 @@ class PinkPigMail : Application(), IStorageListener
     {
         Thread.setDefaultUncaughtExceptionHandler { _, _ -> ; }
         bootProperty.set(2)
-        try
-        {
-            saveUISettings()
-        } catch (ex: Exception)
-        {
-            ex.printStackTrace()
-            //  ignore
+        val t = Thread {
+            try
+            {
+                saveUISettings()
+            } catch (ex: Exception)
+            {
+                ex.printStackTrace()
+                //  ignore
+            }
+
+            //  shutdown the storage layer
+            try
+            {
+                storage.close()
+            } catch (ex: Exception)
+            {
+                ex.printStackTrace()
+                //  ignore
+            }
+            //                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
         }
 
-        //  shutdown the storage layer
-        try
-        {
-            storage.close()
-        } catch (ex: Exception)
-        {
-            ex.printStackTrace()
-            //  ignore
-        }
-//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
-
-        //primaryStage .close()
+        t.start()
+        t.join()
         exitProcess(1)
     }
 
@@ -560,9 +559,6 @@ class PinkPigMail : Application(), IStorageListener
                 }
             }
         }
-
-        //	hopefully everything is loaded before this?
-        htmlState.isAllowJars = false
 
         //  sync and switch to main pane when done
         Thread {

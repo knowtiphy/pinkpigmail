@@ -10,5 +10,4 @@ class HTMLState
 {
     //  this is a hack, but forced on us by the way JavaFX WebView doesn't expose handlers
     var message: IMessage? = null
-    var isAllowJars = true
 }
