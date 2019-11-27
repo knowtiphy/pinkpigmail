@@ -18,7 +18,7 @@ object Comparators
                 e.invoke(x).compareTo(e.invoke(y))
             } catch (ex: Exception)
             {
-                ex.printStackTrace()
+                //ex.printStackTrace()
                 0
             }
         }

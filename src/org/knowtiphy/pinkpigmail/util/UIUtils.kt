@@ -43,7 +43,16 @@ object UIUtils
 
     fun <T> comparator(f: (T, T) -> Int): Comparator<T>
     {
-        return Comparator<T> { a: T, b: T -> f.invoke(a, b) }
+        return Comparator<T> { a: T, b: T ->
+            try
+            {
+                f.invoke(a, b)
+            } catch (ex: Exception)
+            {
+                ex.printStackTrace()
+                0
+            }
+        }
     }
 
     fun stage(): Stage

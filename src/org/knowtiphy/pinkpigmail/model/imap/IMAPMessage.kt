@@ -90,13 +90,13 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
             context.start()
             try
             {
-                val resultSet = QueryExecutionFactory.create(DFetch.attachments(id), context.model).execSelect()
+                val resultSet = QueryExecutionFactory.create(Fetch.attachments(id), context.model).execSelect()
                 resultSet.forEach {
                     result.add(IMAPAttachment(
-                            it.get(DFetch.VAR_ATTACHMENT_ID).asResource().toString(),
+                            it.get(Fetch.VAR_ATTACHMENT_ID).asResource().toString(),
                             storage,
-                            it.get(DFetch.VAR_FILE_NAME).asLiteral().toString(),
-                            it.get(DFetch.VAR_MIME_TYPE).asLiteral().toString()))
+                            it.get(Fetch.VAR_FILE_NAME).asLiteral().toString(),
+                            it.get(Fetch.VAR_MIME_TYPE).asLiteral().toString()))
                 }
             } finally
             {
@@ -115,9 +115,9 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
             context.start()
             try
             {
-                val resultSet = QueryExecutionFactory.create(DFetch.cidLocalNames(id), context.model).execSelect()
+                val resultSet = QueryExecutionFactory.create(Fetch.cidLocalNames(id), context.model).execSelect()
                 resultSet.forEach {
-                    result[URL(it.get(DFetch.VAR_LOCAL_CID_PART_ID).asResource().toString())] = IMAPCIDPart(it.get(DFetch.VAR_CID_PART_ID).asResource().toString(), storage)
+                    result[URL(it.get(Fetch.VAR_LOCAL_CID_PART_ID).asResource().toString())] = IMAPCIDPart(it.get(Fetch.VAR_CID_PART_ID).asResource().toString(), storage)
                 }
             } finally
             {

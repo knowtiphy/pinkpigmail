@@ -5,7 +5,7 @@ import org.knowtiphy.babbage.storage.Vocabulary
 /**
  * @author graham
  */
-object DFetch
+object Fetch
 {
     const val VAR_CID_PART_ID = "cidPartId"
     const val VAR_LOCAL_CID_PART_ID = "localCidPartId"
