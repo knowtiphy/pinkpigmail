@@ -48,9 +48,8 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
     private val messageProperty = SimpleObjectProperty<IMessage?>()
 
     private val viewer = MailViewer()
-    private val noMessageSelected = StackPane()
-    private val loadingLabel = Label("Loading Message -- Please Wait")
-    private val loading = BorderPane()
+    private val noMessageSelected = UIUtils.boxIt(Label("No Message Selected"))
+    private val loading = UIUtils.boxIt(WaitSpinner("Loading Message"))
 
     private val fromText = Label()
     private val subjectText = Label()
@@ -116,14 +115,9 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
         addNode(NONE, noMessageSelected)
         whichProperty.value = NONE
 
-        loading.center = loadingLabel
-
-        //  configure no message selected
-        noMessageSelected.background = Background(BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets(0.0)))
-        UIUtils.resizable(noMessageSelected)
-
-        //loading.background = Background(BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets(0.0)))
-        UIUtils.resizable(loading)
+//        //  configure no message selected
+//        noMessageSelected.background = Background(BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets(0.0)))
+//        UIUtils.resizable(noMessageSelected)
 
         attachmentsMenu.graphic = Icons.attach()
 
@@ -133,7 +127,6 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
             {
                 Platform.runLater {
                     whichProperty.value = MESSAGE
-                    //messageSpace.toFront()
                 }
             }
         }
@@ -192,11 +185,7 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
                 override fun call(): Void?
                 {
                     val account = message.mailAccount
-                    println("getting content")
-
                     val part = message.getContent(account.allowHTMLProperty.get())
-                    println("content")
-                    println(part)
 
                     Platform.runLater {
                         try

@@ -12,7 +12,7 @@ class WaitSpinner(message : String): VBox()
         val progress = ProgressIndicator()
         val message = Label(message)
         children.addAll(progress, message)
-        spacing = 25.0
+        spacing = 35.0
         alignment = Pos.CENTER
     }
 }

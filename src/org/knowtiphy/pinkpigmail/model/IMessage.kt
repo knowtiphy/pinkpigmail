@@ -4,12 +4,10 @@ import javafx.beans.property.BooleanProperty
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.owlorm.javafx.IPeer
 import org.knowtiphy.pinkpigmail.model.imap.IMAPCIDPart
 import java.net.URL
 import java.time.ZonedDateTime
-import java.util.concurrent.Future
 
 /**
  * @author graham
@@ -48,10 +46,7 @@ interface IMessage : IPeer
 
     val loadRemoteProperty: BooleanProperty
 
-    fun loadAhead(): Future<*>
+    fun ensureContentLoaded()
 
-    fun setFuture(future: Future<*>)
-
-    @Throws(StorageException::class)
     fun getContent(allowHTML: Boolean): IPart
 }

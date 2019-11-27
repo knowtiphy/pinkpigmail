@@ -150,19 +150,21 @@ class PinkPigMail : Application(), IStorageListener
 
         val pos = model.selectedIndices[model.selectedIndices.size - 1]
         //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
-        //val messages = LinkedList<IMessage>()
-        for (i in pos - 5 until pos + 5)
+        //  load ahead radially 4 messages either side of pos
+        val n = model.tableView.items.size
+        for (i in 1 until 5)
         {
-            try
+            val before = pos - i
+            if (before in 0 until n)
             {
-                model.tableView.items[i].loadAhead()
-            } catch (e: IndexOutOfBoundsException)
+                model.tableView.items[before].ensureContentLoaded()
+            }
+            val after = pos + i
+            if (after in 0 until n)
             {
-                //  ignore -- this can happen and it's ok
+                model.tableView.items[after].ensureContentLoaded()
             }
         }
-
-//        messages[0].folder.loadAhead(messages)
     }
 
     private fun displayMessage(messages: List<IMessage>, messageView: MessageView)

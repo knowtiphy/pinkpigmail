@@ -36,7 +36,6 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
 
     override lateinit var folder: IFolder
     override val mailAccount by lazy { folder.mailAccount }
-
     private var future: Future<*>? = null
 
     init
@@ -54,25 +53,14 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     }
 
     @Synchronized
-    override fun loadAhead(): Future<*>
+    override fun ensureContentLoaded()
     {
         if (future == null)
         {
+            //  TODO probably want to do different things in embedded vs non embedded mode (e.g. cache the future)
             future = storage.ensureMessageContentLoaded(folder.mailAccount.id, folder.id, id)
+            future!!.get()
         }
-
-        return future!!
-    }
-
-    @Synchronized
-    override fun setFuture(future: Future<*>)
-    {
-        this.future = future
-    }
-
-    private fun ensureContentLoaded()
-    {
-        loadAhead().get()
     }
 
     override fun getContent(allowHTML: Boolean): IPart
