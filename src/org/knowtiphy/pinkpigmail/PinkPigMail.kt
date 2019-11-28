@@ -145,6 +145,7 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun loadAhead(fvm: FolderViewModel)
     {
+        return
         val model = fvm.selectionModel ?: return
         assert(model.selectedItems.isNotEmpty())
 
