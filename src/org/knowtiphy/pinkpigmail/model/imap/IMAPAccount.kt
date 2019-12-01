@@ -37,8 +37,9 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     var trashFolder: IMAPFolder? = null
     var junkFolder: IMAPFolder? = null
-    private var sentFolder: IMAPFolder? = null
-    private var draftsFolder: IMAPFolder? = null
+    var inbox: IMAPFolder? = null
+    protected var sentFolder: IMAPFolder? = null
+    protected var draftsFolder: IMAPFolder? = null
 
     private val setting = AccountSettings()
 
@@ -210,17 +211,13 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
         val folder = peer(stmt.getObject().asResource())!! as IMAPFolder
         assert(!folders.contains(folder)) { folder.id }
 
-        folder.imapAccount = this
-        folders.add(folder)
+        folder.accountProperty.set(this)
 
-        val name = folder.nameProperty.get() ?: return
-        when
-        {
-            Patterns.TRASH_PATTERN.matcher(name).matches() -> trashFolder = folder
-            Patterns.JUNK_PATTERN.matcher(name).matches() -> junkFolder = folder
-            Patterns.SENT_PATTERN.matcher(name).matches() -> sentFolder = folder
-            Patterns.DRAFTS_PATTERN.matcher(name).matches() -> draftsFolder = folder
-        }
+        folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
+        folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
+        folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }
+
+        folders.add(folder)
     }
 }
 

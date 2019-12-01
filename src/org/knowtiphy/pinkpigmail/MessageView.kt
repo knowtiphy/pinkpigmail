@@ -3,7 +3,6 @@ package org.knowtiphy.pinkpigmail
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
@@ -34,16 +33,9 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService) : FlipperOld<Number>(SimpleIntegerProperty())
+class MessageView(private val service: ExecutorService) : Flipper()
 {
     private val logger = Logger.getLogger(MessageView::class.qualifiedName)
-
-    companion object
-    {
-        private const val MESSAGE = 0
-        private const val WAITING = 1
-        private const val NONE = 2
-    }
 
     private val messageProperty = SimpleObjectProperty<IMessage?>()
 
@@ -110,14 +102,7 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
 
     init
     {
-        addNode(MESSAGE, messageSpace)
-        addNode(WAITING, loading)
-        addNode(NONE, noMessageSelected)
-        whichProperty.value = NONE
-
-//        //  configure no message selected
-//        noMessageSelected.background = Background(BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets(0.0)))
-//        UIUtils.resizable(noMessageSelected)
+        children.addAll(messageSpace, loading, noMessageSelected)
 
         attachmentsMenu.graphic = Icons.attach()
 
@@ -125,9 +110,7 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
         viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
             if (newState == Worker.State.SUCCEEDED)
             {
-                Platform.runLater {
-                    whichProperty.value = MESSAGE
-                }
+                Platform.runLater { flip(messageSpace) }
             }
         }
 
@@ -179,12 +162,13 @@ class MessageView(private val service: ExecutorService) : FlipperOld<Number>(Sim
         val message = messageProperty.get()
         if (message != null)
         {
-            whichProperty.value = WAITING
+            flip(loading)
             val task = object : Task<Void>()
             {
                 override fun call(): Void?
                 {
                     val account = message.mailAccount
+                    println("Client grabbing content :: " + message.id)
                     val part = message.getContent(account.allowHTMLProperty.get())
 
                     Platform.runLater {

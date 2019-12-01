@@ -46,7 +46,7 @@ interface IMessage : IPeer
 
     val loadRemoteProperty: BooleanProperty
 
-    fun ensureContentLoaded()
+    fun ensureContentLoaded(immediate: Boolean)
 
     fun getContent(allowHTML: Boolean): IPart
 }

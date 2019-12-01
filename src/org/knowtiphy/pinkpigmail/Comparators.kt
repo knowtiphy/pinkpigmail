@@ -1,7 +1,6 @@
 package org.knowtiphy.pinkpigmail
 
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.util.UIUtils
 import java.util.*
 
 /**
@@ -10,31 +9,14 @@ import java.util.*
  */
 object Comparators
 {
-    fun <T : Comparable<T>> cmp(e: (IMessage) -> T): Comparator<IMessage>
+    fun <T : Comparable<T>> cmp(e: (IMessage) -> T?): Comparator<IMessage>
     {
-        return UIUtils.comparator { x: IMessage, y: IMessage ->
-            try
-            {
-                e.invoke(x).compareTo(e.invoke(y))
-            } catch (ex: Exception)
-            {
-                //ex.printStackTrace()
-                0
-            }
+        return kotlin.Comparator { x, y ->
+            val a = e.invoke(x)
+            val b = e.invoke(y)
+            val result = if (a == null) if (b == null) 0 else 1 else if (b == null) -1 else a.compareTo(b)
+//            println((a?.toString() ?: "NULL") + " : " + (b?.toString() ?: "NULL") + " : " + result)
+            result
         }
     }
-//
-//    internal fun <T : Comparable<T>> cmp(): Comparator<T>
-//    {
-//        return UIUtils.comparator { x: T, y: T ->
-//            try
-//            {
-//                x.compareTo(y)
-//            } catch (ex: Exception)
-//            {
-//                ex.printStackTrace()
-//                0
-//            }
-//        }
-//    }
 }

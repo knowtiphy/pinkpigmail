@@ -35,7 +35,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val loadRemoteProperty = SimpleBooleanProperty(false)
 
     override lateinit var folder: IFolder
-    override val mailAccount by lazy { folder.mailAccount }
+    override val mailAccount by lazy { folder.accountProperty.get() }
     private var future: Future<*>? = null
 
     init
@@ -53,19 +53,19 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     }
 
     @Synchronized
-    override fun ensureContentLoaded()
+    override fun ensureContentLoaded(immediate: Boolean)
     {
         if (future == null)
         {
             //  TODO probably want to do different things in embedded vs non embedded mode (e.g. cache the future)
-            future = storage.ensureMessageContentLoaded(folder.mailAccount.id, folder.id, id)
+            future = storage.ensureMessageContentLoaded(folder.accountProperty.get().id, folder.id, id, immediate)
             future!!.get()
         }
     }
 
     override fun getContent(allowHTML: Boolean): IPart
     {
-        ensureContentLoaded()
+        ensureContentLoaded(true)
         val context = storage.readContext
         context.start()
         try
@@ -84,7 +84,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val attachments: ObservableList<IAttachment>
         get()
         {
-            ensureContentLoaded()
+            ensureContentLoaded(true)
             val result = FXCollections.observableArrayList<IAttachment>()
             val context = storage.readContext
             context.start()
@@ -109,7 +109,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val cidMap: Map<URL, IMAPCIDPart>
         get()
         {
-            ensureContentLoaded()
+            ensureContentLoaded(true)
             val result = HashMap<URL, IMAPCIDPart>()
             val context = storage.readContext
             context.start()
@@ -130,7 +130,7 @@ class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
     override val isHTML: Boolean
         get()
         {
-            ensureContentLoaded()
+            ensureContentLoaded(true)
             val context = storage.readContext
             context.start()
             try

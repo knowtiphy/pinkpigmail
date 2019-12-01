@@ -20,6 +20,7 @@ import javafx.scene.image.Image
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
+import javafx.scene.media.AudioClip
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import org.apache.jena.rdf.model.Model
@@ -44,6 +45,7 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
+import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
 import org.knowtiphy.utils.NameSource
@@ -56,7 +58,6 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalTime
-import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.logging.LogManager
@@ -117,6 +118,27 @@ class PinkPigMail : Application(), IStorageListener
         }
 
         val service: ExecutorService = Executors.newCachedThreadPool()
+
+        val _beep: AudioClip? = AudioClip(Resources::class.java.getResource("beep-29.wav").toString())
+//                try
+//                {
+//                    AudioClip(Resources::class.java.getResource("beep-29.wav").toString())
+//                } catch (ex: MediaException)
+//                {
+//                    Fail.failNoMessage(Dimension.LinearUnits.ex)
+//                    null
+//                }
+
+        fun beep()
+        {
+            try
+            {
+                _beep?.play()
+            } catch (ex: Exception)
+            {
+                Fail.failNoMessage(ex)
+            }
+        }
     }
 
     //  all UI model updates go through this code
@@ -126,7 +148,7 @@ class PinkPigMail : Application(), IStorageListener
 //    }
         Peer.delta(added, deleted) {
             //   it.subject.toString().contains("orange") &&
-            it.predicate.toString().contains("startsAt") || it.predicate.toString().contains("endsAt")
+            it.predicate.toString().contains(Vocabulary.IS_TRASH_FOLDER)// || it.predicate.toString().contains(Vocabulary.IS_INBOX)
             //  && it.`object`.toString().contains("Event")
         }
     }
@@ -145,7 +167,6 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun loadAhead(fvm: FolderViewModel)
     {
-        return
         val model = fvm.selectionModel ?: return
         assert(model.selectedItems.isNotEmpty())
 
@@ -153,17 +174,18 @@ class PinkPigMail : Application(), IStorageListener
         //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
         //  load ahead radially 4 messages either side of pos
         val n = model.tableView.items.size
+        println("Starting loadAhead")
         for (i in 1 until 5)
         {
             val before = pos - i
             if (before in 0 until n)
             {
-                model.tableView.items[before].ensureContentLoaded()
+                model.tableView.items[before].ensureContentLoaded(false)
             }
             val after = pos + i
             if (after in 0 until n)
             {
-                model.tableView.items[after].ensureContentLoaded()
+                model.tableView.items[after].ensureContentLoaded(false)
             }
         }
     }
@@ -255,11 +277,9 @@ class PinkPigMail : Application(), IStorageListener
 
         val cellValueFactory = { param: CellDataFeatures<IMessage, IMessage> -> ReadOnlyObjectWrapper(param.value) }
 
-        val headersView = TableView(sortedList)
+        val headersView = TableView<IMessage>()
         headersView.columnResizePolicy = SmartResize.POLICY
         UIUtils.resizable(headersView)
-
-        sortedList.comparatorProperty().bind(headersView.comparatorProperty())
 
         if (fvm.selectionModel == null)
         {
@@ -306,10 +326,10 @@ class PinkPigMail : Application(), IStorageListener
         val fromColumn = TableColumn<IMessage, IMessage>(Strings.FROM)
         fromColumn.setCellValueFactory(cellValueFactory)
         with(fromColumn) {
-            setCellFactory { AddressCell(folder.mailAccount) { it.from } }
+            setCellFactory { AddressCell(folder.accountProperty.get()) { it.from } }
             prefWidth = 300.0
             //  TODO
-            comparator = Comparators.cmp<EmailAddress> { it.from[0] }
+            comparator = Comparators.cmp { it.from[0] }
         }
 
         val receivedCol = TableColumn<IMessage, IMessage>(Strings.RECEIVED)
@@ -317,7 +337,7 @@ class PinkPigMail : Application(), IStorageListener
         with(receivedCol) {
             setCellFactory { DateCell { it.receivedOnProperty } }
             prefWidth = 200.0
-            comparator = Comparators.cmp<ZonedDateTime> { it.receivedOnProperty.get() }
+            comparator = Comparators.cmp { it.receivedOnProperty.get() }
             sortType = TableColumn.SortType.DESCENDING
         }
 
@@ -330,11 +350,13 @@ class PinkPigMail : Application(), IStorageListener
             comparator = Comparators.cmp { it.subjectProperty.get() }
         }
 
+        headersView.sortOrder.add(receivedCol)
         headersView.columns.addAll(statusColumn, fromColumn, subjectCol, receivedCol)
 
-//        sort on date received --why we need to do this when the thing is a sorted list?
-//        possibly due to data streaming in ....
-        headersView.sortOrder.add(receivedCol)
+        // sort on date received
+
+        sortedList.comparatorProperty().bind(headersView.comparatorProperty())
+        headersView.items = sortedList
 
         return headersView
     }
@@ -431,22 +453,30 @@ class PinkPigMail : Application(), IStorageListener
             //            println("Adding folders" + mailAccount)
             while (c.next())
             {
-                c.addedSubList.forEach {
+                c.addedSubList.forEach { folder ->
                     //                    println("Actually Adding folder" + it)
                     val fvm = FolderViewModel()
-                    pad.addFolderViewModel(it, fvm)
-                    val treeItem = TreeItem<IFolder>(it)
+                    pad.addFolderViewModel(folder, fvm)
+                    val treeItem = TreeItem<IFolder>(folder)
                     accountsRoot.children.add(treeItem)
-                    val flipper = createFolderView(fvm, it)
+                    val flipper = createFolderView(fvm, folder)
                     //  publish events -- new message selected
                     EventStreams.changesOf((fvm.selectionModel
                             ?: return@forEach).selectedIndices).subscribe { pad.messagesSelected.push(fvm) }
 
-                    folderViews.addNode(it, flipper)
-                    if (it.isInbox)
-                    {
-                        Platform.runLater { accountView.selectionModel.select(treeItem) }
-                    }
+                    //  event streams for the folder becoming an inbox
+                    val inBoxSet = EventStreams.changesOf(folder.isInboxProperty)
+
+                    //  event stream for the folder increasing its unread message count
+                    val unreadCountChanged = EventStreams.changesOf(folder.unreadMessageCountProperty)
+                            .filter { c -> c.newValue.toInt() > c.oldValue.toInt() }
+
+                    //  if the folder becomes an inbox select it
+                    inBoxSet.subscribe { if (it.newValue) accountView.selectionModel.select(treeItem) }
+                    //  if the
+                    EventStreams.combine(inBoxSet, unreadCountChanged).subscribe { println("GOT UNREAD MAIL "); beep();  }
+
+                    folderViews.addNode(folder, flipper)
                 }
             }
         }
@@ -491,7 +521,7 @@ class PinkPigMail : Application(), IStorageListener
     {
         Thread.setDefaultUncaughtExceptionHandler { _, _ -> ; }
         mainFlipper.flip(bootPane)
-        val t = Thread {
+        Thread {
             try
             {
                 saveUISettings()
@@ -510,12 +540,48 @@ class PinkPigMail : Application(), IStorageListener
                 ex.printStackTrace()
                 //  ignore
             }
-            //                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
-        }
 
-        t.start()
-        t.join()
-        exitProcess(1)
+            //                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
+            exitProcess(1)
+        }.start()
+    }
+
+    private fun initPostSynch()
+    {
+//        var newMessages = false
+//        for (account in accounts)
+//        {
+//            if (account is IEmailAccount)
+//                for (folder in account.folders)
+//                {
+//                    for (message in folder.messages)
+//                    {
+//                        if (!message.readProperty.get())
+//                        {
+//                            newMessages = true
+//                            break
+//                        }
+//                    }
+//                }
+//        }
+//
+//        println(newMessages)
+//        if (newMessages)
+//        {
+////            readProperty.addListener { _, _, new ->
+//            //            if (Patterns.INBOX_PATTERN.matcher(folder.nameProperty.get()).matches() && !new)
+////            {
+//            try
+//            {
+//                _beep?.play()
+//            } catch (ex: Exception)
+//            {
+//                Fail.failNoMessage(ex)
+//            }
+////            }
+////        }
+//        }
+        println("POST SYNCH XXXXXXXXXXXXXXXXXXXXXXX")
     }
 
     //  boot sequence
@@ -560,6 +626,7 @@ class PinkPigMail : Application(), IStorageListener
         //  sync and switch to main pane when done
         Thread {
             storage.addListener(this).forEach { it.value.get() }
+            initPostSynch()
             Platform.runLater { mainFlipper.flip(root) }
         }.start()
 

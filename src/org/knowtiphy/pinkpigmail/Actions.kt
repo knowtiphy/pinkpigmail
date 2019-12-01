@@ -4,12 +4,12 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
-import org.knowtiphy.pinkpigmail.model.IEmailAccount
+import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.IAttachment
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.ModelType
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.babbage.storage.StorageException
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -94,7 +94,7 @@ object Actions
     fun deleteMessages(messages: List<IMessage>)
     {
         val folder = messages[0].folder
-        if (folder.isTrash)
+        if (folder.isTrashProperty.get())
         {
             val alert = Alert(Alert.AlertType.CONFIRMATION)
             alert.width = 500.0

@@ -1,6 +1,8 @@
 package org.knowtiphy.pinkpigmail.model
 
+import javafx.beans.property.BooleanProperty
 import javafx.beans.property.IntegerProperty
+import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
 import org.knowtiphy.owlorm.javafx.IPeer
@@ -11,13 +13,13 @@ import org.knowtiphy.pinkpigmail.ITreeItem
  */
 interface IFolder : ITreeItem, IPeer
 {
-    val mailAccount: IEmailAccount
+    val accountProperty: ObjectProperty<IEmailAccount>
 
     val messages: ObservableList<IMessage>
 
-    val isTrash: Boolean
-
-    val isInbox: Boolean
+    val isTrashProperty: BooleanProperty
+    val isInboxProperty: BooleanProperty
+    val isJunkProperty: BooleanProperty
 
     val nameProperty: StringProperty
 
