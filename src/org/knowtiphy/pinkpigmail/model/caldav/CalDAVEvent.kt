@@ -8,14 +8,14 @@ import org.knowtiphy.pinkpigmail.model.PPPeer
 import org.knowtiphy.utils.JenaUtils
 import java.time.ZonedDateTime
 
-class CalDAVEvent(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
+class CalDAVEvent(id: String, storage: IStorage) : PPPeer(id, storage)
 {
     val event = Entry<String>("")
 
     //  calendarfx can't handle setting the end date before the start date, so store them locally, and update when
     //  we have both
-    var startDate: ZonedDateTime? = null
-    var endDate: ZonedDateTime? = null
+    private var startDate: ZonedDateTime? = null
+    private var endDate: ZonedDateTime? = null
 
     init
     {

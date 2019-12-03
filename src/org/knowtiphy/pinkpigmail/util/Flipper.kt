@@ -6,7 +6,7 @@ import javafx.scene.layout.StackPane
 /**
  * @author graham
  */
-open class Flipper() : StackPane()
+open class Flipper : StackPane()
 {
     fun flip(node: Node)
     {

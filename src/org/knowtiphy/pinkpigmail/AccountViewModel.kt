@@ -1,50 +1,44 @@
 package org.knowtiphy.pinkpigmail
 
-import javafx.beans.property.ObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.pinkpigmail.model.IEmailAccount
-import org.knowtiphy.pinkpigmail.model.IFolder
-import org.knowtiphy.pinkpigmail.model.IMessage
+import org.reactfx.Change
 import org.reactfx.EventSource
+import org.reactfx.EventStream
+import org.reactfx.EventStreams
 
 //  the view-model for the account view
-class AccountViewModel(val mailAccount: IEmailAccount)
+class AccountViewModel<A, C, E>(val account: A)
 {
-    private var currentFolder: IFolder? = null
-    private val folderViewModels = HashMap<IFolder, FolderViewModel>()
+    val currentEntityProperty = SimpleObjectProperty<C>()
 
-    val visibleView: ObjectProperty<IFolder> = SimpleObjectProperty()
+    private val categoryViewModels = HashMap<C, CategoryViewModel<C, E>>()
 
-    //  event sources
-    val folderSelected: EventSource<IFolder> = EventSource()
-    val messagesSelected: EventSource<FolderViewModel> = EventSource()
+    //  event sources -- the selected category or entity changes
+    val categorySelected: EventStream<Change<C>> = EventStreams.changesOf(currentEntityProperty)
+    val entitySelected: EventSource<CategoryViewModel<C, E>> = EventSource()
 
     init
     {
-        folderSelected.subscribe {
-            currentFolder = it
-            visibleView.set(it)
-            messagesSelected.push(currentFolderViewModel())
-        }
+        categorySelected.subscribe { entitySelected.push(currentCategoryViewModel()) }
     }
 
-    fun currentFolderViewModel(): FolderViewModel = folderViewModels[currentFolder!!]!!
+    fun currentCategoryViewModel(): CategoryViewModel<C, E> = categoryViewModels[currentEntityProperty.get()]!!
 
-    fun addFolderViewModel(folder: IFolder, model: FolderViewModel)
+    fun addCategoryViewModel(category: C, model: CategoryViewModel<C, E>)
     {
-        folderViewModels[folder] = model
+        categoryViewModels[category] = model
     }
 
-    fun currentMessages(): ObservableList<out IMessage>
+    fun currentEntities(): ObservableList<out E>
     {
-        assert(currentFolderViewModel().selectionModel!!.selectedItems.isNotEmpty())
-        return currentFolderViewModel().selectionModel!!.selectedItems
+        assert(currentCategoryViewModel().selectionModel!!.selectedItems.isNotEmpty())
+        return currentCategoryViewModel().selectionModel!!.selectedItems
     }
 
-    fun currentMessage(): IMessage
+    fun currentEntity(): E
     {
-        assert(currentFolderViewModel().selectionModel!!.selectedItems.size == 1)
-        return currentFolderViewModel().selectionModel!!.selectedItem
+        assert(currentCategoryViewModel().selectionModel!!.selectedItems.size == 1)
+        return currentCategoryViewModel().selectionModel!!.selectedItem
     }
 }

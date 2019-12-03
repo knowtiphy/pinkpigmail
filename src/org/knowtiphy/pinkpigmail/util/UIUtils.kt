@@ -21,6 +21,7 @@ object UIUtils
     {
         val box = HBox()
         box.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+        HBox.setHgrow(box, Priority.ALWAYS)
         return box
     }
 

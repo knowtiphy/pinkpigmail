@@ -13,6 +13,7 @@ import java.io.InputStream
  */
 object Icons
 {
+    const val LARGE_SIZE = 24
     const val DEFAULT_SIZE = 16
     const val MEDIUM_SIZE = 12
     const val SMALL_SIZE = 8
@@ -54,6 +55,7 @@ object Icons
     fun answered(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.REPLY), color), size)
     fun deleted(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CLOSE), color), size)
     fun calendar(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CALENDAR), color), size)
+    fun book(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.BOOK), color), size)
     fun mail(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.ENVELOPE), color), size)
     fun configure(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.GEAR), color), size)
     fun switchHorizontal(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Node = s(c(f(FontAwesome.Glyph.ANGLE_DOUBLE_RIGHT), color), size)

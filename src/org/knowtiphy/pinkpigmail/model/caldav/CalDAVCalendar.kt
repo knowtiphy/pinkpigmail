@@ -6,7 +6,7 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.PPPeer
 
-class CalDAVCalendar(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
+class CalDAVCalendar(id: String, storage: IStorage) : PPPeer(id, storage)
 {
     val calendar = Calendar()
 
