@@ -36,7 +36,7 @@ class CardCell : ListCell<CardDAVCard>()
         {
             //  just in case we did the first case
 //            graphic = box
-            textProperty().bind(item.formattedNameProperty)
+            textProperty().bind(item.hasNameProperty)
         }
     }
 }
