@@ -4,6 +4,7 @@ import com.calendarfx.model.Calendar
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.PPPeer
 
 class CalDAVCalendar(id: String, storage: IStorage) : PPPeer(id, storage)
@@ -20,11 +21,11 @@ class CalDAVCalendar(id: String, storage: IStorage) : PPPeer(id, storage)
 
     private fun addEvent(stmt: Statement)
     {
-        calendar.addEntry((peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
+        calendar.addEntry((PeerState.peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
     }
 
     private fun deleteEvent(stmt: Statement)
     {
-        calendar.removeEntry((peer(stmt.getObject().asResource()) as CalDAVEvent).event)
+        calendar.removeEntry((PeerState.peer(stmt.getObject().asResource()) as CalDAVEvent).event)
     }
 }

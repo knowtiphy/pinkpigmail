@@ -8,6 +8,7 @@ import org.apache.jena.rdf.model.Resource
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.PPPeer
 
@@ -50,7 +51,7 @@ class CalDAVAccount(id: String, storage: IStorage) : PPPeer(id, storage), ICalen
 
     private fun addCalendar(stmt: Statement)
     {
-        val calendar = peer(stmt.getObject().asResource()) as CalDAVCalendar
+        val calendar = PeerState.peer(stmt.getObject().asResource()) as CalDAVCalendar
         //  TODO should possibly do something better here
         if (calendar.calendar.name != "Outbox" && calendar.calendar.name != "Inbox")
         {
@@ -60,6 +61,6 @@ class CalDAVAccount(id: String, storage: IStorage) : PPPeer(id, storage), ICalen
 
     private fun deleteCalendar(stmt: Statement)
     {
-        source.calendars.remove((peer(stmt.`object`.asResource()) as CalDAVCalendar).calendar)
+        source.calendars.remove((PeerState.peer(stmt.`object`.asResource()) as CalDAVCalendar).calendar)
     }
 }

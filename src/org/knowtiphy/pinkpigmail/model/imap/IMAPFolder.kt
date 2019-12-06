@@ -9,6 +9,7 @@ import javafx.collections.ObservableList
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
@@ -96,7 +97,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
 
     private fun addMessage(stmt: Statement)
     {
-        val message = peer(stmt.getObject().asResource())!! as IMAPMessage
+        val message = PeerState.peer(stmt.getObject().asResource())!! as IMAPMessage
         assert(!messages.contains(message)) { message.id }
 
         message.folder = this

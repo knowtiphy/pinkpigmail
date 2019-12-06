@@ -4,27 +4,26 @@ import javafx.collections.ListChangeListener
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.scene.Node
-import javafx.scene.control.Label
-import javafx.scene.control.ListView
-import javafx.scene.control.SplitPane
+import javafx.scene.control.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import org.knowtiphy.pinkpigmail.cell.AddressBookCell
 import org.knowtiphy.pinkpigmail.cell.CardCell
 import org.knowtiphy.pinkpigmail.model.ICardAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVCard
+import org.knowtiphy.pinkpigmail.model.caldav.CardDAVGroup
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.MappedFlipper
 import org.knowtiphy.pinkpigmail.util.UIUtils
-import org.reactfx.EventStreams
 
 class ContactView(account: ICardAccount) : VBox()
 {
+    private val groupsRoot = TreeItem<Any>()
+
     init
     {
         val pad = AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>(account)
@@ -38,21 +37,40 @@ class ContactView(account: ICardAccount) : VBox()
         val folderArea = SplitPane(accountView, folderViews)
         UIUtils.resizable(folderArea)
 
-        //  when a folder is added to the accounts folder list add an item to the account view
+        //  when an account folder is added to the accounts folder list add an item to the account view
         //  and add a folder view for the folder
 
         account.addressBooks.addListener { c: ListChangeListener.Change<out CardDAVAddressBook> ->
             while (c.next())
             {
-                c.addedSubList.forEach { folder ->
-                    val fvm = CategoryViewModel<CardDAVAddressBook, CardDAVCard>(folder)
-                    pad.addCategoryViewModel(folder, fvm)
-                    val flipper = createFolderView(fvm)
-                    //  publish events -- new message selected
-                    EventStreams.changesOf((fvm.selectionModel
-                            ?: return@forEach).selectedIndices).subscribe { pad.entitySelected.push(fvm) }
-                    folderViews.addNode(folder, flipper)
-                    println(folderViews.nodes)
+                c.addedSubList.forEach { addressBook ->
+                    val treeItem = TreeItem<Any>(addressBook)
+                    groupsRoot.children.add(treeItem)
+                    addressBook.groups.addListener { c: ListChangeListener.Change<out CardDAVGroup> ->
+                        while (c.next())
+                        {
+                            c.addedSubList.forEach { group ->
+                                val treeItem = TreeItem<Any>(group)
+                                groupsRoot.children.add(treeItem)
+//                                val fvm = CategoryViewModel<CardDAVAddressBook, CardDAVCard>(folder)
+//                                pad.addCategoryViewModel(folder, fvm)
+//                                val flipper = createFolderView(fvm)
+//                                //  publish events -- new message selected
+//                                EventStreams.changesOf((fvm.selectionModel
+//                                        ?: return@forEach).selectedIndices).subscribe { pad.entitySelected.push(fvm) }
+//                                folderViews.addNode(folder, flipper)
+//                                println(folderViews.nodes)
+                            }
+                        }
+                    }
+//                    val fvm = CategoryViewModel<CardDAVAddressBook, CardDAVCard>(folder)
+//                    pad.addCategoryViewModel(folder, fvm)
+//                    val flipper = createFolderView(fvm)
+//                    //  publish events -- new message selected
+//                    EventStreams.changesOf((fvm.selectionModel
+//                            ?: return@forEach).selectedIndices).subscribe { pad.entitySelected.push(fvm) }
+//                    folderViews.addNode(folder, flipper)
+//                    println(folderViews.nodes)
                 }
             }
         }
@@ -87,7 +105,7 @@ class ContactView(account: ICardAccount) : VBox()
 
         val toolBar = HBox()
 
-        toolBar.children.add(ButtonHelper.regular(delete))
+        toolBar.children.addAll(UIUtils.spacer(), ButtonHelper.regular(delete), UIUtils.spacer())
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
         toolBar.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
 
@@ -101,18 +119,29 @@ class ContactView(account: ICardAccount) : VBox()
         return toolBar
     }
 
-    private fun createAccountView(pad: AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>): ListView<CardDAVAddressBook>
+    private fun createAccountView(pad: AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>): TreeView<Any>
     {
-        val view = ListView<CardDAVAddressBook>(pad.account.addressBooks)
-        view.setCellFactory { AddressBookCell() }
+        val view = TreeView(groupsRoot)
         UIUtils.resizable(view)
+        view.isShowRoot = false
+//        view.setCellFactory { FolderCell() }
 
         //  publish events -- new folder selected (single selection model)
-        EventStreams.changesOf(view.selectionModel.selectedItems)
-                .filter { it.list.size == 1 }
-                .subscribe { pad.currentEntityProperty.set(it.list[0]) }
+//        EventStreams.changesOf(view.selectionModel.selectedItems)
+//                .filter { it.list.size == 1 }
+//                .subscribe { accountViewModel.currentEntityProperty.set(it.list[0].value) }
 
         return view
+//        val view = ListView<CardDAVAddressBook>(pad.account.addressBooks)
+//        view.setCellFactory { AddressBookCell() }
+//        UIUtils.resizable(view)
+//
+//        //  publish events -- new folder selected (single selection model)
+//        EventStreams.changesOf(view.selectionModel.selectedItems)
+//                .filter { it.list.size == 1 }
+//                .subscribe { pad.currentEntityProperty.set(it.list[0]) }
+//
+//        return view
     }
 
     private fun createFolderView(fvm: CategoryViewModel<CardDAVAddressBook, CardDAVCard>): SplitPane//MappedFlipper<CardDAVCard>

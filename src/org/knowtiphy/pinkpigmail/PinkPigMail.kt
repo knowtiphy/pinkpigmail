@@ -27,7 +27,7 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.owlorm.javafx.Peer
+import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.IAccount
@@ -104,19 +104,20 @@ class PinkPigMail : Application(), IStorageListener
         init
         {
             //  peer constructors
-            Peer.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
-            Peer.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
-            Peer.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDAVAccount(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> CalDAVCalendar(id, storage) }
-            Peer.addConstructor(Vocabulary.CALDAV_EVENT) { id -> CalDAVEvent(id, storage) }
-            Peer.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { id -> CardDAVAccount(id, storage) }
-            Peer.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { id -> CardDAVAddressBook(id, storage) }
-            Peer.addConstructor(Vocabulary.CARDDAV_CARD) { id -> CardDAVCard(id, storage) }
+            PeerState.addConstructor(Vocabulary.IMAP_ACCOUNT) { id -> IMAPAccount(id, storage) }
+            PeerState.addConstructor(Vocabulary.IMAP_FOLDER) { id -> IMAPFolder(id, storage) }
+            PeerState.addConstructor(Vocabulary.IMAP_MESSAGE) { id -> IMAPMessage(id, storage) }
+            PeerState.addConstructor(Vocabulary.CALDAV_ACCOUNT) { id -> CalDAVAccount(id, storage) }
+            PeerState.addConstructor(Vocabulary.CALDAV_CALENDAR) { id -> CalDAVCalendar(id, storage) }
+            PeerState.addConstructor(Vocabulary.CALDAV_EVENT) { id -> CalDAVEvent(id, storage) }
+            PeerState.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { id -> CardDAVAccount(id, storage) }
+            PeerState.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { id -> CardDAVAddressBook(id, storage) }
+            PeerState.addConstructor(Vocabulary.CARDDAV_GROUP) { id -> CardDAVGroup(id, storage) }
+            PeerState.addConstructor(Vocabulary.CARDDAV_CARD) { id -> CardDAVCard(id, storage) }
             //  peer roots
-            Peer.addRoot(Vocabulary.IMAP_ACCOUNT) { id -> accounts.add(id as IAccount) }
-            Peer.addRoot(Vocabulary.CALDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
-            Peer.addRoot(Vocabulary.CARDDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
+            PeerState.addRoot(Vocabulary.IMAP_ACCOUNT) { id -> accounts.add(id as IAccount) }
+            PeerState.addRoot(Vocabulary.CALDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
+            PeerState.addRoot(Vocabulary.CARDDAV_ACCOUNT) { id -> accounts.add(id as IAccount) }
 
             mainFlipper.children.addAll(shutdownPane, root, bootPane)
         }
@@ -142,9 +143,9 @@ class PinkPigMail : Application(), IStorageListener
     {
 //        Peer.delta(added, deleted)
 //    }
-        Peer.delta(added, deleted) {
+        PeerState.delta(added, deleted) {
             //   it.subject.toString().contains("orange") &&
-            it.subject.toString().contains("CARD") || it.`object`.toString().contains("CARD")
+            it.predicate.toString().contains("type" )//|| it.`object`.toString().contains("CARD")
             //  && it.`object`.toString().contains("Event")
         }
     }

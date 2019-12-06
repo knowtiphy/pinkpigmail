@@ -11,6 +11,7 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.resources.Strings
 import java.time.format.DateTimeFormatter
@@ -208,7 +209,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
 
     private fun addFolder(stmt: Statement)
     {
-        val folder = peer(stmt.getObject().asResource())!! as IMAPFolder
+        val folder = PeerState.peer(stmt.getObject().asResource())!! as IMAPFolder
         assert(!folders.contains(folder)) { folder.id }
 
         folder.accountProperty.set(this)
