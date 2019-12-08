@@ -5,9 +5,9 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
-class CalDAVCalendar(id: String, storage: IStorage) : PPPeer(id, storage)
+class CalDAVCalendar(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
     val calendar = Calendar()
 

@@ -19,7 +19,7 @@ import java.util.concurrent.Future
 /**
  * @author graham
  */
-class IMAPMessage(id: String, storage: IStorage) : PPPeer(id, storage), IMessage
+class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMessage
 {
     override val readProperty = SimpleBooleanProperty()
     override val answeredProperty = SimpleBooleanProperty()

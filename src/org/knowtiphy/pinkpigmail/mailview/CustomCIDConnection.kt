@@ -1,8 +1,8 @@
 package org.knowtiphy.pinkpigmail.mailview
 
-import org.knowtiphy.pinkpigmail.Fail
-import org.knowtiphy.pinkpigmail.Mime
 import org.knowtiphy.pinkpigmail.resources.Icons
+import org.knowtiphy.pinkpigmail.util.Fail
+import org.knowtiphy.pinkpigmail.util.Mime
 import java.io.InputStream
 import java.net.URL
 import java.net.URLConnection

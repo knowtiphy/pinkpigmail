@@ -9,12 +9,12 @@ import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.ICardAccount
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham
  */
-class CardDAVAccount(id: String, storage: IStorage) : PPPeer(id, storage), ICardAccount
+class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), ICardAccount
 {
     override val addressBooks : ObservableList<CardDAVAddressBook> = FXCollections.observableArrayList()
 

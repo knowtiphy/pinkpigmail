@@ -5,13 +5,13 @@ import javafx.scene.control.CustomMenuItem
 import javafx.scene.control.Label
 import javafx.scene.control.MenuItem
 import javafx.scene.layout.HBox
+import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.util.ActionHelper
-import org.knowtiphy.pinkpigmail.util.ButtonHelper
-
+import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
+import org.knowtiphy.pinkpigmail.util.Mime
 import java.io.IOException
 
 /**

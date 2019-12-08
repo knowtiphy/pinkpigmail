@@ -5,9 +5,9 @@ import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
-class CardDAVAddressBook(accountId: String, storage: IStorage) : PPPeer(accountId, storage)
+class CardDAVAddressBook(accountId: String, storage: IStorage) : StoredPeer(accountId, storage)
 {
     val cards: ObservableList<CardDAVCard> = FXCollections.observableArrayList()
     val groups: ObservableList<CardDAVGroup> = FXCollections.observableArrayList()

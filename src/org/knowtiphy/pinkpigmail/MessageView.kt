@@ -25,6 +25,10 @@ import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
+import org.knowtiphy.pinkpigmail.util.ui.Flipper
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.HTMLUtils
 import org.w3c.dom.Document
 import java.util.concurrent.ExecutorService
@@ -40,8 +44,8 @@ class MessageView(private val service: ExecutorService) : Flipper()
     private val messageProperty = SimpleObjectProperty<IMessage?>()
 
     private val viewer = MailViewer()
-    private val noMessageSelected = UIUtils.boxIt(Label("No Message Selected"))
-    private val loading = UIUtils.boxIt(WaitSpinner("Loading Message"))
+    private val noMessageSelected = UIUtils.boxIt(Label(Strings.NO_MESSAGE_SELECTED))
+    private val loading = UIUtils.boxIt(WaitSpinner(Strings.LOADING_MESSAGE))
 
     private val fromText = Label()
     private val subjectText = Label()
@@ -106,7 +110,7 @@ class MessageView(private val service: ExecutorService) : Flipper()
 
         attachmentsMenu.graphic = Icons.attach()
 
-        UIUtils.resizable(viewer)
+        UIUtils.resizeable(viewer)
         viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
             if (newState == Worker.State.SUCCEEDED)
             {
@@ -143,7 +147,7 @@ class MessageView(private val service: ExecutorService) : Flipper()
 
         VBox.setVgrow(header, Priority.NEVER)
         VBox.setVgrow(viewer, Priority.ALWAYS)
-        UIUtils.resizable(messageSpace)
+        UIUtils.resizeable(messageSpace)
 
         viewer.webView.engine.documentProperty().addListener(listener)
 

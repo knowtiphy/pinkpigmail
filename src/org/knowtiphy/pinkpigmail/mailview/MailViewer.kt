@@ -6,7 +6,7 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
 import javafx.scene.web.WebErrorEvent
 import javafx.scene.web.WebView
-import org.knowtiphy.pinkpigmail.Fail
+import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.utils.OS
 import org.w3c.dom.Element
 import org.w3c.dom.events.Event
@@ -18,54 +18,6 @@ import org.w3c.dom.events.EventTarget
  */
 class MailViewer : GridPane()
 {
-    val webView = WebView()
-
-    private var content: String? = null
-    private var mimeType: String? = null
-
-    init
-    {
-        addRow(0, webView)
-        setHgrow(webView, Priority.ALWAYS)
-        setVgrow(webView, Priority.ALWAYS)
-
-        with(webView)
-        {
-            setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
-            engine.isJavaScriptEnabled = false
-            engine.setOnError { event: WebErrorEvent -> Fail.failNoMessage(event.exception) }
-            //	load some content to create a worker in the webView, for the next step
-            engine.load("<html></html>")
-            engine.loadWorker.stateProperty().addListener { _: ObservableValue<out State>, _: State, newState: State ->
-                if (newState == State.SUCCEEDED)
-                {
-                    val nodeList = webView.engine.document.getElementsByTagName("a")
-                    for (i in 0 until nodeList.length)
-                    {
-                        (nodeList.item(i) as EventTarget).addEventListener(EVENT_TYPE_CLICK, INTERCEPT, false)
-                    }
-                }
-            }
-        }
-    }
-
-    fun loadContent(content: String, mimeType: String?)
-    {
-        this.content = content
-        this.mimeType = mimeType
-        webView.engine.loadContent(content, mimeType)
-    }
-
-    fun reload()
-    {
-        webView.engine.loadContent(content, mimeType)
-    }
-
-    fun clear()
-    {
-        loadContent("", mimeType)
-    }
-
     companion object
     {
         private const val EVENT_TYPE_CLICK = "click"
@@ -90,4 +42,47 @@ class MailViewer : GridPane()
             }
         }
     }
+
+    val webView = WebView()
+
+    private var content: String? = null
+    private var mimeType: String? = null
+
+    init
+    {
+        addRow(0, webView)
+        setHgrow(webView, Priority.ALWAYS)
+        setVgrow(webView, Priority.ALWAYS)
+
+        with(webView) {
+            setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+            with(engine) {
+                isJavaScriptEnabled = false
+                setOnError { event: WebErrorEvent -> Fail.failNoMessage(event.exception) }
+                //	load some content to create a worker in the webView, for the next step
+                load("<html></html>")
+                loadWorker.stateProperty().addListener { _: ObservableValue<out State>, _: State, newState: State ->
+                    if (newState == State.SUCCEEDED)
+                    {
+                        val nodeList = webView.engine.document.getElementsByTagName("a")
+                        for (i in 0 until nodeList.length)
+                        {
+                            (nodeList.item(i) as EventTarget).addEventListener(EVENT_TYPE_CLICK, INTERCEPT, false)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun reload() = webView.engine.loadContent(content, mimeType)
+
+    fun loadContent(content: String, mimeType: String?)
+    {
+        this.content = content
+        this.mimeType = mimeType
+        reload()
+    }
+
+    fun clear() = loadContent("", mimeType)
 }

@@ -22,7 +22,7 @@ import javax.mail.internet.InternetAddress
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, storage), IEmailAccount
 {
     override val nickNameProperty = SimpleStringProperty()
     override val allowHTMLProperty = SimpleBooleanProperty(true)
@@ -217,6 +217,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : PPPeer(accountId, stor
         folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
         folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
         folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }
+        folder.isSentProperty.addListener { _, _, new -> if (new) sentFolder = folder }
 
         folders.add(folder)
     }

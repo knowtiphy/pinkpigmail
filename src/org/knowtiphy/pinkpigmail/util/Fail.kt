@@ -1,6 +1,5 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.util
 
-import javafx.application.Platform
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.Label
@@ -8,10 +7,10 @@ import javafx.scene.control.TextArea
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.UIUtils
-
-import java.io.PrintWriter
-import java.io.StringWriter
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
+import org.knowtiphy.utils.LoggerUtils
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -21,40 +20,32 @@ import java.util.logging.Logger
  */
 object Fail
 {
-    @JvmStatic
     fun failNoMessage(ex: Throwable)
     {
         Logger.getLogger(Fail::class.java.name).log(Level.SEVERE, null, ex)
     }
 
-    @JvmStatic
     fun fail(ex: Throwable)
     {
-        System.err.println("Application Failure")
         failNoMessage(ex)
 
-        Platform.runLater {
+        later {
             val alert = Alert(AlertType.ERROR)
-            alert.width = 1600.0
-            alert.height = 1200.0
-            alert.title = Strings.APPLICATION_ERROR
-            alert.headerText = Strings.APPLICATION_ERROR_HAS_OCCURED
-            alert.contentText = ex.localizedMessage
-
-            val sw = StringWriter()
-            val pw = PrintWriter(sw)
-            ex.printStackTrace(pw)
-            val exceptionText = sw.toString()
+            with(alert) {
+                width = 1600.0
+                height = 1200.0
+                title = Strings.APPLICATION_ERROR
+                headerText = Strings.APPLICATION_ERROR_HAS_OCCURED
+                contentText = ex.localizedMessage
+            }
 
             val label = Label(Strings.STACKTRACE)
 
-            val textArea = TextArea(exceptionText)
-            textArea.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+            val textArea = maxSizeable(TextArea(LoggerUtils.exceptionMessage(ex)))
             textArea.isEditable = false
             textArea.isWrapText = true
 
-            val expContent = GridPane()
-            UIUtils.resizable(expContent)
+            val expContent = resizeable(GridPane())
             expContent.addColumn(0, label, textArea)
             GridPane.setHgrow(label, Priority.ALWAYS)
             GridPane.setVgrow(label, Priority.NEVER)

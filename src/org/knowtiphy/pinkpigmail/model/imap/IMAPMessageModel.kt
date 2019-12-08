@@ -1,11 +1,11 @@
 package org.knowtiphy.pinkpigmail.model.imap
 
+import org.knowtiphy.babbage.storage.IMAP.Mime
+import org.knowtiphy.babbage.storage.IStorage
+import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.MessageModel
 import org.knowtiphy.pinkpigmail.model.SendMode
-import org.knowtiphy.babbage.storage.IStorage
-import org.knowtiphy.babbage.storage.IMAP.Mime
-import org.knowtiphy.babbage.storage.StorageException
 import java.io.IOException
 
 /*

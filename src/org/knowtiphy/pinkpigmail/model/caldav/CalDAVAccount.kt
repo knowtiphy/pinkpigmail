@@ -10,12 +10,12 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham
  */
-class CalDAVAccount(id: String, storage: IStorage) : PPPeer(id, storage), ICalendarAccount
+class CalDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), ICalendarAccount
 {
     override val nickNameProperty = SimpleStringProperty()
     override val emailAddressProperty = SimpleStringProperty()

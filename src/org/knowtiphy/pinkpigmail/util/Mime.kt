@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.util
 
 import javafx.scene.Node
 import org.controlsfx.glyphfont.FontAwesome
@@ -47,7 +47,6 @@ object Mime
     private val SAFE_FILE_ENDINGS = setOf("pdf", "rtf", "txt", "csv", "jpeg", "jpg", "png", "ods", "odt", "ics")
     private val IMAGE = setOf("image/jpeg", "image/png")
 
-    @JvmStatic
     fun glyph(mimeType: String, size: Int): Node
     {
         val g = GLYPHS[mimeType]
@@ -55,20 +54,17 @@ object Mime
         return g?.invoke(size) ?: Icons.attach(size)
     }
 
-    @JvmStatic
     fun isSafeFileEnding(fileName: String): Boolean
     {
         val split = fileName.split("\\.".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
         return split.size == 2 && SAFE_FILE_ENDINGS.contains(split[1])
     }
 
-    @JvmStatic
     fun isSafe(mimeType: String): Boolean
     {
         return SAFE.contains(mimeType)
     }
 
-    @JvmStatic
     fun isImage(mimeType: String): Boolean
     {
         return IMAGE.contains(mimeType)

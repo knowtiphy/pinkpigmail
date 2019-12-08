@@ -1,8 +1,8 @@
 package org.knowtiphy.pinkpigmail.model.imap
 
-import org.knowtiphy.owlorm.javafx.Entity
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.Entity
 import org.knowtiphy.utils.JenaUtils
 import java.io.ByteArrayInputStream
 import java.io.InputStream

@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.util
 
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -117,5 +117,4 @@ class ErrorHandler : Thread.UncaughtExceptionHandler
 //            showAndWait()
 //        }
 //    }
-
 }

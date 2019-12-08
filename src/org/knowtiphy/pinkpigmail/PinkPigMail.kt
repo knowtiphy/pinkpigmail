@@ -2,7 +2,6 @@ package org.knowtiphy.pinkpigmail
 
 import com.calendarfx.view.CalendarView
 import javafx.application.Application
-import javafx.application.Platform
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
@@ -40,8 +39,13 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Resources
-import org.knowtiphy.pinkpigmail.util.Flipper
-import org.knowtiphy.pinkpigmail.util.UIUtils
+import org.knowtiphy.pinkpigmail.resources.Strings
+import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.pinkpigmail.util.ui.Flipper
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
+import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
 import java.io.IOException
@@ -75,21 +79,20 @@ class PinkPigMail : Application(), IStorageListener
     companion object
     {
         private const val MESSAGE_STORAGE = "messages"
-
-        //val LOGGER = Logger.getLogger(IMAPAdapter::class.java.name)
-
-        const val STYLE_SHEET = "styles.css"
+        private const val ACCOUNTS_FILE = "accounts.ttl"
+        private const val UI_FILE = "ui.ttl"
+        private const val STYLE_SHEET = "styles.css"
 
         val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
         val storage: IStorage by lazy {
             val dir = Paths.get(OS.getAppDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
             Files.createDirectories(dir)
-            StorageFactory.getLocal(dir, OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE))
+            StorageFactory.getLocal(dir, OS.getAppFile(PinkPigMail::class.java, ACCOUNTS_FILE))
         }
 
         val uiSettings: UISettings by lazy {
-            UISettings.read(Constants.UI_FILE)
+            UISettings.read(UI_FILE)
         }
 
         val htmlState = HTMLState()
@@ -97,8 +100,8 @@ class PinkPigMail : Application(), IStorageListener
         private val appToolBar = HBox()
         private val rootTabPane = TabPane()
         private val root = VBox(appToolBar, rootTabPane)
-        private val bootPane = UIUtils.boxIt(WaitSpinner("Synchronizing Accounts"))
-        private val shutdownPane = UIUtils.boxIt(WaitSpinner("Closing Accounts"))
+        private val bootPane = UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS))
+        private val shutdownPane = UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS))
         private val mainFlipper = Flipper()
 
         init
@@ -141,13 +144,12 @@ class PinkPigMail : Application(), IStorageListener
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model)
     {
-//        Peer.delta(added, deleted)
-//    }
-        PeerState.delta(added, deleted) {
-            //   it.subject.toString().contains("orange") &&
-            it.predicate.toString().contains("type" )//|| it.`object`.toString().contains("CARD")
-            //  && it.`object`.toString().contains("Event")
-        }
+        PeerState.delta(added, deleted)
+//        PeerState.delta(added, deleted) {
+//            //   it.subject.toString().contains("orange") &&
+//            it.predicate.toString().contains("type")//|| it.`object`.toString().contains("CARD")
+//            //  && it.`object`.toString().contains("Event")
+//        }
     }
 
     private fun initTab(box: Node, icon: Glyph, label: StringProperty): Tab
@@ -165,7 +167,7 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun addCalendarView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICalendarAccount)
     {
-        val calendarView = CalendarView()
+        val calendarView = resizeable(CalendarView())
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
         //  TODO -- the thread to update the requested time
@@ -174,16 +176,14 @@ class PinkPigMail : Application(), IStorageListener
 
     private fun addCardView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICardAccount)
     {
-        val cardView = ContactView(account)
-        UIUtils.resizable(cardView)
-        rootTabPane.tabs.add(initTab(cardView, Icons.book(Icons.DEFAULT_SIZE), account.nickNameProperty))
+        rootTabPane.tabs.add(initTab(resizeable(ContactView(account)),
+                Icons.book(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
     {
-        val mailView = MailAccountView(primaryStage, account)
-        UIUtils.resizable(mailView)
-        rootTabPane.tabs.add(initTab(mailView, Icons.mail(Icons.DEFAULT_SIZE), account.nickNameProperty))
+        rootTabPane.tabs.add(initTab(resizeable(MailAccountView(primaryStage, account)),
+                Icons.mail(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private val viewCreator = mapOf(
@@ -198,13 +198,13 @@ class PinkPigMail : Application(), IStorageListener
         uiModel.setNsPrefix("n", Vocabulary.NBASE)
         uiModel.setNsPrefix("o", Vocabulary.TBASE)
         accounts.forEach { uiSettings.save(uiModel, names, it) }
-        RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.UI_FILE)), uiModel, Lang.TURTLE)
+        RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, UI_FILE)), uiModel, Lang.TURTLE)
     }
 
     //  shutdown sequence
     private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
     {
-        Thread.setDefaultUncaughtExceptionHandler { _, _ -> ; }
+        Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
         mainFlipper.flip(bootPane)
         Thread {
             try
@@ -231,56 +231,13 @@ class PinkPigMail : Application(), IStorageListener
         }.start()
     }
 
-    private fun initPostSynch()
-    {
-//        var newMessages = false
-//        for (account in accounts)
-//        {
-//            if (account is IEmailAccount)
-//                for (folder in account.folders)
-//                {
-//                    for (message in folder.messages)
-//                    {
-//                        if (!message.readProperty.get())
-//                        {
-//                            newMessages = true
-//                            break
-//                        }
-//                    }
-//                }
-//        }
-//
-//        println(newMessages)
-//        if (newMessages)
-//        {
-////            readProperty.addListener { _, _, new ->
-//            //            if (Patterns.INBOX_PATTERN.matcher(folder.nameProperty.get()).matches() && !new)
-////            {
-//            try
-//            {
-//                _beep?.play()
-//            } catch (ex: Exception)
-//            {
-//                Fail.failNoMessage(ex)
-//            }
-////            }
-////        }
-//        }
-        println("POST SYNCH XXXXXXXXXXXXXXXXXXXXXXX")
-    }
-
     //  boot sequence
     override fun start(primaryStage: Stage)
     {
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
-        //  TODO -- have to make this work
         URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
-        UIUtils.resizable(rootTabPane)
-        UIUtils.resizable(root)
-        UIUtils.resizable(bootPane)
-        UIUtils.resizable(shutdownPane)
-        UIUtils.resizable(mainFlipper)
+        listOf(rootTabPane, root, bootPane, shutdownPane, mainFlipper).forEach { resizeable(it) }
 
         VBox.setVgrow(rootTabPane, Priority.ALWAYS)
         VBox.setVgrow(appToolBar, Priority.NEVER)
@@ -302,17 +259,15 @@ class PinkPigMail : Application(), IStorageListener
         accounts.addListener { c: Change<out IAccount> ->
             while (c.next())
             {
-                c.addedSubList.forEach {
-                    Platform.runLater { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } }
-                }
+                if (c.wasAdded())
+                    c.addedSubList.forEach { later { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } } }
             }
         }
 
         //  sync and switch to main pane when done
         Thread {
             storage.addListener(this).forEach { it.value.get() }
-            initPostSynch()
-            Platform.runLater { mainFlipper.flip(root) }
+            later { mainFlipper.flip(root) }
         }.start()
 
         primaryStage.show()

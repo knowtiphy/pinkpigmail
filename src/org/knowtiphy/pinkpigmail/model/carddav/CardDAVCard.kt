@@ -3,9 +3,9 @@ package org.knowtiphy.pinkpigmail.model.caldav
 import javafx.beans.property.SimpleStringProperty
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
-class CardDAVCard(id: String, storage: IStorage) : PPPeer(id, storage)
+class CardDAVCard(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
    val hasNameProperty = SimpleStringProperty()
     //, optional: 0+ telephone numbers (each with a type), 0+ emails (each with a type)

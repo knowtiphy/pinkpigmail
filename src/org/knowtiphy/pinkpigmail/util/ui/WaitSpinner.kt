@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.util.ui
 
 import javafx.geometry.Pos
 import javafx.scene.control.Label
@@ -9,9 +9,7 @@ class WaitSpinner(message : String): VBox()
 {
     init
     {
-        val progress = ProgressIndicator()
-        val message = Label(message)
-        children.addAll(progress, message)
+        children.addAll(ProgressIndicator(), Label(message))
         spacing = 35.0
         alignment = Pos.CENTER
     }

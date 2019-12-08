@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.util
 
 /**
  * @author graham

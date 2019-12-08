@@ -10,12 +10,12 @@ import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.ModelType
 import org.knowtiphy.pinkpigmail.resources.Strings
+import org.knowtiphy.pinkpigmail.util.Operation
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.util.*
-import java.util.concurrent.ExecutionException
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -25,8 +25,6 @@ import java.util.logging.Logger
  */
 object Actions
 {
-    @Throws(ExecutionException::class, InterruptedException::class)
-    @JvmStatic
     fun configureAccount(mailAccount: IEmailAccount)
     {
 //        val root = VBox()
@@ -64,44 +62,34 @@ object Actions
 //        stage.showAndWait()
     }
 
-    @Throws(ExecutionException::class, InterruptedException::class)
-    @JvmStatic
-    fun composeMail(mailAccount: IEmailAccount)
-    {
-        try
-        {
-            val model = mailAccount.getSendModel(ModelType.COMPOSE)
-            ComposeMessage.compose(model) { Operation.perform { model.send() } }
-        } catch (ex: StorageException)
-        {
-            Fail.fail(ex)
-        }
+    fun composeMail(mailAccount: IEmailAccount) = Operation.perform {
+        val model = mailAccount.getSendModel(ModelType.COMPOSE)
+        ComposeMessage.compose(model) { Operation.perform { model.send() } }
     }
 
-    @JvmStatic
     fun markMessagesAsJunk(messages: List<IMessage>)
     {
         messages[0].folder.markMessagesAsJunk(messages)
     }
 
-    @JvmStatic
     fun markMessagesAsNotJunk(messages: List<IMessage>)
     {
         messages[0].folder.markMessagesAsNotJunk(messages)
     }
 
-    @JvmStatic
     fun deleteMessages(messages: List<IMessage>)
     {
         val folder = messages[0].folder
         if (folder.isTrashProperty.get())
         {
             val alert = Alert(Alert.AlertType.CONFIRMATION)
-            alert.width = 500.0
-            alert.height = 700.0
-            alert.title = Strings.DELETE
-            alert.contentText = Strings.DELETE_FOREVER
-            alert.dialogPane.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE)
+            with(alert) {
+                width = 500.0
+                height = 700.0
+                title = Strings.DELETE
+                contentText = Strings.DELETE_FOREVER
+                dialogPane.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE)
+            }
             if (alert.showAndWait().isPresent && alert.result != ButtonType.OK)
             {
                 return
@@ -112,35 +100,16 @@ object Actions
         folder.deleteMessages(ArrayList(messages))
     }
 
-    @Throws(ExecutionException::class, InterruptedException::class)
-    @JvmStatic
-    fun replyToMessage(message: IMessage, all: Boolean)
-    {
-        try
-        {
-            val model = message.mailAccount.getReplyModel(message, if (all) ModelType.REPLY_ALL else ModelType.REPLY)
-            ComposeMessage.compose(model) { Operation.perform { model.send() } }
-        } catch (ex: StorageException)
-        {
-            Fail.fail(ex)
-        }
+    fun replyToMessage(message: IMessage, all: Boolean) = Operation.perform {
+        val model = message.mailAccount.getReplyModel(message, if (all) ModelType.REPLY_ALL else ModelType.REPLY)
+        ComposeMessage.compose(model) { Operation.perform { model.send() } }
     }
 
-    @Throws(ExecutionException::class, InterruptedException::class)
-    @JvmStatic
-    fun forwardMail(message: IMessage)
-    {
-        try
-        {
-            val model = message.mailAccount.getReplyModel(message, ModelType.FORWARD)
-            ComposeMessage.compose(model) { Operation.perform { model.send() } }
-        } catch (ex: StorageException)
-        {
-            Fail.fail(ex)
-        }
+    fun forwardMail(message: IMessage) = Operation.perform {
+        val model = message.mailAccount.getReplyModel(message, ModelType.FORWARD)
+        ComposeMessage.compose(model) { model.send() }
     }
 
-    @JvmStatic
     fun saveAttachment(attachment: IAttachment)
     {
         val chooser = FileChooser()
@@ -161,7 +130,6 @@ object Actions
         }
     }
 
-    @JvmStatic
     fun saveAttachments(attachments: List<IAttachment>)
     {
         val chooser = DirectoryChooser()
@@ -184,18 +152,5 @@ object Actions
         }
     }
 
-    @JvmStatic
-    fun openAttachment(attachment: IAttachment)
-    {
-        try
-        {
-            attachment.open()
-        } catch (ex: IOException)
-        {
-            Fail.fail(ex)
-        } catch (ex: StorageException)
-        {
-            Fail.fail(ex)
-        }
-    }
+    fun openAttachment(attachment: IAttachment) = Operation.perform { attachment.open() }
 }

@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail.util
+package org.knowtiphy.pinkpigmail.util.ui
 
 import javafx.beans.property.Property
 import javafx.scene.Node

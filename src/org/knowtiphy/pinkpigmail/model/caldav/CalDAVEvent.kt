@@ -4,11 +4,11 @@ import com.calendarfx.model.Entry
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 import org.knowtiphy.utils.JenaUtils
 import java.time.ZonedDateTime
 
-class CalDAVEvent(id: String, storage: IStorage) : PPPeer(id, storage)
+class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
     val event = Entry<String>("")
 

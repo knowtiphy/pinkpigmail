@@ -3,6 +3,7 @@ package org.knowtiphy.pinkpigmail
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.StringProperty
 import javafx.collections.ListChangeListener
 import javafx.collections.transformation.SortedList
 import javafx.geometry.Insets
@@ -20,6 +21,11 @@ import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
+import org.knowtiphy.pinkpigmail.util.ui.MappedFlipper
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.reactfx.EventStreams
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
@@ -31,11 +37,11 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
     init
     {
-        val foldersList = createFoldersList()
+        val p = createFoldersList()
+        val foldersList = p.second
 
         //  the folder flipper that shows the current folder view to the right of the folder list
-        val folderViewFlipper = MappedFlipper<IFolder>(accountViewModel.currentEntityProperty)
-        UIUtils.resizable(folderViewFlipper)
+        val folderViewFlipper = resizeable(MappedFlipper<IFolder>(accountViewModel.currentEntityProperty))
 
         //  when a folder is added to the account's folder list add an item to folder list on the left, and
         //  add a per folder view to the folder flipper
@@ -73,13 +79,9 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             }
         }
 
-        val toolBar = createToolBar()
-        setVgrow(toolBar, Priority.NEVER)
-
         //  the folder space below the tool bar
-        val folderSpace = SplitPane(foldersList, folderViewFlipper)
+        val folderSpace = resizeable(SplitPane(p.first, folderViewFlipper))
         setVgrow(folderSpace, Priority.ALWAYS)
-        UIUtils.resizable(folderSpace)
         folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
 
         //  TODO is this is necessary to try to work around a JavaFX bug with setting split pane positions?
@@ -93,7 +95,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         //  message load-ahead
         accountViewModel.entitySelected.filter { it.selectionModel!!.selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
 
-        children.addAll(toolBar, folderSpace)
+        children.addAll(folderSpace)
     }
 
     private fun loadAhead(fvm: CategoryViewModel<IFolder, IMessage>)
@@ -149,7 +151,6 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         val reply = ActionHelper.create(Icons.reply(), { Actions.replyToMessage(accountViewModel.currentEntity(), false) }, Strings.REPLY)
         val replyAll = ActionHelper.create(Icons.replyAll(), { Actions.replyToMessage(accountViewModel.currentEntity(), true) }, Strings.REPLY_ALL)
         val forward = ActionHelper.create(Icons.forward(), { Actions.forwardMail(accountViewModel.currentEntity()) }, Strings.FORWARD)
-        val compose = ActionHelper.create(Icons.compose(), { Actions.composeMail(accountViewModel.account) }, Strings.COMPOSE, false)
         val delete = ActionHelper.create(Icons.delete(),
                 {
                     //  move to the next message
@@ -174,16 +175,15 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         replyGroup.spacing = 2.0
         val markGroup = HBox(ButtonHelper.regular(delete), ButtonHelper.regular(markJunk), ButtonHelper.regular(markNotJunk))
         markGroup.spacing = 2.0
-        val middleButtons = HBox(ButtonHelper.regular(compose), replyGroup, markGroup)
+        val middleButtons = HBox(replyGroup, markGroup)
         middleButtons.spacing = 15.0
 
         //val configButton = ButtonHelper.regular(config)
 //        val layoutButton = ButtonHelper.regular(layout)
 
         val toolBar = HBox()
-        toolBar.children.addAll(UIUtils.spacer(), middleButtons, UIUtils.spacer())
+        toolBar.children.addAll(UIUtils.hSpacer(), middleButtons, UIUtils.hSpacer())
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
-        toolBar.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
 
         accountViewModel.entitySelected.subscribe { fvm ->
             singleMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.size != 1) }
@@ -196,8 +196,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     //  the message list for one folder perspective
     private fun createFolderMessageList(fvm: CategoryViewModel<IFolder, IMessage>, messageView: MessageView): TableView<IMessage>
     {
-        val view = TableView<IMessage>()
-        UIUtils.resizable(view)
+        val view = resizeable(TableView<IMessage>())
 
         view.columnResizePolicy = SmartResize.POLICY
 
@@ -251,7 +250,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             setCellFactory { AddressCell(fvm.category.accountProperty.get()) { it.from } }
             prefWidth = 300.0
             //  TODO
-            comparator = Comparators.cmp { it.from[0] }
+            comparator = UIUtils.cmp { it.from[0] }
         }
 
         val receivedCol = TableColumn<IMessage, IMessage>(Strings.RECEIVED)
@@ -259,17 +258,17 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         with(receivedCol) {
             setCellFactory { DateCell { it.receivedOnProperty } }
             prefWidth = 200.0
-            comparator = Comparators.cmp { it.receivedOnProperty.get() }
-            sortType = TableColumn.SortType.DESCENDING
+            comparator = UIUtils.cmp { it.receivedOnProperty.get() }
+            sortType = TableColumn.SortType.ASCENDING
         }
 
         val subjectCol = TableColumn<IMessage, IMessage>(Strings.SUBJECT)
         with(subjectCol) {
             setCellValueFactory(cellValueFactory)
-            setCellFactory { GeneralCell({ it.subjectProperty }, { Format.format(it) }) }
+            setCellFactory { GeneralCell<String, StringProperty>({ it.subjectProperty }, { Format.format(it) }) }
             remainingWidth()
             prefWidth = 750.0
-            comparator = Comparators.cmp { it.subjectProperty.get() }
+            comparator = UIUtils.cmp { it.subjectProperty.get() }
         }
 
         view.columns.addAll(statusColumn, fromColumn, subjectCol, receivedCol)
@@ -286,16 +285,14 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     //  create a perspective of one folder
     private fun createFolderPerspective(fvm: CategoryViewModel<IFolder, IMessage>, @Suppress("SameParameterValue") orientation: Orientation): SplitPane
     {
-        val messageView = MessageView(PinkPigMail.service)
-        UIUtils.resizable(messageView)
-        val splitPane = SplitPane(createFolderMessageList(fvm, messageView), messageView)
+        val messageView = resizeable(MessageView(PinkPigMail.service))
+        val splitPane = resizeable(SplitPane(createFolderMessageList(fvm, messageView), messageView))
         splitPane.orientation = orientation
-        UIUtils.resizable(splitPane)
         return splitPane
     }
 
     //  create a view of one folder -- a flipper of different folder perspectives
-    private fun createFolderView(fvm: CategoryViewModel<IFolder, IMessage>): SplitPane
+    private fun createFolderView(fvm: CategoryViewModel<IFolder, IMessage>): VBox
     {
         val fSettings = PinkPigMail.uiSettings.getFolderSettings(fvm.category)
 
@@ -318,14 +315,21 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 //        //  set the default view type
 ////        fvm.visiblePerspective.set(fSettings.viewType)
 
-        return hPerspective
+        val toolBar = maxSizeable(createToolBar())
+        setVgrow(toolBar, Priority.NEVER)
+
+        setVgrow(hPerspective, Priority.ALWAYS)
+
+        val box = resizeable(VBox())
+        box.children.addAll(toolBar, hPerspective)
+
+        return box
     }
 
     //  the tree view of folders on the left
-    private fun createFoldersList(): TreeView<IFolder>
+    private fun createFoldersList(): Pair<VBox, TreeView<IFolder>>
     {
-        val view = TreeView(foldersRoot)
-        UIUtils.resizable(view)
+        val view = resizeable(TreeView(foldersRoot))
         view.isShowRoot = false
         view.setCellFactory { FolderCell() }
 
@@ -334,6 +338,19 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
                 .filter { it.list.size == 1 }
                 .subscribe { accountViewModel.currentEntityProperty.set(it.list[0].value) }
 
-        return view
+        val box = resizeable(VBox())
+
+        val compose = ActionHelper.create(Icons.compose(), { Actions.composeMail(accountViewModel.account) }, Strings.COMPOSE, false)
+
+        val toolBar = maxSizeable(HBox())
+        toolBar.children.addAll(ButtonHelper.regular(compose))
+        toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
+
+        setVgrow(toolBar, Priority.NEVER)
+        setVgrow(view, Priority.ALWAYS)
+        
+        box.children.addAll(toolBar, view)
+
+        return Pair(box, view)
     }
 }

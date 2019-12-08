@@ -3,27 +3,17 @@ package org.knowtiphy.pinkpigmail.util
 import javafx.event.ActionEvent
 import javafx.scene.Node
 import org.controlsfx.control.action.Action
-import org.knowtiphy.pinkpigmail.Fail
 
 /**
  * @author graham
  */
 object ActionHelper
 {
-    private fun create(g: Node, handler: (ActionEvent) -> Unit, text: String?, tip: String, disabled: Boolean): Action
+    private fun create(node: Node, handler: (ActionEvent) -> Unit, text: String?, tip: String, disabled: Boolean): Action
     {
-        val action = Action(text) { e ->
-            try
-            {
-                handler.invoke(e)
-            } catch (ex: Exception)
-            {
-                Fail.fail(ex)
-            }
-        }
-
+        val action = Action(text) { e -> Operation.perform { handler.invoke(e) } }
         with(action) {
-            graphic = g
+            graphic = node
             longText = tip
             isDisabled = disabled
         }
@@ -31,6 +21,6 @@ object ActionHelper
         return action
     }
 
-    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true) = create(g, handler, null, tip, disabled)
-    fun create(g: Node, handler: (ActionEvent) -> Unit, tip: String) = create(g, handler, null, tip, false)
+    fun create(node: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true) = create(node, handler, null, tip, disabled)
+    fun create(node: Node, handler: (ActionEvent) -> Unit, tip: String) = create(node, handler, null, tip, false)
 }

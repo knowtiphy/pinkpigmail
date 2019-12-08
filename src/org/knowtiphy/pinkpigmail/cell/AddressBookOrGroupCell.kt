@@ -1,13 +1,14 @@
 package org.knowtiphy.pinkpigmail.cell
 
-import javafx.scene.control.ListCell
+import javafx.scene.control.TreeCell
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
+import org.knowtiphy.pinkpigmail.model.caldav.CardDAVGroup
 
 /**
  *
  * @author graham
  */
-class AddressBookCell : ListCell<CardDAVAddressBook>()
+class AddressBookOrGroupCell : TreeCell<Any>()
 {
 //    private val junk = Icons.junk()
 //    private val unread = Icons.unread()
@@ -24,19 +25,17 @@ class AddressBookCell : ListCell<CardDAVAddressBook>()
 //        deleted.managedProperty().bind(deleted.visibleProperty())
 //    }
 
-    public override fun updateItem(item: CardDAVAddressBook?, empty: Boolean)
+    public override fun updateItem(item: Any?, empty: Boolean)
     {
         super.updateItem(item, empty)
-//        text = null
         if (empty || item == null)
         {
             graphic = null
-          //  text = null
         } else
         {
             //  just in case we did the first case
 //            graphic = box
-            textProperty().bind(item.nameProperty)
+            textProperty().bind(if (item is CardDAVAddressBook) item.nameProperty else ((item as CardDAVGroup)).nameProperty)
         }
     }
 }

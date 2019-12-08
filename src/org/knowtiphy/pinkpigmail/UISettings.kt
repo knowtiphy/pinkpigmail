@@ -9,10 +9,10 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
-import org.knowtiphy.pinkpigmail.model.IEmailAccount
-import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.IAccount
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
+import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS

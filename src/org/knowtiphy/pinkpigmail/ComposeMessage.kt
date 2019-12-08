@@ -20,8 +20,8 @@ import org.knowtiphy.pinkpigmail.model.SendMode
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ActionHelper
-import org.knowtiphy.pinkpigmail.util.ButtonHelper
-import org.knowtiphy.pinkpigmail.util.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import java.io.File
 import java.io.IOException
 import java.util.logging.Level

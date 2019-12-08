@@ -13,12 +13,12 @@ import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.PPPeer
+import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham
  */
-class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage), IFolder
+class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, storage), IFolder
 {
     override val accountProperty = SimpleObjectProperty<IEmailAccount>()
 
@@ -34,6 +34,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
     override val isJunkProperty = SimpleBooleanProperty()
     override val isTrashProperty = SimpleBooleanProperty()
     override val isInboxProperty = SimpleBooleanProperty()
+    override val isSentProperty = SimpleBooleanProperty()
 
     init
     {
@@ -43,6 +44,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : PPPeer(folderId, storage
         declareU(Vocabulary.IS_JUNK_FOLDER, isJunkProperty)
         declareU(Vocabulary.IS_TRASH_FOLDER, isTrashProperty)
         declareU(Vocabulary.IS_INBOX, isInboxProperty)
+        declareU(Vocabulary.IS_SENT_FOLDER, isSentProperty)
         declareU(Vocabulary.CONTAINS, ::addMessage)
         declareD(Vocabulary.CONTAINS, messages)
     }

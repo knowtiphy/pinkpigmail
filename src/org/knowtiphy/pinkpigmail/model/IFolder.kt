@@ -20,6 +20,7 @@ interface IFolder : ITreeItem, IPeer
     val isTrashProperty: BooleanProperty
     val isInboxProperty: BooleanProperty
     val isJunkProperty: BooleanProperty
+    val isSentProperty: BooleanProperty
 
     val nameProperty: StringProperty
 

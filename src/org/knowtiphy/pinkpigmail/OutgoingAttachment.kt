@@ -1,8 +1,6 @@
 package org.knowtiphy.pinkpigmail
 
 import org.knowtiphy.pinkpigmail.model.IAttachment
-import org.knowtiphy.babbage.storage.IStorage
-
 import java.io.FileInputStream
 import java.io.IOException
 import java.io.InputStream
