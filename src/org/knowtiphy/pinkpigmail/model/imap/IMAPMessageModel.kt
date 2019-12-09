@@ -3,16 +3,16 @@ package org.knowtiphy.pinkpigmail.model.imap
 import org.knowtiphy.babbage.storage.IMAP.Mime
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.MessageModel
-import org.knowtiphy.pinkpigmail.model.SendMode
 import java.io.IOException
 
 /*
  * @author graham
  */
 class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFolder,
-                       replyToMessage: IMessage?, sendMode: SendMode,
+                       replyToMessage: IMessage?, sendMode: EmailSendMode,
                        subject: String?, to: String?, content: String?) : MessageModel(storage, account,
         replyToMessage, sendMode, subject, to, content, copyTo)
 {
@@ -23,7 +23,7 @@ class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFold
         //  TODO -- need to check addresses
         val model = org.knowtiphy.babbage.storage.IMAP.MessageModel(account.id,
                 subjectProperty().get(), toProperty().get(), ccProperty().get(),
-                contentProperty().get(), if (sendMode === SendMode.TEXT) Mime.PLAIN else Mime.HTML,
+                contentProperty().get(), if (sendMode === EmailSendMode.TEXT) Mime.PLAIN else Mime.HTML,
                 attachments.map { it.location }, copyTo.id)
         //  TODO -- this assumes that the send works -- need to chain them together
         storage.send(model)//account.sentFolder.getId());

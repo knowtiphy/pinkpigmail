@@ -9,8 +9,8 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
+import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
-import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham

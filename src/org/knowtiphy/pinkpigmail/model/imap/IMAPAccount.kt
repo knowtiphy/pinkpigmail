@@ -12,6 +12,7 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
+import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.resources.Strings
 import java.time.format.DateTimeFormatter
@@ -33,8 +34,8 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
     override val emailAddressProperty = SimpleStringProperty()
 
     private val password = SimpleStringProperty()
-    private val replyMode = ReplyMode.MATCH
-    private val sendMode = SendMode.HTML
+    private val replyMode = EmailReplyMode.MATCH
+    private val sendMode = EmailSendMode.HTML
 
     var trashFolder: IMAPFolder? = null
     var junkFolder: IMAPFolder? = null
@@ -121,27 +122,27 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 
     override fun isTrustedProvider(url: String) = trustedContentProviders.contains(url)
 
-    override fun getSendModel(modelType: ModelType): IMessageModel
+    override fun getSendModel(modelType: EmailModelType): IMessageModel
     {
         return IMAPMessageModel(storage, this, sentFolder!!,
                 null, sendMode, null, null, null)
     }
 
     @Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
-    override fun getReplyModel(message: IMessage, modelType: ModelType): IMessageModel
+    override fun getReplyModel(message: IMessage, modelType: EmailModelType): IMessageModel
     {
         val sendMode = sendMode(message, modelType)
         return IMAPMessageModel(storage, this, sentFolder!!, message, sendMode,
-                (if (modelType == ModelType.FORWARD) Strings.FWD else Strings.RE) + message.subjectProperty.get(),
-                if (modelType == ModelType.FORWARD) null else EmailAddress.format(this, message.from),
+                (if (modelType == EmailModelType.FORWARD) Strings.FWD else Strings.RE) + message.subjectProperty.get(),
+                if (modelType == EmailModelType.FORWARD) null else EmailAddress.format(this, message.from),
                 quote(message, sendMode))
     }
 
     @Throws(StorageException::class)
-    private fun quote(message: IMessage, sendMode: SendMode): String
+    private fun quote(message: IMessage, sendMode: EmailSendMode): String
     {
         val builder = StringBuilder()
-        if (sendMode == SendMode.HTML)
+        if (sendMode == EmailSendMode.HTML)
         {
             builder.append("<html><body>")
             //	TODO -- I don't think is valid HTML for a blank line
@@ -166,8 +167,8 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
         builder.append(" wrote\n")
 
         //	TODO -- not sure this is correct
-        val raw = message.getContent(sendMode == SendMode.HTML)
-        if (sendMode == SendMode.HTML)
+        val raw = message.getContent(sendMode == EmailSendMode.HTML)
+        if (sendMode == EmailSendMode.HTML)
         {
             //	TODO: this is a hack
             var processed = raw.content.replace("</html[^>]*>".toRegex(), "</div>")
@@ -189,19 +190,19 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
     }
 
     @Throws(ExecutionException::class, InterruptedException::class, StorageException::class)
-    private fun sendMode(message: IMessage, modelType: ModelType): SendMode
+    private fun sendMode(message: IMessage, modelType: EmailModelType): EmailSendMode
     {
         return when (modelType)
         {
-            ModelType.COMPOSE -> sendMode
+            EmailModelType.COMPOSE -> sendMode
             else ->
             {
-                if (replyMode == ReplyMode.MATCH)
+                if (replyMode == EmailReplyMode.MATCH)
                 {
-                    if (message.isHTML) SendMode.HTML else SendMode.TEXT
+                    if (message.isHTML) EmailSendMode.HTML else EmailSendMode.TEXT
                 } else
                 {
-                    if (replyMode == ReplyMode.HTML) SendMode.HTML else SendMode.TEXT
+                    if (replyMode == EmailReplyMode.HTML) EmailSendMode.HTML else EmailSendMode.TEXT
                 }
             }
         }

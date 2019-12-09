@@ -11,7 +11,7 @@ object ActionHelper
 {
     private fun create(node: Node, handler: (ActionEvent) -> Unit, text: String?, tip: String, disabled: Boolean): Action
     {
-        val action = Action(text) { e -> Operation.perform { handler.invoke(e) } }
+        val action = Action(text) { handler.invoke(it) }
         with(action) {
             graphic = node
             longText = tip

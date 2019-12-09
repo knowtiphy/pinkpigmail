@@ -3,7 +3,8 @@ package org.knowtiphy.pinkpigmail.model
 /**
  * @author graham
  */
-enum class ModelType
+enum class EmailSendMode
 {
-    COMPOSE, REPLY, REPLY_ALL, FORWARD
+    TEXT,
+    HTML
 }

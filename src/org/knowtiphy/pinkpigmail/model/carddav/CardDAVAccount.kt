@@ -8,8 +8,8 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.ICardAccount
-import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham
@@ -17,10 +17,9 @@ import org.knowtiphy.pinkpigmail.model.StoredPeer
 class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), ICardAccount
 {
     override val addressBooks : ObservableList<CardDAVAddressBook> = FXCollections.observableArrayList()
-
     override val nickNameProperty = SimpleStringProperty()
-
     override val emailAddressProperty = SimpleStringProperty()
+
     private val serverNameProperty = SimpleStringProperty()
     private val serverHeaderProperty = SimpleStringProperty()
     private val passwordProperty = SimpleStringProperty()
@@ -34,6 +33,7 @@ class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), I
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareOU(Vocabulary.CONTAINS, addressBooks)
         declareD(Vocabulary.CONTAINS, addressBooks)
+
         emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
             if (nickNameProperty.get() == null)
                 nickNameProperty.set(newValue)

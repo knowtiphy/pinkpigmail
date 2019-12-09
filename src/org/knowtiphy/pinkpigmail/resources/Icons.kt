@@ -1,6 +1,5 @@
 package org.knowtiphy.pinkpigmail.resources
 
-import javafx.scene.Group
 import javafx.scene.Node
 import javafx.scene.paint.Color
 import org.controlsfx.glyphfont.FontAwesome
@@ -30,14 +29,7 @@ object Icons
     private fun c(g: Glyph, color: Color): Glyph = g.color(color)
     private fun s(g: Glyph, size: Int): Glyph = g.size(size.toDouble())
 
-    fun attach(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Group
-    {
-        //  TODO why can't i just rotate the glyph?
-        val grp = Group(s(c(f(FontAwesome.Glyph.PAPERCLIP), color), size))
-        grp.rotate = 90.0
-        return grp
-    }
-
+    fun attach(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR) = Icons.s(c(f(FontAwesome.Glyph.PAPERCLIP), color), size)
     fun reply(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_REPLY), color), size)
     fun replyAll(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_REPLY_ALL), color), size)
     fun forward(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_FORWARD), color), size)
@@ -50,13 +42,13 @@ object Icons
     fun save(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.SAVE), color), size)
     fun send(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.PAPER_PLANE), color), size)
     fun trustContentProvider(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.HTML5), color), size)
-    fun junk(size: Int = SMALL_SIZE, color: Color = Color.ORANGE): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
-    fun unread(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
-    fun answered(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.REPLY), color), size)
-    fun deleted(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CLOSE), color), size)
-    fun calendar(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CALENDAR), color), size)
-    fun book(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.BOOK), color), size)
-    fun mail(size: Int = SMALL_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.ENVELOPE), color), size)
+    fun junk(size: Int = DEFAULT_SIZE, color: Color = Color.ORANGE): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
+    fun unread(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
+    fun answered(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.REPLY), color), size)
+    fun deleted(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CLOSE), color), size)
+    fun calendar(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CALENDAR), color), size)
+    fun book(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.BOOK), color), size)
+    fun mail(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.ENVELOPE), color), size)
     fun configure(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.GEAR), color), size)
     fun switchHorizontal(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Node = s(c(f(FontAwesome.Glyph.ANGLE_DOUBLE_RIGHT), color), size)
     fun notification(size: Int = DEFAULT_SIZE, color: Color = ICON_COLOR): Glyph = s(c(f(FontAwesome.Glyph.EXCLAMATION_TRIANGLE), color), size)

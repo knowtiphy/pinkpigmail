@@ -3,7 +3,7 @@ package org.knowtiphy.pinkpigmail.model.caldav
 import javafx.beans.property.SimpleStringProperty
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.StoredPeer
+import org.knowtiphy.owlorm.javafx.StoredPeer
 
 class CardDAVCard(id: String, storage: IStorage) : StoredPeer(id, storage)
 {

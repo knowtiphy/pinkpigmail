@@ -11,7 +11,7 @@ import org.knowtiphy.babbage.storage.StorageException
  * @author graham
  */
 abstract class MessageModel(val storage: IStorage, override val mailAccount: IEmailAccount,
-                            val replyToMessage: IMessage?, override val sendMode: SendMode,
+                            val replyToMessage: IMessage?, override val sendMode: EmailSendMode,
                             subject: String?, to: String?, content: String?, override val copyTo: IFolder) : IMessageModel
 {
     private val subjectProperty: StringProperty

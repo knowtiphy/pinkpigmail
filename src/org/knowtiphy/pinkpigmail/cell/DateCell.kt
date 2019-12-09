@@ -10,4 +10,4 @@ import java.time.ZonedDateTime
  */
 class DateCell(extractor: (IMessage) -> ObjectProperty<ZonedDateTime>) :
         GeneralCell<ZonedDateTime, ObjectProperty<ZonedDateTime>>(extractor,
-                { date: ObjectProperty<ZonedDateTime> -> Format.format(date.get()) })
+                { date: ObjectProperty<ZonedDateTime> -> Format.asDate(date.get()) })

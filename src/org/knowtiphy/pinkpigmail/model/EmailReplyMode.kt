@@ -3,7 +3,7 @@ package org.knowtiphy.pinkpigmail.model
 /**
  * @author graham
  */
-enum class ReplyMode
+enum class EmailReplyMode
 {
     TEXT,
     HTML,

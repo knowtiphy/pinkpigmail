@@ -77,6 +77,12 @@ object UIUtils
         return stage
     }
 
+    fun getStage(title : String, width: Double, height: Double): Stage
+    {
+        val stage = getStage(width, height)
+        stage.title = title
+        return stage
+    }
     fun later(x: () -> Unit) = Platform.runLater(x)
 
     fun boxIt(node: Node, color: Paint = Color.WHITE): GridPane

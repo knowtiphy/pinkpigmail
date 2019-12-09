@@ -5,12 +5,12 @@ import javafx.scene.control.ButtonType
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
 import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.pinkpigmail.model.EmailModelType
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.ModelType
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.Operation
+import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -62,9 +62,8 @@ object Actions
 //        stage.showAndWait()
     }
 
-    fun composeMail(mailAccount: IEmailAccount) = Operation.perform {
-        val model = mailAccount.getSendModel(ModelType.COMPOSE)
-        ComposeMessage.compose(model) { Operation.perform { model.send() } }
+    fun composeMail(mailAccount: IEmailAccount) = perform {
+        ComposeMessage.compose(mailAccount.getSendModel(EmailModelType.COMPOSE)) { it.send() }
     }
 
     fun markMessagesAsJunk(messages: List<IMessage>)
@@ -100,14 +99,13 @@ object Actions
         folder.deleteMessages(ArrayList(messages))
     }
 
-    fun replyToMessage(message: IMessage, all: Boolean) = Operation.perform {
-        val model = message.mailAccount.getReplyModel(message, if (all) ModelType.REPLY_ALL else ModelType.REPLY)
-        ComposeMessage.compose(model) { Operation.perform { model.send() } }
+    fun replyToMessage(message: IMessage, all: Boolean) = perform {
+        ComposeMessage.compose(message.mailAccount.getReplyModel(message,
+                if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY)) { it.send() }
     }
 
-    fun forwardMail(message: IMessage) = Operation.perform {
-        val model = message.mailAccount.getReplyModel(message, ModelType.FORWARD)
-        ComposeMessage.compose(model) { model.send() }
+    fun forwardMail(message: IMessage) = perform {
+        ComposeMessage.compose(message.mailAccount.getReplyModel(message, EmailModelType.FORWARD)) { it.send() }
     }
 
     fun saveAttachment(attachment: IAttachment)
@@ -152,5 +150,5 @@ object Actions
         }
     }
 
-    fun openAttachment(attachment: IAttachment) = Operation.perform { attachment.open() }
+    fun openAttachment(attachment: IAttachment) = perform { attachment.open() }
 }

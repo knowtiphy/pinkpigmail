@@ -45,7 +45,7 @@ interface IEmailAccount : ITreeItem, IAccount
     fun isTrustedProvider(url: String): Boolean
 
     @Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
-    fun getReplyModel(message: IMessage, modelType: ModelType): IMessageModel
+    fun getReplyModel(message: IMessage, modelType: EmailModelType): IMessageModel
 
-    fun getSendModel(modelType: ModelType): IMessageModel
+    fun getSendModel(modelType: EmailModelType): IMessageModel
 }

@@ -20,7 +20,8 @@ import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.pinkpigmail.util.ActionHelper
+import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.MappedFlipper
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
@@ -265,7 +266,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         val subjectCol = TableColumn<IMessage, IMessage>(Strings.SUBJECT)
         with(subjectCol) {
             setCellValueFactory(cellValueFactory)
-            setCellFactory { GeneralCell<String, StringProperty>({ it.subjectProperty }, { Format.format(it) }) }
+            setCellFactory { GeneralCell<String, StringProperty>({ it.subjectProperty }, { Format.asDate(it) }) }
             remainingWidth()
             prefWidth = 750.0
             comparator = UIUtils.cmp { it.subjectProperty.get() }

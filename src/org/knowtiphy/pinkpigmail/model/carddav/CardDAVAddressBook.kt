@@ -5,7 +5,7 @@ import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.StoredPeer
+import org.knowtiphy.owlorm.javafx.StoredPeer
 
 class CardDAVAddressBook(accountId: String, storage: IStorage) : StoredPeer(accountId, storage)
 {

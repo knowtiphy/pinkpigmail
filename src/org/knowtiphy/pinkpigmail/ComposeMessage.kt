@@ -15,8 +15,8 @@ import javafx.scene.web.HTMLEditor
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessageModel
-import org.knowtiphy.pinkpigmail.model.SendMode
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ActionHelper
@@ -68,10 +68,9 @@ object ComposeMessage
         return fileChooser.showOpenMultipleDialog(stage)
     }
 
-    fun compose(model: IMessageModel, send: () -> Unit)
+    fun compose(model: IMessageModel, send: (IMessageModel) -> Unit)
     {
-        val stage = UIUtils.getStage(800.0, 700.0)
-        stage.title = Strings.FROM + " : " + model.mailAccount.emailAddressProperty.get()
+        val stage = UIUtils.getStage(Strings.FROM + " : " + model.mailAccount.emailAddressProperty.get(), 800.0, 700.0)
 
         val toolBar = HBox()
         val root = VBox(header(model), toolBar)
@@ -81,7 +80,7 @@ object ComposeMessage
 
         when (model.sendMode)
         {
-            SendMode.TEXT ->
+            EmailSendMode.TEXT ->
             {
                 val editor = TextArea()
                 editor.text = model.contentProperty().get()
@@ -91,7 +90,7 @@ object ComposeMessage
                 root.children.add(editor)
                 sendAction = {
                     stage.close()
-                    send.invoke()
+                    send.invoke(model)
                 }
                 saveAction = {
                     try
@@ -103,7 +102,7 @@ object ComposeMessage
                     }
                 }
             }
-            SendMode.HTML ->
+            EmailSendMode.HTML ->
             {
                 val editor = HTMLEditor()
                 editor.htmlText = model.contentProperty().get()
@@ -128,7 +127,7 @@ object ComposeMessage
                 sendAction = {
                     stage.close()
                     model.contentProperty().set(editor.htmlText)
-                    send.invoke()
+                    send.invoke(model)
                 }
                 saveAction = {
                     model.contentProperty().set(editor.htmlText)
@@ -137,27 +136,21 @@ object ComposeMessage
             }
         }
 
-        val sendB = ButtonHelper
-                .regular(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
+        val sendB = ButtonHelper.regular(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
         val attachB = SplitMenuButton()
         attachB.setOnAction {
-            val files = attachFile(stage)
-            if (files != null)
-            {
-                for (f in files)
+            attachFile(stage)?.forEach { f ->
+                val attachment = OutgoingAttachment(f.toPath())
+                model.attachments.add(OutgoingAttachment(f.toPath()))
+                try
                 {
-                    val attachment = OutgoingAttachment(f.toPath())
-                    model.attachments.add(OutgoingAttachment(f.toPath()))
-                    try
-                    {
-                        attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
-                    } catch (ex: IOException)
-                    {
-                        Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-                    } catch (ex: StorageException)
-                    {
-                        Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-                    }
+                    attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
+                } catch (ex: IOException)
+                {
+                    Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
+                } catch (ex: StorageException)
+                {
+                    Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
                 }
             }
         }

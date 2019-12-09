@@ -15,17 +15,16 @@ object Format
 {
     fun formatN(o: Any?) = o?.toString() ?: ""
 
-    fun format(p: ObservableValue<*>) = formatN(p.value)
+    fun asDate(p: ObservableValue<*>) = formatN(p.value)
 
-    //  TODO -- this is wrong -- needs fixing -- a zoned date time is almost never now, but we only want the date part
-    fun format(date: ZonedDateTime?): String
+    fun asDate(zdt: ZonedDateTime?): String
     {
-        return when (date!!.toLocalDate())
+        return when (zdt!!.toLocalDate())
         {
             null -> ""
             LocalDate.now() -> Strings.TODAY
             LocalDate.now().minusDays(1) -> Strings.YESTERDAY
-            else -> date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+            else -> zdt.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
         }//	TODO -- settable formatting?
     }
 }

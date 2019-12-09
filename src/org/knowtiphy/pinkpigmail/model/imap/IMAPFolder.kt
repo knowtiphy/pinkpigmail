@@ -10,10 +10,10 @@ import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
+import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.StoredPeer
 
 /**
  * @author graham
@@ -63,7 +63,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
         } else
         {
             disable(messages)
-            storage.moveMessagesToJunk(mailAccount.id, id, ids, mailAccount?.junkFolder?.id, true)
+            storage.moveMessagesToJunk(mailAccount.id, id, ids, mailAccount.junkFolder?.id, true)
         }
     }
 
@@ -81,7 +81,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
             storage.deleteMessages(mailAccount.id, id, ids)
         } else
         {
-            storage.copyMessages(mailAccount.id, id, ids, mailAccount?.trashFolder?.id, true)
+            storage.copyMessages(mailAccount.id, id, ids, mailAccount.trashFolder?.id, true)
         }
     }
 

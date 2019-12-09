@@ -5,7 +5,7 @@ import java.util.logging.Logger
 
 class ErrorHandler : Thread.UncaughtExceptionHandler
 {
-    private val log = Logger.getLogger(ErrorHandler::class.qualifiedName)
+    private val LOGGER = Logger.getLogger(ErrorHandler::class.qualifiedName)
 
     @Suppress("unused")
     class ErrorEvent(val thread: Thread, val error: Throwable)
@@ -23,11 +23,11 @@ class ErrorHandler : Thread.UncaughtExceptionHandler
 
     override fun uncaughtException(thread: Thread, error: Throwable)
     {
-        log.log(Level.SEVERE, "Uncaught error", error)
+        LOGGER.log(Level.SEVERE, "Uncaught error", error)
 
         if (isCycle(error))
         {
-            log.log(Level.INFO, "Detected cycle handling error, aborting.", error)
+            LOGGER.log(Level.INFO, "Detected cycle handling error, aborting.", error)
         } else
         {
             val event = ErrorEvent(thread, error)

@@ -15,7 +15,7 @@ interface IMessageModel
 
     val copyTo: IFolder
 
-    val sendMode: SendMode
+    val sendMode: EmailSendMode
 
     val attachments: ObservableList<IAttachment>
 

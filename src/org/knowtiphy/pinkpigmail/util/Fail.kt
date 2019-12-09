@@ -20,9 +20,11 @@ import java.util.logging.Logger
  */
 object Fail
 {
+    private val LOGGER = Logger.getLogger(Fail::class.qualifiedName)
+
     fun failNoMessage(ex: Throwable)
     {
-        Logger.getLogger(Fail::class.java.name).log(Level.SEVERE, null, ex)
+        LOGGER.log(Level.SEVERE, null, ex)
     }
 
     fun fail(ex: Throwable)

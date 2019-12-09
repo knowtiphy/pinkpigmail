@@ -4,7 +4,7 @@ import com.calendarfx.model.Entry
 import org.apache.jena.rdf.model.Statement
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.pinkpigmail.model.StoredPeer
+import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.utils.JenaUtils
 import java.time.ZonedDateTime
 
@@ -29,10 +29,7 @@ class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
         //  calendarfx can't handle setting the end date before the start date
         if (startDate != null && endDate != null)
         {
-            event.changeStartDate(startDate!!.toLocalDate())
-            event.changeStartTime(startDate!!.toLocalTime())
-            event.changeEndDate(endDate!!.toLocalDate())
-            event.changeEndTime(endDate!!.toLocalTime())
+            event.setInterval(startDate, endDate);
         }
     }
 

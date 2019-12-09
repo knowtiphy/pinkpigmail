@@ -192,7 +192,7 @@ class MessageView(private val service: ExecutorService) : Flipper()
                             fromText.text = EmailAddress.format(message.mailAccount, message.from)
                             subjectText.text = Format.formatN(message.subjectProperty.get())
                             toText.text = EmailAddress.format(message.mailAccount, message.to)
-                            receivedOn.text = Format.format(message.receivedOnProperty.get())
+                            receivedOn.text = Format.asDate(message.receivedOnProperty.get())
 
                             try
                             {
