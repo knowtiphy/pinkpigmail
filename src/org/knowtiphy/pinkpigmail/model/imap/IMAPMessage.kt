@@ -117,8 +117,9 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
             try
             {
                 val resultSet = QueryExecutionFactory.create(Fetch.cidLocalNames(id), context.model).execSelect()
+                //  the local CID is a string not a URI -- it is unique within a message, but not across messages
                 resultSet.forEach {
-                    result[URL(it.get(Fetch.VAR_LOCAL_CID_PART_ID).asResource().toString())] = IMAPCIDPart(it.get(Fetch.VAR_CID_PART_ID).asResource().toString(), storage)
+                    result[URL(it.get(Fetch.VAR_LOCAL_CID_PART_ID).toString())] = IMAPCIDPart(it.get(Fetch.VAR_CID_PART_ID).asResource().toString(), storage)
                 }
             } finally
             {

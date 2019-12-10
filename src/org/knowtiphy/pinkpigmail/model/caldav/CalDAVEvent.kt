@@ -12,8 +12,8 @@ class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
     val event = Entry<String>("")
 
-    //  calendarfx can't handle setting the end date before the start date, so store them locally, and update when
-    //  we have both
+    //  calendarfx can't handle setting the end date before the start date, so store them locally, and update as
+    //  an interval when we have both
     private var startDate: ZonedDateTime? = null
     private var endDate: ZonedDateTime? = null
 
@@ -29,7 +29,7 @@ class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
         //  calendarfx can't handle setting the end date before the start date
         if (startDate != null && endDate != null)
         {
-            event.setInterval(startDate, endDate);
+            event.setInterval(startDate, endDate)
         }
     }
 
