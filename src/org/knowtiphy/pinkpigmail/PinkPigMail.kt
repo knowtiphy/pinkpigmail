@@ -41,7 +41,7 @@ import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ErrorHandler
-import org.knowtiphy.pinkpigmail.util.Operation
+import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import org.knowtiphy.pinkpigmail.util.ui.Flipper
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
@@ -130,7 +130,7 @@ class PinkPigMail : Application(), IStorageListener
 
         private val BEEP: AudioClip? = AudioClip(Resources::class.java.getResource("beep-29.wav").toString())
 
-        fun beep() = Operation.perform { BEEP?.play() }
+        fun beep() = perform { BEEP?.play() }
     }
 
     //  all UI model updates go through this code
@@ -144,7 +144,7 @@ class PinkPigMail : Application(), IStorageListener
 //        }
     }
 
-    private fun initTab(box: Node, icon: Glyph, label: StringProperty): Tab
+    private fun tabIt(box: Node, icon: Glyph, label: StringProperty): Tab
     {
         val tab = Tab()
         with(tab) {
@@ -163,18 +163,18 @@ class PinkPigMail : Application(), IStorageListener
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
         //  TODO -- the thread to update the requested time
-        rootTabPane.tabs.add(initTab(calendarView, Icons.calendar(Icons.DEFAULT_SIZE), account.nickNameProperty))
+        rootTabPane.tabs.add(tabIt(calendarView, Icons.calendar(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private fun addCardView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICardAccount)
     {
-        rootTabPane.tabs.add(initTab(resizeable(ContactView(account)),
+        rootTabPane.tabs.add(tabIt(resizeable(ContactView(account)),
                 Icons.book(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
     {
-        rootTabPane.tabs.add(initTab(resizeable(MailAccountView(primaryStage, account)),
+        rootTabPane.tabs.add(tabIt(resizeable(MailAccountView(primaryStage, account)),
                 Icons.mail(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 

@@ -9,6 +9,7 @@ class WaitSpinner(message : String): VBox()
 {
     init
     {
+        //children.add( Label(message))
         children.addAll(ProgressIndicator(), Label(message))
         spacing = 35.0
         alignment = Pos.CENTER

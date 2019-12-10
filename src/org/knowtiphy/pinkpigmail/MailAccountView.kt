@@ -94,43 +94,42 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         }
 
         //  message load-ahead
-        accountViewModel.entitySelected.filter { it.selectionModel!!.selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
+        // accountViewModel.entitySelected.filter { it.selectionModel!!.selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
 
         children.addAll(folderSpace)
     }
 
-    private fun loadAhead(fvm: CategoryViewModel<IFolder, IMessage>)
+    private fun loadAhead(fvm: CategoryViewModel<IFolder, IMessage>, total: List<IMessage>): List<IMessage>
     {
-        val model = fvm.selectionModel as TableView.TableViewSelectionModel<IMessage>
-        assert(model.selectedItems.isNotEmpty())
-
-        val pos = model.selectedIndices[model.selectedIndices.size - 1]
+        val pos = fvm.selectionModel!!.selectedIndices[fvm.selectionModel!!.selectedIndices.size - 1]
         //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
         //  load ahead radially 4 messages either side of pos
-        val n = model.tableView.items.size
-        println("Starting loadAhead")
+        val n = total.size
+        val result = ArrayList<IMessage>()
         for (i in 1 until 5)
         {
             val before = pos - i
             if (before in 0 until n)
             {
-                model.tableView.items[before].ensureContentLoaded(false)
+                result.add(total[before])
             }
             val after = pos + i
             if (after in 0 until n)
             {
-                model.tableView.items[after].ensureContentLoaded(false)
+                result.add(total[after])
             }
         }
+
+        return result
     }
 
-    private fun displayMessage(messages: List<IMessage>, messageView: MessageView)
+    private fun displayMessage(messages: List<IMessage>, total: List<IMessage>, fvm: CategoryViewModel<IFolder, IMessage>, messageView: MessageView)
     {
         if (messages.size == 1)
         {
             val message = messages[messages.size - 1]
             PinkPigMail.htmlState.message = message
-            messageView.setMessage(message)
+            messageView.setMessage(Pair(message, loadAhead(fvm, total)))
             //	don't mark junk as read
             if (message.mailAccount.isDisplayMessageMarksAsRead && !message.junkProperty.get())
             {
@@ -215,7 +214,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             {
                 if (c.wasAdded() && c.addedSize != 0)
                 {
-                    displayMessage(c.list, messageView)
+                    displayMessage(c.list,   view.items, fvm, messageView)
                 }
             }
         }
@@ -349,7 +348,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
         setVgrow(toolBar, Priority.NEVER)
         setVgrow(view, Priority.ALWAYS)
-        
+
         box.children.addAll(toolBar, view)
 
         return Pair(box, view)

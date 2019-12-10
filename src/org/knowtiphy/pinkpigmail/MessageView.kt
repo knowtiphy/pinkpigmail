@@ -1,6 +1,5 @@
 package org.knowtiphy.pinkpigmail
 
-import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.SimpleBooleanProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -24,10 +23,13 @@ import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.*
+import org.knowtiphy.pinkpigmail.util.ActionHelper
+import org.knowtiphy.pinkpigmail.util.Fail
+import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.Flipper
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.HTMLUtils
 import org.w3c.dom.Document
@@ -41,7 +43,7 @@ class MessageView(private val service: ExecutorService) : Flipper()
 {
     private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 
-    private val messageProperty = SimpleObjectProperty<IMessage?>()
+    private val messageProperty = SimpleObjectProperty<Pair<IMessage?, Collection<IMessage>>>()
 
     private val viewer = MailViewer()
     private val noMessageSelected = UIUtils.boxIt(Label(Strings.NO_MESSAGE_SELECTED))
@@ -59,12 +61,12 @@ class MessageView(private val service: ExecutorService) : Flipper()
 
     private val loadRemoteAction = ActionHelper.create(Icons.loadRemote(),
             {
-                (messageProperty.get() ?: return@create).loadRemoteProperty.set(true)
+                (messageProperty.get().first ?: return@create).loadRemoteProperty.set(true)
             }, Strings.LOAD_REMOTE_CONTENT)
 
     private val trustSenderAction = ActionHelper.create(Icons.trustSender(),
             {
-                val message = messageProperty.get() ?: return@create
+                val message = messageProperty.get().first ?: return@create
                 message.mailAccount.trustSender(message.from)
             }, Strings.TRUST_SENDER)
 
@@ -83,7 +85,7 @@ class MessageView(private val service: ExecutorService) : Flipper()
         if (document != null)
         {
             val message = messageProperty.get()!!
-            val account = message.mailAccount
+            val account = message.first!!.mailAccount
             trustContentMenu.items.clear()
             val externalRefs = HTMLUtils.computeExternalReferences(document)
             for (ref in externalRefs)
@@ -97,10 +99,10 @@ class MessageView(private val service: ExecutorService) : Flipper()
             }
 
             trustContentMenu.isDisable = externalRefs.isEmpty()
-            loadRemoteAction.disabledProperty().bind(Bindings.or(message.loadRemoteProperty,
-                    SimpleBooleanProperty(!message.isHTML || externalRefs.isEmpty())).or(
+            loadRemoteAction.disabledProperty().bind(Bindings.or(message.first!!.loadRemoteProperty,
+                    SimpleBooleanProperty(!message.first!!.isHTML || externalRefs.isEmpty())).or(
                     Bindings.createBooleanBinding(
-                            UIUtils.callable { account.isTrustedSender(message.from) }, account.trustedSenders)))
+                            UIUtils.callable { account.isTrustedSender(message.first!!.from) }, account.trustedSenders)))
         }
     }
 
@@ -114,7 +116,8 @@ class MessageView(private val service: ExecutorService) : Flipper()
         viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
             if (newState == Worker.State.SUCCEEDED)
             {
-                Platform.runLater { flip(messageSpace) }
+                later { flip(messageSpace) ;                         /*loadAhead(messageProperty.get().second)*/
+                }
             }
         }
 
@@ -156,17 +159,43 @@ class MessageView(private val service: ExecutorService) : Flipper()
         messageProperty.addListener { _ -> newMessage() }
     }
 
-    fun setMessage(message: IMessage)
+    fun setMessage(message: Pair<IMessage?, Collection<IMessage>>)
     {
         messageProperty.set(message)
     }
 
+    private fun loadAhead(messages : Collection<IMessage> )
+    {
+        //val pos = model.selectedIndices[model.selectedIndices.size - 1]
+        //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
+        //  load ahead radially 4 messages either side of pos
+       // val n = model.tableView.items.size
+        println("Starting loadAhead")
+        messages.forEach { it.ensureContentLoaded(false)}
+//        for (i in 1 until 5)
+//        {
+//            val before = pos - i
+//            if (before in 0 until n)
+//            {
+//                model.tableView.items[before].ensureContentLoaded(false)
+//            }
+//            val after = pos + i
+//            if (after in 0 until n)
+//            {
+//                model.tableView.items[after].ensureContentLoaded(false)
+//            }
+//        }
+    }
+
     private fun newMessage()
     {
-        val message = messageProperty.get()
+        val message = messageProperty.get().first
         if (message != null)
         {
+            println("FLIP Loading")
             flip(loading)
+            println("STARTING TASK")
+
             val task = object : Task<Void>()
             {
                 override fun call(): Void?
@@ -175,9 +204,10 @@ class MessageView(private val service: ExecutorService) : Flipper()
                     println("Client grabbing content :: " + message.id)
                     val part = message.getContent(account.allowHTMLProperty.get())
 
-                    Platform.runLater {
+                    later {
                         try
                         {
+                            println("Client GOT content :: " + message.id)
                             //  disable and clear trustContent menu until the load finishes
                             trustContentMenu.items.clear()
                             trustContentMenu.isDisable = true
@@ -194,42 +224,38 @@ class MessageView(private val service: ExecutorService) : Flipper()
                             toText.text = EmailAddress.format(message.mailAccount, message.to)
                             receivedOn.text = Format.asDate(message.receivedOnProperty.get())
 
-                            try
-                            {
-                                viewer.loadContent(part.content, part.mimeType)
+                            println("Client LOAD content :: " + message.id)
+                            viewer.loadContent(part.content, part.mimeType)
 
-                                //  call getAttachments() once because they do database queries so can be slow
-                                val attachments = message.attachments
-                                if (attachments.isEmpty())
-                                {
-                                    attachmentsMenu.isDisable = true
-                                } else
-                                {
-                                    attachmentsMenu.isDisable = false
-                                    attachmentsMenu.items.clear()
-                                    Attachments.viewSaveMenu(attachments, attachmentsMenu.items)
-                                }
-
-                                with(message) {
-                                    loadRemoteProperty.addListener { _ -> viewer.reload() }
-                                    account.trustedContentProviders.addListener { _: ListChangeListener.Change<out String> -> viewer.reload() }
-                                    account.trustedSenders.addListener { _: ListChangeListener.Change<out EmailAddress> -> viewer.reload() }
-                                    loadRemoteProperty.set(message.loadRemoteProperty.get() || account.isTrustedSender(message.from))
-                                }
-                            } catch (ex: Exception)
+                            println("Client LOAD ATTACHMENTS :: " + message.id)
+                            //  call getAttachments() once because they do database queries so can be slow
+                            val attachments = message.attachments
+                            if (attachments.isEmpty())
                             {
-                                //  TODO -- do something nicer here
-                                logger.warning(ex.localizedMessage)
-                                viewer.clear()
-                                Fail.fail(ex)
+                                attachmentsMenu.isDisable = true
+                            } else
+                            {
+                                attachmentsMenu.isDisable = false
+                                attachmentsMenu.items.clear()
+                                Attachments.viewSaveMenu(attachments, attachmentsMenu.items)
+                            }
+
+                            with(message) {
+                                loadRemoteProperty.addListener { _ -> viewer.reload() }
+                                account.trustedContentProviders.addListener { _: ListChangeListener.Change<out String> -> viewer.reload() }
+                                account.trustedSenders.addListener { _: ListChangeListener.Change<out EmailAddress> -> viewer.reload() }
+                                loadRemoteProperty.set(loadRemoteProperty.get() || account.isTrustedSender(from))
                             }
                         } catch (ex: Exception)
                         {
                             logger.warning(ex.localizedMessage)
+                            viewer.clear()
+                            Fail.fail(ex)
                         }
+
                     }
 
-                    return null
+                    return null;
                 }
             }
 

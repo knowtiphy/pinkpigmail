@@ -10,7 +10,7 @@ open class Flipper : StackPane()
 {
     fun flip(node: Node)
     {
-        children.remove(node)
+        children.clear()
         children.add(node)
     }
 
