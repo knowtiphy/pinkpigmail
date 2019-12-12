@@ -6,17 +6,12 @@ import javafx.scene.layout.StackPane
 /**
  * @author graham
  */
-open class Flipper : StackPane()
+open class Replacer : StackPane()
 {
     fun flip(node: Node)
     {
-        children.clear()
+        children.remove(node)
         children.add(node)
-    }
-
-    fun rotate()
-    {
-        flip(children.last())
     }
 }
 

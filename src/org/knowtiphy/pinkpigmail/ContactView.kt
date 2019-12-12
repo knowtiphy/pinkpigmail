@@ -14,12 +14,6 @@ import org.knowtiphy.pinkpigmail.model.ICardAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVCard
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVGroup
-import org.knowtiphy.pinkpigmail.resources.Icons
-import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.ActionHelper
-import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
-import org.knowtiphy.pinkpigmail.util.ui.MappedFlipper
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 
@@ -34,9 +28,9 @@ class ContactView(account: ICardAccount) : VBox()
         val accountView = createAccountView(pad)
         val toolBar = createToolBar(pad)
 
-        val folderViews = resizeable(MappedFlipper<CardDAVAddressBook>(pad.currentEntityProperty))
+       // val folderViews = resizeable(MappedReplacer<TreeItem<CardDAVAddressBook>>(pad.selectedCategory))
 
-        val folderArea = resizeable(SplitPane(accountView, folderViews))
+       // val folderArea = resizeable(SplitPane(accountView, folderViews))
 
         //  when an account folder is added to the accounts folder list add an item to the account view
         //  and add a folder view for the folder
@@ -69,11 +63,11 @@ class ContactView(account: ICardAccount) : VBox()
             }
         }
 
-        children.addAll(toolBar, folderArea)
-        setVgrow(toolBar, Priority.NEVER)
-        setVgrow(folderArea, Priority.ALWAYS)
-
-        folderArea.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+//        children.addAll(toolBar, folderArea)
+//        setVgrow(toolBar, Priority.NEVER)
+//        setVgrow(folderArea, Priority.ALWAYS)
+//
+//        folderArea.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
 
 //        //  TODO is this is necessary to try to work around a JavaFX bug with setting split pane positions?
 //        primaryStage.setOnShown {
@@ -86,29 +80,29 @@ class ContactView(account: ICardAccount) : VBox()
 
     private fun createToolBar(pad: AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>): Node
     {
-        val delete = ActionHelper.create(Icons.delete(),
-                {
-                    //  move to the next message
-                    val indices = pad.currentCategoryViewModel().selectionModel!!.selectedIndices
-                   // Actions.deleteMessages(pad.currentEntities())
-                    pad.currentCategoryViewModel().selectionModel!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
-                }, Strings.DELETE)
+//        val delete = ActionHelper.create(Icons.delete(),
+//                {
+//                    //  move to the next message
+//                    val indices = pad.currentCategoryViewModel().getSelectionModel()!!.selectedIndices
+//                   // Actions.deleteMessages(pad.currentEntities())
+//                    pad.currentCategoryViewModel().getSelectionModel()!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
+//                }, Strings.DELETE)
 
         // val singleMessageActions = arrayOf()//reply, replyAll, forward)
-        val multiMessageActions = arrayOf(delete)///, markJunk, markNotJunk)
+//        val multiMessageActions = arrayOf(delete)///, markJunk, markNotJunk)
 
         val toolBar = maxSizeable(HBox())
 
-        toolBar.children.addAll(UIUtils.hSpacer(), ButtonHelper.regular(delete), UIUtils.hSpacer())
+//        toolBar.children.addAll(UIUtils.hSpacer(), ButtonHelper.regular(delete), UIUtils.hSpacer())
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
 //        toolBar.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
 
         setVgrow(toolBar, Priority.NEVER)
 
-        pad.entitySelected.subscribe { fvm ->
-            //singleMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.size != 1) }
-            multiMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.isEmpty()) }
-        }
+//        pad.entitySelected.subscribe { fvm ->
+//            //singleMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.size != 1) }
+//            multiMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.isEmpty()) }
+//        }
 
         return toolBar
     }
@@ -137,7 +131,7 @@ class ContactView(account: ICardAccount) : VBox()
         val left = resizeable(ListView<CardDAVCard>(fvm.category.cards))
         left.setCellFactory { CardCell() }
 
-        fvm.selectionModel = left.selectionModel
+      //  fvm.setSelectionModel(left.selectionModel)
 
         val right = resizeable(VBox())//createPerAccountHeaderView(fvm, folder, messageView)
 

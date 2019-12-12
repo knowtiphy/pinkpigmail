@@ -27,7 +27,7 @@ import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
-import org.knowtiphy.pinkpigmail.util.ui.Flipper
+import org.knowtiphy.pinkpigmail.util.ui.Replacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
@@ -39,7 +39,7 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService) : Flipper()
+class MessageView(private val service: ExecutorService) : Replacer()
 {
     private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 

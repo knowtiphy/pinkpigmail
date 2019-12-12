@@ -1,44 +1,35 @@
 package org.knowtiphy.pinkpigmail
 
 import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.ObservableList
+import javafx.scene.control.MultipleSelectionModel
+import javafx.scene.control.TreeItem
 import org.reactfx.Change
-import org.reactfx.EventSource
 import org.reactfx.EventStream
 import org.reactfx.EventStreams
 
-//  the view-model for the account view
+//  the view-model for the account view -- so the account and its folders/calendars/etc
 class AccountViewModel<A, C, E>(val account: A)
 {
-    val currentEntityProperty = SimpleObjectProperty<C>()
+    //  TODO -- shouldn't be public -- Flipper mess
+    private val selectedCategory = SimpleObjectProperty<TreeItem<C>>()
 
-    private val categoryViewModels = HashMap<C, CategoryViewModel<C, E>>()
+    //  one selection model per category
+    private val selectionModels = HashMap<C, MultipleSelectionModel<E>?>()
 
-    //  event sources -- the selected category or entity changes
-    val categorySelected: EventStream<Change<C>> = EventStreams.changesOf(currentEntityProperty)
-    val entitySelected: EventSource<CategoryViewModel<C, E>> = EventSource()
+    //  event sources -- the selected category
+    val categorySelected: EventStream<Change<TreeItem<C>>> = EventStreams.changesOf(selectedCategory)
 
-    init
+    fun setCategory(category: TreeItem<C>)
     {
-        categorySelected.subscribe { entitySelected.push(currentCategoryViewModel()) }
+        println("SETTING CATEGORY FOR " + category.value)
+        selectedCategory.set(category)
     }
 
-    fun currentCategoryViewModel(): CategoryViewModel<C, E> = categoryViewModels[currentEntityProperty.get()]!!
-
-    fun addCategoryViewModel(category: C, model: CategoryViewModel<C, E>)
+    fun setSelectionModel(category: C, model: MultipleSelectionModel<E>)
     {
-        categoryViewModels[category] = model
+        selectionModels[category] = model
     }
 
-    fun currentEntities(): ObservableList<out E>
-    {
-        assert(currentCategoryViewModel().selectionModel!!.selectedItems.isNotEmpty())
-        return currentCategoryViewModel().selectionModel!!.selectedItems
-    }
-
-    fun currentEntity(): E
-    {
-        assert(currentCategoryViewModel().selectionModel!!.selectedItems.size == 1)
-        return currentCategoryViewModel().selectionModel!!.selectedItem
-    }
+    fun getSelectionModel(category: C) = selectionModels[category]!!
+    fun isNullSelectionModel(category: C) = selectionModels[category] == null
 }

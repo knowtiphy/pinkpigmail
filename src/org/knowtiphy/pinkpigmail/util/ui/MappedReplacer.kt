@@ -6,9 +6,9 @@ import javafx.scene.Node
 /**
  * @author graham
  */
-open class MappedFlipper<T>(whichProperty: Property<T>) : Flipper()
+open class MappedReplacer<T>(whichProperty: Property<T>) : Replacer()
 {
-    val nodes = HashMap<T, Node>()
+     val nodes = HashMap<T, Node>()
 
     init
     {
@@ -18,6 +18,7 @@ open class MappedFlipper<T>(whichProperty: Property<T>) : Flipper()
     fun addNode(key: T, node: Node)
     {
         nodes[key] = node;
-        children.add(node);
+        children.add(node)
+        flip(node)
     }
 }

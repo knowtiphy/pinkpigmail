@@ -11,6 +11,7 @@ import javafx.scene.Scene
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
@@ -42,7 +43,7 @@ import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ErrorHandler
 import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
-import org.knowtiphy.pinkpigmail.util.ui.Flipper
+import org.knowtiphy.pinkpigmail.util.ui.Replacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
@@ -103,7 +104,7 @@ class PinkPigMail : Application(), IStorageListener
         private val root = VBox(appToolBar, rootTabPane)
         private val bootPane = UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS))
         private val shutdownPane = UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS))
-        private val mainFlipper = Flipper()
+        private val mainFlipper = Replacer()
 
         init
         {
@@ -136,12 +137,12 @@ class PinkPigMail : Application(), IStorageListener
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model)
     {
-        PeerState.delta(added, deleted)
-//        PeerState.delta(added, deleted) {
-//            //   it.subject.toString().contains("orange") &&
-//            it.predicate.toString().contains("type")//|| it.`object`.toString().contains("CARD")
-//            //  && it.`object`.toString().contains("Event")
-//        }
+      //  PeerState.delta(added, deleted)
+        PeerState.delta(added, deleted) {
+            //   it.subject.toString().contains("orange") &&
+            it.`object`.toString().contains("2c809517-316a-4aa7-968f-e29178f7c244")//|| it.`object`.toString().contains("CARD")
+            //  && it.`object`.toString().contains("Event")
+        }
     }
 
     private fun tabIt(box: Node, icon: Glyph, label: StringProperty): Tab
@@ -150,6 +151,7 @@ class PinkPigMail : Application(), IStorageListener
         with(tab) {
             content = box
             graphic = icon
+            textProperty().bind(label)
             textProperty().bind(label)
             closableProperty().set(false)
         }
@@ -197,7 +199,7 @@ class PinkPigMail : Application(), IStorageListener
     private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
     {
         Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
-        mainFlipper.flip(bootPane)
+      //  mainFlipper.flip(bootPane)
         Thread {
             try
             {
@@ -229,7 +231,7 @@ class PinkPigMail : Application(), IStorageListener
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
         URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
-        listOf(rootTabPane, root, bootPane, shutdownPane, mainFlipper).forEach { resizeable(it) }
+        listOf(rootTabPane, root, shutdownPane, bootPane, mainFlipper).forEach { resizeable(it) }
 
         VBox.setVgrow(rootTabPane, Priority.ALWAYS)
         VBox.setVgrow(appToolBar, Priority.NEVER)
@@ -259,7 +261,8 @@ class PinkPigMail : Application(), IStorageListener
         //  sync and switch to main pane when done
         Thread {
             storage.addListener(this).forEach { it.value.get() }
-            later { mainFlipper.flip(root) }
+            later { ((bootPane.children.get(0) as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
+                mainFlipper.flip(root) }
         }.start()
 
         primaryStage.show()

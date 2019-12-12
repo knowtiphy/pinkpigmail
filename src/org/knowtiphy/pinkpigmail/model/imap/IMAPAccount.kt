@@ -215,6 +215,15 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 
         folder.accountProperty.set(this)
 
+        if(folder.isInboxProperty.get())
+            inbox = folder;
+        if(folder.isJunkProperty.get())
+            junkFolder = folder
+        if(folder.isTrashProperty.get())
+            trashFolder = folder;
+        if(folder.isSentProperty.get())
+            sentFolder = folder;
+
         folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
         folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
         folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }

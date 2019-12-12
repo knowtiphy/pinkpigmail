@@ -3,6 +3,7 @@ package org.knowtiphy.pinkpigmail
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
+import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ListChangeListener
 import javafx.collections.transformation.SortedList
@@ -23,7 +24,7 @@ import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
-import org.knowtiphy.pinkpigmail.util.ui.MappedFlipper
+import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
@@ -38,11 +39,11 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
     init
     {
-        val p = createFoldersList()
-        val foldersList = p.second
-
+        val folderList = createFoldersList()
+        val foo = SimpleObjectProperty<TreeItem<IFolder>>()
         //  the folder flipper that shows the current folder view to the right of the folder list
-        val folderViewFlipper = resizeable(MappedFlipper<IFolder>(accountViewModel.currentEntityProperty))
+        val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>(foo))
+        accountViewModel.categorySelected.subscribe { foo.set(it.newValue) }
 
         //  when a folder is added to the account's folder list add an item to folder list on the left, and
         //  add a per folder view to the folder flipper
@@ -51,17 +52,17 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             while (c.next())
             {
                 c.addedSubList.forEach { folder ->
-                    val fvm = CategoryViewModel<IFolder, IMessage>(folder)
+                    //val fvm = CategoryViewModel<IFolder, IMessage>(folder)
 
-                    accountViewModel.addCategoryViewModel(folder, fvm)
                     val treeItem = TreeItem<IFolder>(folder)
                     foldersRoot.children.add(treeItem)
 
-                    val folderView = createFolderView(fvm)
+                    val folderView = createFolderView(treeItem)
+                    folderViewFlipper.addNode(treeItem, folderView)
+                    println(folderViewFlipper.nodes)
 
                     //  publish events -- new message selected
-                    EventStreams.changesOf((fvm.selectionModel
-                            ?: return@forEach).selectedIndices).subscribe { accountViewModel.entitySelected.push(fvm) }
+                    //   fvm.entitySelected.subscribe { accountViewModel.getCategoryViewModel()!!.entitySelected.set(fvm) })
 
                     //  event streams for the folder becoming an inbox
                     val inBoxSet = EventStreams.changesOf(folder.isInboxProperty)
@@ -70,18 +71,22 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
                     val unreadCountChanged = EventStreams.changesOf(folder.unreadMessageCountProperty)
                             .filter { c -> c.newValue.toInt() > c.oldValue.toInt() }
 
+                    if (folder.isInboxProperty.get())
+                    {
+                        println("setting category for " + ((folder as IFolder).nameProperty.get()))
+                        accountViewModel.setCategory(treeItem)
+                    }
+
                     //  if the folder becomes an inbox select it
-                    inBoxSet.subscribe { if (it.newValue) foldersList.selectionModel.select(treeItem) }
+                    inBoxSet.subscribe { if (it.newValue) accountViewModel.setCategory(treeItem) }
                     //  if the folder becomes and inbox and has unread messages, beep
                     EventStreams.combine(inBoxSet, unreadCountChanged).subscribe { println("GOT UNREAD MAIL "); PinkPigMail.beep(); }
-
-                    folderViewFlipper.addNode(folder, folderView)
                 }
             }
         }
 
         //  the folder space below the tool bar
-        val folderSpace = resizeable(SplitPane(p.first, folderViewFlipper))
+        val folderSpace = resizeable(SplitPane(folderList, folderViewFlipper))
         setVgrow(folderSpace, Priority.ALWAYS)
         folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
 
@@ -94,14 +99,14 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         }
 
         //  message load-ahead
-        // accountViewModel.entitySelected.filter { it.selectionModel!!.selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
+        // accountViewModel.entitySelected.filter { it.getSelectionModel(folder).selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
 
         children.addAll(folderSpace)
     }
 
-    private fun loadAhead(fvm: CategoryViewModel<IFolder, IMessage>, total: List<IMessage>): List<IMessage>
+    private fun loadAhead(folder: IFolder, total: List<IMessage>): List<IMessage>
     {
-        val pos = fvm.selectionModel!!.selectedIndices[fvm.selectionModel!!.selectedIndices.size - 1]
+        val pos = accountViewModel.getSelectionModel(folder).selectedIndices[accountViewModel.getSelectionModel(folder).selectedIndices.size - 1]
         //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
         //  load ahead radially 4 messages either side of pos
         val n = total.size
@@ -123,13 +128,13 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         return result
     }
 
-    private fun displayMessage(messages: List<IMessage>, total: List<IMessage>, fvm: CategoryViewModel<IFolder, IMessage>, messageView: MessageView)
+    private fun displayMessage(folder: IFolder, messages: List<IMessage>, total: List<IMessage>, messageView: MessageView)
     {
         if (messages.size == 1)
         {
             val message = messages[messages.size - 1]
             PinkPigMail.htmlState.message = message
-            messageView.setMessage(Pair(message, loadAhead(fvm, total)))
+            messageView.setMessage(Pair(message, loadAhead(folder, total)))
             //	don't mark junk as read
             if (message.mailAccount.isDisplayMessageMarksAsRead && !message.junkProperty.get())
             {
@@ -139,7 +144,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     }
 
     //  create the tool bar at the top of the view
-    private fun createToolBar(): HBox
+    private fun createToolBar(folder: IFolder): HBox
     {
 //        val config = ActionHelper.create(Icons.configure(),
 //                { Actions.configureAccount(pad.mailAccount) }, Strings.CONFIGURE_ACCOUNT, false)
@@ -148,25 +153,25 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 //                    val p = pad.currentFolderViewModel().visiblePerspective
 //                    p.set(if (p.get() == FolderSettings.HORIZONTAL_VIEW) FolderSettings.VERTICAL_VIEW else FolderSettings.HORIZONTAL_VIEW)
 //                }, Strings.SWITCH_HORIZONTAL, false)
-        val reply = ActionHelper.create(Icons.reply(), { Actions.replyToMessage(accountViewModel.currentEntity(), false) }, Strings.REPLY)
-        val replyAll = ActionHelper.create(Icons.replyAll(), { Actions.replyToMessage(accountViewModel.currentEntity(), true) }, Strings.REPLY_ALL)
-        val forward = ActionHelper.create(Icons.forward(), { Actions.forwardMail(accountViewModel.currentEntity()) }, Strings.FORWARD)
+        val reply = ActionHelper.create(Icons.reply(), { Actions.replyToMessage(accountViewModel.getSelectionModel(folder).selectedItem, false) }, Strings.REPLY)
+        val replyAll = ActionHelper.create(Icons.replyAll(), { Actions.replyToMessage(accountViewModel.getSelectionModel(folder).selectedItem, true) }, Strings.REPLY_ALL)
+        val forward = ActionHelper.create(Icons.forward(), { Actions.forwardMail(accountViewModel.getSelectionModel(folder).selectedItem) }, Strings.FORWARD)
         val delete = ActionHelper.create(Icons.delete(),
                 {
                     //  move to the next message
-                    val indices = accountViewModel.currentCategoryViewModel().selectionModel!!.selectedIndices
-                    Actions.deleteMessages(accountViewModel.currentEntities())
-                    accountViewModel.currentCategoryViewModel().selectionModel!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
+                    val indices = accountViewModel.getSelectionModel(folder).selectedIndices
+                    Actions.deleteMessages(accountViewModel.getSelectionModel(folder).selectedItems)
+                    accountViewModel.getSelectionModel(folder).clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
                 }, Strings.DELETE)
         val markJunk = ActionHelper.create(Icons.markJunk(),
                 {
                     //  move to the next message
-                    val indices = accountViewModel.currentCategoryViewModel().selectionModel!!.selectedIndices
-                    Actions.markMessagesAsJunk(accountViewModel.currentEntities())
-                    accountViewModel.currentCategoryViewModel().selectionModel!!.clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
+                    val indices = accountViewModel.getSelectionModel(folder).selectedIndices
+                    Actions.markMessagesAsJunk(accountViewModel.getSelectionModel(folder).selectedItems)
+                    accountViewModel.getSelectionModel(folder).clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
                 }, Strings.MARK_JUNK)
         val markNotJunk = ActionHelper.create(Icons.markNotJunk(),
-                { Actions.markMessagesAsNotJunk(accountViewModel.currentEntities()) }, Strings.MARK_NOT_JUNK)
+                { Actions.markMessagesAsNotJunk(accountViewModel.getSelectionModel(folder).selectedItems) }, Strings.MARK_NOT_JUNK)
 
         val singleMessageActions = arrayOf(reply, replyAll, forward)
         val multiMessageActions = arrayOf(delete, markJunk, markNotJunk)
@@ -185,36 +190,42 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         toolBar.children.addAll(UIUtils.hSpacer(), middleButtons, UIUtils.hSpacer())
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
 
-        accountViewModel.entitySelected.subscribe { fvm ->
-            singleMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.size != 1) }
-            multiMessageActions.forEach { it.disabledProperty().set(fvm.selectionModel!!.selectedIndices.isEmpty()) }
+        accountViewModel.getSelectionModel(folder).selectedIndices.addListener { c: ListChangeListener.Change<out Int> ->
+            println("SET BUTTONS")
+            while (c.next())
+            {
+                singleMessageActions.forEach { it.disabledProperty().set(c.list.size != 1) }
+                multiMessageActions.forEach { it.disabledProperty().set(c.list.isEmpty()) }
+            }
         }
 
         return toolBar
     }
 
     //  the message list for one folder perspective
-    private fun createFolderMessageList(fvm: CategoryViewModel<IFolder, IMessage>, messageView: MessageView): TableView<IMessage>
+    private fun createFolderMessageList(folder: IFolder, messageView: MessageView): TableView<IMessage>
     {
         val view = resizeable(TableView<IMessage>())
+        view.selectionModel.selectionMode = SelectionMode.MULTIPLE
 
         view.columnResizePolicy = SmartResize.POLICY
 
-        if (fvm.selectionModel == null)
+        if (accountViewModel.isNullSelectionModel(folder))
         {
-            view.selectionModel.selectionMode = SelectionMode.MULTIPLE
-            fvm.selectionModel = view.selectionModel
+            accountViewModel.setSelectionModel(folder, view.selectionModel)
         } else
         {
-            view.selectionModel = fvm.selectionModel as TableView.TableViewSelectionModel<IMessage>
+            view.setSelectionModel(accountViewModel.getSelectionModel(folder) as TableView.TableViewSelectionModel<IMessage>)
         }
+
+        // accountViewModel.addCategory(folder)
 
         view.selectionModel.selectedItems.addListener { c: ListChangeListener.Change<out IMessage> ->
             while (c.next())
             {
                 if (c.wasAdded() && c.addedSize != 0)
                 {
-                    displayMessage(c.list,   view.items, fvm, messageView)
+                    displayMessage(folder, c.list, view.items, messageView)
                 }
             }
         }
@@ -247,7 +258,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         val fromColumn = TableColumn<IMessage, IMessage>(Strings.FROM)
         fromColumn.setCellValueFactory(cellValueFactory)
         with(fromColumn) {
-            setCellFactory { AddressCell(fvm.category.accountProperty.get()) { it.from } }
+            setCellFactory { AddressCell(accountViewModel.account) { it.from } }
             prefWidth = 300.0
             //  TODO
             comparator = UIUtils.cmp { it.from[0] }
@@ -259,7 +270,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             setCellFactory { DateCell { it.receivedOnProperty } }
             prefWidth = 200.0
             comparator = UIUtils.cmp { it.receivedOnProperty.get() }
-            sortType = TableColumn.SortType.ASCENDING
+            sortType = TableColumn.SortType.DESCENDING
         }
 
         val subjectCol = TableColumn<IMessage, IMessage>(Strings.SUBJECT)
@@ -275,7 +286,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
         // sort on date received
         view.sortOrder.add(receivedCol)
-        val sortedList = SortedList(fvm.category.messages)
+        val sortedList = SortedList(folder.messages)
         sortedList.comparatorProperty().bind(view.comparatorProperty())
         view.items = sortedList
 
@@ -283,20 +294,20 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     }
 
     //  create a perspective of one folder
-    private fun createFolderPerspective(fvm: CategoryViewModel<IFolder, IMessage>, @Suppress("SameParameterValue") orientation: Orientation): SplitPane
+    private fun createFolderPerspective(folder: TreeItem<IFolder>, @Suppress("SameParameterValue") orientation: Orientation): SplitPane
     {
         val messageView = resizeable(MessageView(PinkPigMail.service))
-        val splitPane = resizeable(SplitPane(createFolderMessageList(fvm, messageView), messageView))
+        val splitPane = resizeable(SplitPane(createFolderMessageList(folder.value, messageView), messageView))
         splitPane.orientation = orientation
         return splitPane
     }
 
     //  create a view of one folder -- a flipper of different folder perspectives
-    private fun createFolderView(fvm: CategoryViewModel<IFolder, IMessage>): VBox
+    private fun createFolderView(folder: TreeItem<IFolder>): VBox
     {
-        val fSettings = PinkPigMail.uiSettings.getFolderSettings(fvm.category)
+        val fSettings = PinkPigMail.uiSettings.getFolderSettings(folder.value)
 
-        val hPerspective = createFolderPerspective(fvm, Orientation.VERTICAL)
+        val hPerspective = createFolderPerspective(folder, Orientation.VERTICAL)
         //  val vPerspective = createFolderPerspective(fvm, folder, Orientation.HORIZONTAL)
 
         //  this is horrible
@@ -315,7 +326,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 //        //  set the default view type
 ////        fvm.visiblePerspective.set(fSettings.viewType)
 
-        val toolBar = maxSizeable(createToolBar())
+        val toolBar = maxSizeable(createToolBar(folder.value))
         setVgrow(toolBar, Priority.NEVER)
 
         setVgrow(hPerspective, Priority.ALWAYS)
@@ -327,16 +338,28 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     }
 
     //  the tree view of folders on the left
-    private fun createFoldersList(): Pair<VBox, TreeView<IFolder>>
+    private fun createFoldersList(): VBox
     {
         val view = resizeable(TreeView(foldersRoot))
         view.isShowRoot = false
         view.setCellFactory { FolderCell() }
 
-        //  publish events -- new folder selected (single selection model)
-        EventStreams.changesOf(view.selectionModel.selectedItems)
-                .filter { it.list.size == 1 }
-                .subscribe { accountViewModel.currentEntityProperty.set(it.list[0].value) }
+        //  new folder selected (single selection model)
+        view.selectionModel.selectedItems.addListener { c: ListChangeListener.Change<out TreeItem<IFolder>> ->
+            while (c.next())
+            {
+                if (c.wasAdded() && c.addedSize == 1)
+                {
+                    println("Selection changed to " + ((c.addedSubList[0].value as IFolder).nameProperty.get()))
+                    accountViewModel.setCategory(c.addedSubList[0])
+                }
+            }
+        }
+
+        accountViewModel.categorySelected.subscribe {
+            println("Setting view selection model to " + ((it.newValue.value) as IFolder).nameProperty.get())
+            view.selectionModel.select(it.newValue)
+        }
 
         val box = resizeable(VBox())
 
@@ -351,6 +374,6 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
         box.children.addAll(toolBar, view)
 
-        return Pair(box, view)
+        return box
     }
 }
