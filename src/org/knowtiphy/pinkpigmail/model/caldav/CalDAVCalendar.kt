@@ -21,8 +21,7 @@ class CalDAVCalendar(id: String, storage: IStorage) : StoredPeer(id, storage)
 
     private fun addEvent(stmt: Statement)
     {
-        System.out.println(stmt);
-        (PeerState.peer(stmt.getObject().asResource())!! as CalDAVEvent).setCalendar(this);
+        calendar.addEntry((PeerState.peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
     }
 
     private fun deleteEvent(stmt: Statement)

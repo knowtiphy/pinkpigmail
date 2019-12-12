@@ -10,7 +10,6 @@ import java.time.ZonedDateTime
 
 class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
-    private var calendar: CalDAVCalendar? = null
     val event = Entry<String>("")
 
     //  calendarfx can't handle setting the end date before the start date, so store them locally, and update as
@@ -29,10 +28,9 @@ class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
     {
         //  calendarfx can't handle setting the end date before the start date
         //  it also can't handle adding an event with no date
-        if (startDate != null && endDate != null && calendar != null)
+        if (startDate != null && endDate != null)
         {
             event.setInterval(startDate, endDate)
-            calendar!!.calendar.addEntry(event)
         }
     }
 
@@ -45,14 +43,6 @@ class CalDAVEvent(id: String, storage: IStorage) : StoredPeer(id, storage)
     private fun setEndDate(stmt: Statement)
     {
         endDate = JenaUtils.getLDT(stmt.literal)
-        update()
-    }
-
-    fun setCalendar(calendar: CalDAVCalendar)
-    {
-        //  only set it once
-        assert(this.calendar == null)
-        this.calendar = calendar
         update()
     }
 }
