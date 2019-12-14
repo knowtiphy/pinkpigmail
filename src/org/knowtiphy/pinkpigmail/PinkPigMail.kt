@@ -11,11 +11,9 @@ import javafx.scene.Scene
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
-import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
-import javafx.scene.media.AudioClip
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import org.apache.jena.rdf.model.Model
@@ -39,10 +37,8 @@ import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.imap.IMAPFolder
 import org.knowtiphy.pinkpigmail.model.imap.IMAPMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
-import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ErrorHandler
-import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import org.knowtiphy.pinkpigmail.util.ui.Replacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
@@ -50,6 +46,7 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
+import org.reactfx.EventSource
 import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
@@ -85,6 +82,7 @@ class PinkPigMail : Application(), IStorageListener
         private const val UI_FILE = "ui.ttl"
         private const val STYLE_SHEET = "styles.css"
 
+        val synched = EventSource<IAccount>()
         val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
         val storage: IStorage by lazy {
@@ -100,11 +98,11 @@ class PinkPigMail : Application(), IStorageListener
         val htmlState = HTMLState()
 
         private val appToolBar = HBox()
-        private val rootTabPane = TabPane()
-        private val root = VBox(appToolBar, rootTabPane)
-        private val bootPane = UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS))
-        private val shutdownPane = UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS))
-        private val mainFlipper = Replacer()
+        private val rootTabPane = resizeable(TabPane())
+        private val root = resizeable(VBox(appToolBar, rootTabPane))
+        private val bootPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS)))
+        private val shutdownPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS)))
+        private val mainFlipper = resizeable(Replacer())
 
         init
         {
@@ -128,16 +126,12 @@ class PinkPigMail : Application(), IStorageListener
         }
 
         val service: ExecutorService = Executors.newCachedThreadPool()
-
-        private val BEEP: AudioClip? = AudioClip(Resources::class.java.getResource("beep-29.wav").toString())
-
-        fun beep() = perform { BEEP?.play() }
     }
 
     //  all UI model updates go through this code
     override fun delta(added: Model, deleted: Model)
     {
-      //  PeerState.delta(added, deleted)
+        //  PeerState.delta(added, deleted)
         PeerState.delta(added, deleted) {
             //   it.subject.toString().contains("orange") &&
             it.`object`.toString().contains("2c809517-316a-4aa7-968f-e29178f7c244")//|| it.`object`.toString().contains("CARD")
@@ -199,7 +193,6 @@ class PinkPigMail : Application(), IStorageListener
     private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
     {
         Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
-      //  mainFlipper.flip(bootPane)
         Thread {
             try
             {
@@ -231,8 +224,6 @@ class PinkPigMail : Application(), IStorageListener
         Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
         URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
-        listOf(rootTabPane, root, shutdownPane, bootPane, mainFlipper).forEach { resizeable(it) }
-
         VBox.setVgrow(rootTabPane, Priority.ALWAYS)
         VBox.setVgrow(appToolBar, Priority.NEVER)
 
@@ -261,8 +252,12 @@ class PinkPigMail : Application(), IStorageListener
         //  sync and switch to main pane when done
         Thread {
             storage.addListener(this).forEach { it.value.get() }
-            later { ((bootPane.children.get(0) as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
-                mainFlipper.flip(root) }
+            //  synch has finished -- publish an event for it
+            accounts.forEach { later { synched.push(it) } }
+            later {
+                //((bootPane.children[0] as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
+                mainFlipper.flip(root)
+            }
         }.start()
 
         primaryStage.show()

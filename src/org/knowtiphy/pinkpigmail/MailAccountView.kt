@@ -3,8 +3,8 @@ package org.knowtiphy.pinkpigmail
 import javafx.application.Platform
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.StringProperty
+import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.collections.transformation.SortedList
 import javafx.geometry.Insets
@@ -28,7 +28,6 @@ import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
-import org.reactfx.EventStreams
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
 
@@ -36,14 +35,25 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 {
     private val accountViewModel = AccountViewModel<IEmailAccount, IFolder, IMessage>(account)
     private val foldersRoot = TreeItem<IFolder>()
+    private var inboxTreeItem: TreeItem<IFolder>? = null
+
+    //  the folder list on the left
+    private val folderList = createFoldersList()
+
+    //  the folder flipper that shows the current folder view to the right of the folder list
+    private val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>())
+
+    //  the folder space below the tool bar
+    private val folderSpace = resizeable(SplitPane(folderList, folderViewFlipper))
 
     init
     {
-        val folderList = createFoldersList()
-        val foo = SimpleObjectProperty<TreeItem<IFolder>>()
-        //  the folder flipper that shows the current folder view to the right of the folder list
-        val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>(foo))
-        accountViewModel.categorySelected.subscribe { foo.set(it.newValue) }
+        setVgrow(folderSpace, Priority.ALWAYS)
+        folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+        children.addAll(folderSpace)
+
+        //  when a new folder is selected flip to it's view
+        accountViewModel.categorySelected.subscribe { folderViewFlipper.whichProperty.set(it.newValue) }
 
         //  when a folder is added to the account's folder list add an item to folder list on the left, and
         //  add a per folder view to the folder flipper
@@ -52,45 +62,22 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             while (c.next())
             {
                 c.addedSubList.forEach { folder ->
-                    //val fvm = CategoryViewModel<IFolder, IMessage>(folder)
-
                     val treeItem = TreeItem<IFolder>(folder)
                     foldersRoot.children.add(treeItem)
-
+                    if (folder.isInboxProperty.get())
+                    {
+                        inboxTreeItem = treeItem
+                    }
                     val folderView = createFolderView(treeItem)
                     folderViewFlipper.addNode(treeItem, folderView)
-                    println(folderViewFlipper.nodes)
 
                     //  publish events -- new message selected
                     //   fvm.entitySelected.subscribe { accountViewModel.getCategoryViewModel()!!.entitySelected.set(fvm) })
-
-                    //  event streams for the folder becoming an inbox
-                    val inBoxSet = EventStreams.changesOf(folder.isInboxProperty)
-
-                    //  event stream for the folder increasing its unread message count
-                    val unreadCountChanged = EventStreams.changesOf(folder.unreadMessageCountProperty)
-                            .filter { c -> c.newValue.toInt() > c.oldValue.toInt() }
-
-                    if (folder.isInboxProperty.get())
-                    {
-                        println("setting category for " + ((folder as IFolder).nameProperty.get()))
-                        accountViewModel.setCategory(treeItem)
-                    }
-
-                    //  if the folder becomes an inbox select it
-                    inBoxSet.subscribe { if (it.newValue) accountViewModel.setCategory(treeItem) }
-                    //  if the folder becomes and inbox and has unread messages, beep
-                    EventStreams.combine(inBoxSet, unreadCountChanged).subscribe { println("GOT UNREAD MAIL "); PinkPigMail.beep(); }
                 }
             }
         }
 
-        //  the folder space below the tool bar
-        val folderSpace = resizeable(SplitPane(folderList, folderViewFlipper))
-        setVgrow(folderSpace, Priority.ALWAYS)
-        folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
-
-        //  TODO is this is necessary to try to work around a JavaFX bug with setting split pane positions?
+        //  TODO -- this is necessary (is it still necessary?) to try to work around a JavaFX bug with setting split pane positions?
         stage.setOnShown {
             Platform.runLater {
                 folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
@@ -101,7 +88,17 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         //  message load-ahead
         // accountViewModel.entitySelected.filter { it.getSelectionModel(folder).selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
 
-        children.addAll(folderSpace)
+        //  on synch finished set the view to the inbox, beep if there are unread messages in the inbox, and
+        //  set up beeping on any new messages arriving in the inbox
+        PinkPigMail.synched.filter { it == account }.subscribe {
+            accountViewModel.setCategory(inboxTreeItem!!)
+            val inbox = inboxTreeItem!!.value
+            if (inbox.unreadMessageCountProperty.get() > 0)
+                Beep.beep()
+            inbox.unreadMessageCountProperty.addListener { _: ObservableValue<out Number>, oldV: Number, newV: Number ->
+                if (newV.toInt() > oldV.toInt()) Beep.beep()
+            }
+        }
     }
 
     private fun loadAhead(folder: IFolder, total: List<IMessage>): List<IMessage>

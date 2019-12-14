@@ -1,14 +1,16 @@
 package org.knowtiphy.pinkpigmail.util.ui
 
-import javafx.beans.property.Property
+import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.Node
 
 /**
  * @author graham
  */
-open class MappedReplacer<T>(whichProperty: Property<T>) : Replacer()
+open class MappedReplacer<T>() : Replacer()
 {
-     val nodes = HashMap<T, Node>()
+    val whichProperty = SimpleObjectProperty<T>()
+
+    private val nodes = HashMap<T, Node>()
 
     init
     {
@@ -17,7 +19,7 @@ open class MappedReplacer<T>(whichProperty: Property<T>) : Replacer()
 
     fun addNode(key: T, node: Node)
     {
-        nodes[key] = node;
+        nodes[key] = node
         children.add(node)
         flip(node)
     }
