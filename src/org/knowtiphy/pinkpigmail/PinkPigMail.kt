@@ -206,7 +206,9 @@ class PinkPigMail : Application(), IStorageListener
             //  shutdown the storage layer
             try
             {
+                println("CLOSING")
                 storage.close()
+                println("CLOSED")
             } catch (ex: Exception)
             {
                 ex.printStackTrace()
@@ -253,6 +255,7 @@ class PinkPigMail : Application(), IStorageListener
         Thread {
             storage.addListener(this).forEach { it.value.get() }
             //  synch has finished -- publish an event for it
+            println("SYNCH IS DONE")
             accounts.forEach { later { synched.push(it) } }
             later {
                 //((bootPane.children[0] as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;

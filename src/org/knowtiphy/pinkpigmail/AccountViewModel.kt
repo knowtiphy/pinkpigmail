@@ -1,5 +1,6 @@
 package org.knowtiphy.pinkpigmail
 
+import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.control.MultipleSelectionModel
 import javafx.scene.control.TreeItem
@@ -10,7 +11,7 @@ import org.reactfx.EventStreams
 //  the view-model for the account view -- so the account and its folders/calendars/etc
 class AccountViewModel<A, C, E>(val account: A)
 {
-    //  TODO -- shouldn't be public -- Flipper mess
+    //  the currently selected folder
     private val selectedCategory = SimpleObjectProperty<TreeItem<C>>()
 
     //  one selection model per category
@@ -19,9 +20,10 @@ class AccountViewModel<A, C, E>(val account: A)
     //  event sources -- the selected category
     val categorySelected: EventStream<Change<TreeItem<C>>> = EventStreams.changesOf(selectedCategory)
 
+    fun selectedCategoryProperty(): ReadOnlyObjectProperty<TreeItem<C>> = selectedCategory
+
     fun setCategory(category: TreeItem<C>)
     {
-        println("SETTING CATEGORY FOR " + category.value)
         selectedCategory.set(category)
     }
 

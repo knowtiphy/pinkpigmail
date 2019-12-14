@@ -40,8 +40,8 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
     var trashFolder: IMAPFolder? = null
     var junkFolder: IMAPFolder? = null
     var inbox: IMAPFolder? = null
-    protected var sentFolder: IMAPFolder? = null
-    protected var draftsFolder: IMAPFolder? = null
+    var sentFolder: IMAPFolder? = null
+    var draftsFolder: IMAPFolder? = null
 
     private val setting = AccountSettings()
 
@@ -216,13 +216,13 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
         folder.accountProperty.set(this)
 
         if(folder.isInboxProperty.get())
-            inbox = folder;
+            inbox = folder
         if(folder.isJunkProperty.get())
             junkFolder = folder
         if(folder.isTrashProperty.get())
-            trashFolder = folder;
+            trashFolder = folder
         if(folder.isSentProperty.get())
-            sentFolder = folder;
+            sentFolder = folder
 
         folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
         folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }

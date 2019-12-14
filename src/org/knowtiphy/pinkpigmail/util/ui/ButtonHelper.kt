@@ -15,8 +15,9 @@ object ButtonHelper
     {
         //b.setStyle("-fx-border-style: none; -fx-border-width: 0; -fx-border-insets: 0;");
         //b.setStyle("-fx-border-color:regular; -fx-background-radius:0");
-        //b.setBackground(Background.EMPTY);
-        return ActionUtils.createButton(action)
+        val b = ActionUtils.createButton(action)
+        b.background = Background.EMPTY;
+        return b
     }
 
     fun transparent(action: Action): Button

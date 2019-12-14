@@ -1,14 +1,14 @@
 package org.knowtiphy.pinkpigmail.util.ui
 
-import javafx.beans.property.SimpleObjectProperty
+import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.scene.Node
 
 /**
  * @author graham
  */
-open class MappedReplacer<T>() : Replacer()
+open class MappedReplacer<T>(whichProperty : ReadOnlyObjectProperty<T>) : Replacer()
 {
-    val whichProperty = SimpleObjectProperty<T>()
+   // val whichProperty = SimpleObjectProperty<T>()
 
     private val nodes = HashMap<T, Node>()
 

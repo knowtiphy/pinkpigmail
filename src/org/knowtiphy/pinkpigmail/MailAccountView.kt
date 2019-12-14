@@ -26,6 +26,7 @@ import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import tornadofx.SmartResize
@@ -41,19 +42,22 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     private val folderList = createFoldersList()
 
     //  the folder flipper that shows the current folder view to the right of the folder list
-    private val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>())
+    private val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>(accountViewModel.selectedCategoryProperty()))
 
-    //  the folder space below the tool bar
+    //  the folder space below the tool bar -- folder list on the left, folder view on right
     private val folderSpace = resizeable(SplitPane(folderList, folderViewFlipper))
 
     init
     {
         setVgrow(folderSpace, Priority.ALWAYS)
-        folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+        try
+        {
+            folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+        } catch (ex: IndexOutOfBoundsException)
+        {
+            //  ignore
+        }
         children.addAll(folderSpace)
-
-        //  when a new folder is selected flip to it's view
-        accountViewModel.categorySelected.subscribe { folderViewFlipper.whichProperty.set(it.newValue) }
 
         //  when a folder is added to the account's folder list add an item to folder list on the left, and
         //  add a per folder view to the folder flipper
@@ -80,8 +84,14 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         //  TODO -- this is necessary (is it still necessary?) to try to work around a JavaFX bug with setting split pane positions?
         stage.setOnShown {
             Platform.runLater {
-                folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
-                Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)
+                try
+                {
+                    folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+                    Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)
+                } catch (ex: Exception)
+                {
+                    //  ignore
+                }
             }
         }
 
@@ -93,8 +103,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         PinkPigMail.synched.filter { it == account }.subscribe {
             accountViewModel.setCategory(inboxTreeItem!!)
             val inbox = inboxTreeItem!!.value
-            if (inbox.unreadMessageCountProperty.get() > 0)
-                Beep.beep()
+            if (inbox.unreadMessageCountProperty.get() > 0) Beep.beep()
             inbox.unreadMessageCountProperty.addListener { _: ObservableValue<out Number>, oldV: Number, newV: Number ->
                 if (newV.toInt() > oldV.toInt()) Beep.beep()
             }
@@ -173,7 +182,8 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         val singleMessageActions = arrayOf(reply, replyAll, forward)
         val multiMessageActions = arrayOf(delete, markJunk, markNotJunk)
 
-        val replyGroup = HBox(ButtonHelper.regular(reply), ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
+        val bb = ButtonHelper.regular(reply)
+        val replyGroup = HBox(bb, ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
         replyGroup.spacing = 2.0
         val markGroup = HBox(ButtonHelper.regular(delete), ButtonHelper.regular(markJunk), ButtonHelper.regular(markNotJunk))
         markGroup.spacing = 2.0
@@ -191,8 +201,10 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             println("SET BUTTONS")
             while (c.next())
             {
-                singleMessageActions.forEach { it.disabledProperty().set(c.list.size != 1) }
-                multiMessageActions.forEach { it.disabledProperty().set(c.list.isEmpty()) }
+                println(c.list.size != 1)
+                println(c.list.isEmpty())
+                singleMessageActions.forEach { later { it.isDisabled = c.list.size != 1 }}
+                multiMessageActions.forEach { later {it.isDisabled = c.list.isEmpty() }}
             }
         }
 
@@ -214,8 +226,6 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         {
             view.setSelectionModel(accountViewModel.getSelectionModel(folder) as TableView.TableViewSelectionModel<IMessage>)
         }
-
-        // accountViewModel.addCategory(folder)
 
         view.selectionModel.selectedItems.addListener { c: ListChangeListener.Change<out IMessage> ->
             while (c.next())
@@ -347,16 +357,12 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             {
                 if (c.wasAdded() && c.addedSize == 1)
                 {
-                    println("Selection changed to " + ((c.addedSubList[0].value as IFolder).nameProperty.get()))
                     accountViewModel.setCategory(c.addedSubList[0])
                 }
             }
         }
 
-        accountViewModel.categorySelected.subscribe {
-            println("Setting view selection model to " + ((it.newValue.value) as IFolder).nameProperty.get())
-            view.selectionModel.select(it.newValue)
-        }
+        accountViewModel.categorySelected.subscribe { view.selectionModel.select(it.newValue) }
 
         val box = resizeable(VBox())
 
