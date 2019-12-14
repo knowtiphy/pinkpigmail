@@ -26,7 +26,6 @@ import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import tornadofx.SmartResize
@@ -175,15 +174,14 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
                     val indices = accountViewModel.getSelectionModel(folder).selectedIndices
                     Actions.markMessagesAsJunk(accountViewModel.getSelectionModel(folder).selectedItems)
                     accountViewModel.getSelectionModel(folder).clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
-                }, Strings.MARK_JUNK)
+                }, Strings.MARK_JUNK, true)
         val markNotJunk = ActionHelper.create(Icons.markNotJunk(),
                 { Actions.markMessagesAsNotJunk(accountViewModel.getSelectionModel(folder).selectedItems) }, Strings.MARK_NOT_JUNK)
 
         val singleMessageActions = arrayOf(reply, replyAll, forward)
         val multiMessageActions = arrayOf(delete, markJunk, markNotJunk)
 
-        val bb = ButtonHelper.regular(reply)
-        val replyGroup = HBox(bb, ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
+        val replyGroup = HBox(ButtonHelper.regular(reply), ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
         replyGroup.spacing = 2.0
         val markGroup = HBox(ButtonHelper.regular(delete), ButtonHelper.regular(markJunk), ButtonHelper.regular(markNotJunk))
         markGroup.spacing = 2.0
@@ -203,8 +201,9 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
             {
                 println(c.list.size != 1)
                 println(c.list.isEmpty())
-                singleMessageActions.forEach { later { it.isDisabled = c.list.size != 1 }}
-                multiMessageActions.forEach { later {it.isDisabled = c.list.isEmpty() }}
+                singleMessageActions.forEach { it.isDisabled = c.list.size != 1 }
+                reply.isDisabled = c.list.size != 1
+                multiMessageActions.forEach { it.isDisabled = c.list.isEmpty() }
             }
         }
 

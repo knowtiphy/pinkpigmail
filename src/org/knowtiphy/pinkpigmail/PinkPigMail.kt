@@ -132,9 +132,9 @@ class PinkPigMail : Application(), IStorageListener
     override fun delta(added: Model, deleted: Model)
     {
         //  PeerState.delta(added, deleted)
-        PeerState.delta(added, deleted) {
+        PeerState.delta(added, deleted) {it.predicate.toString().contains(Vocabulary.CONTAINS)
             //   it.subject.toString().contains("orange") &&
-            it.`object`.toString().contains("2c809517-316a-4aa7-968f-e29178f7c244")//|| it.`object`.toString().contains("CARD")
+           // it.`object`.toString().contains("2c809517-316a-4aa7-968f-e29178f7c244")//|| it.`object`.toString().contains("CARD")
             //  && it.`object`.toString().contains("Event")
         }
     }
