@@ -4,4 +4,14 @@
 
 .table-view .column-header .label{
     -fx-alignment:center-left;
-} 
+}
+
+/*	style class for buttons */
+
+.stdButton {
+  -fx-background-color:transparent;
+}
+
+.stdButton:hover {
+  -fx-background-color: #dae7f3;
+}
