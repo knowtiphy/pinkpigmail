@@ -22,5 +22,6 @@ object ActionHelper
     }
 
     fun create(node: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true) = create(node, handler, null, tip, disabled)
+
     fun create(node: Node, handler: (ActionEvent) -> Unit, tip: String) = create(node, handler, null, tip, false)
 }

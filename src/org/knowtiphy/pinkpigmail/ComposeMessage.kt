@@ -7,6 +7,7 @@ import javafx.scene.control.Label
 import javafx.scene.control.SplitMenuButton
 import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -22,6 +23,7 @@ import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import tornadofx.Dimension
 import java.io.File
 import java.io.IOException
 import java.util.logging.Level
@@ -68,12 +70,31 @@ object ComposeMessage
         return fileChooser.showOpenMultipleDialog(stage)
     }
 
+    private fun foo(ke: KeyEvent)
+    {
+        println("START EVENT")
+        println(ke.character)
+        println(ke.code)
+        println(ke.isAltDown)
+        println(ke.isControlDown)
+        println(ke.isMetaDown)
+        println(ke.isShiftDown)
+        println(ke.isShiftDown)
+        println(ke.text)
+        println(ke.source)
+        println(ke.target)
+        println(ke.eventType)
+        println("END EVENT")
+    }
+
     fun compose(model: IMessageModel, send: (IMessageModel) -> Unit)
     {
         val stage = UIUtils.getStage(Strings.FROM + " : " + model.mailAccount.emailAddressProperty.get(), 800.0, 700.0)
 
         val toolBar = HBox()
         val root = VBox(header(model), toolBar)
+
+        val scene = Scene(root)
 
         var sendAction: ((ActionEvent) -> Unit)? = null
         var saveAction: ((ActionEvent) -> Unit)? = null
@@ -96,7 +117,8 @@ object ComposeMessage
                     try
                     {
                         model.saveToDrafts()
-                    } catch (ex: StorageException)
+                    }
+                    catch (ex: StorageException)
                     {
                         Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
                     }
@@ -106,21 +128,49 @@ object ComposeMessage
             {
                 val editor = HTMLEditor()
                 editor.htmlText = model.contentProperty().get()
-                //				editor.setOnKeyPressed(evt ->
-                //				{
-                //					System.out.println("XXX:" + evt.getText());
-                //					if (evt.getCode() == KeyCode.ENTER)
-                //					{
-                //						System.err.println(evt);
-                //						//editor.fireEvent(new KeyEvent());
-                //						KeyEvent ke = new KeyEvent(evt.getSource(), evt.getTarget(), evt.getEventType(),
-                //								"M", "M", KeyCode.M, false, false, false, false);
-                //						System.err.println("ENTER");
-                //						System.err.println(ke);
-                //						editor.fireEvent(ke);
-                //						editor.setHtmlText(editor.getHtmlText()+ "</p><p></p>");
-                //					}
-                //				});
+                // Define an event filter
+//                val filter = EventHandler<KeyEvent>() {
+//                    // public void handle(InputEvent event) {
+//                    System.out.println("Filtering out event " + it.getEventType());
+//                    println("ORIGINAL")
+//                    foo(it)
+//                    println(":" + it.character + ":")
+//                    println(":" + it.character.length + ":")
+//                    println(":" + (it.character.equals(KeyCode.CONTROL.toString())) + ":")
+//
+//                    if(it.code == KeyCode.M && it.isControlDown)
+//                    {
+//                        println("CCCC IGNORE IT")
+//                        it.consume()
+//                    }
+//
+//                    if (it.code == KeyCode.ENTER)
+//                    {
+//                        //  pretty sure this is the right key-event
+//                        val ke = KeyEvent(it.source, it.target, it.eventType,
+//                                KeyCode.CONTROL.toString(), "", KeyCode.M, false, true, false, false);
+//                        println("TRANSFORMED");
+//                        foo(ke);
+//                        later { root.scene.processKeyEvent(ke) }
+//                        it.consume();
+//                    }
+//                }
+//                editor.addEventFilter(KeyEvent.KEY_PRESSED, filter);
+//                editor.setOnKeyPressed { evt ->
+//
+//                    println("ORIGINAL")
+//                    foo(evt)
+//                    if (evt.code == KeyCode.ENTER)
+//                    {
+//                        //editor.fireEvent(new KeyEvent());
+//                        val ke = KeyEvent(evt.source, evt.target, evt.eventType,
+//                                null, null, KeyCode.M, false, true, false, false);
+//                        println("TRANSFORMED");
+//                        foo(ke);
+//                        root.scene.eventDispatcher.dispatchEvent(ke)
+//                        ///editor.setHtmlText(editor.getHtmlText() + "</p><p></p>");
+//                    }
+//                }
                 //	TODO -- initialize the insert cursor at the beginning?
                 VBox.setVgrow(editor, Priority.ALWAYS)
                 root.children.add(editor)
@@ -145,10 +195,12 @@ object ComposeMessage
                 try
                 {
                     attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
-                } catch (ex: IOException)
+                }
+                catch (ex: IOException)
                 {
                     Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-                } catch (ex: StorageException)
+                }
+                catch (ex: StorageException)
                 {
                     Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
                 }
@@ -158,12 +210,14 @@ object ComposeMessage
         try
         {
             Attachments.addRemoveMenu(model.attachments, attachB.items)
-        } catch (ex: IOException)
+        }
+        catch (ex: IOException)
         {
-            Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-        } catch (ex: StorageException)
+            Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
+        }
+        catch (ex: StorageException)
         {
-            Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
+            Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
         }
 
         val saveB = ButtonHelper.regular(ActionHelper.create(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
@@ -173,7 +227,7 @@ object ComposeMessage
 
         root.spacing = 5.0
         root.padding = INSETS
-        stage.scene = Scene(root)
+        stage.scene = scene
 
         stage.show()
     }

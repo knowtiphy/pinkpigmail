@@ -10,10 +10,10 @@ import javafx.collections.transformation.SortedList
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.scene.control.*
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.VBox
+import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.Stage
+import org.controlsfx.control.action.Action
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
@@ -41,7 +41,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
     private val folderList = createFoldersList()
 
     //  the folder flipper that shows the current folder view to the right of the folder list
-    private val folderViewFlipper = resizeable(MappedReplacer<TreeItem<IFolder>>(accountViewModel.selectedCategoryProperty()))
+    private val folderViewFlipper = resizeable(MappedReplacer(accountViewModel.selectedCategoryProperty()))
 
     //  the folder space below the tool bar -- folder list on the left, folder view on right
     private val folderSpace = resizeable(SplitPane(folderList, folderViewFlipper))
@@ -52,7 +52,8 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         try
         {
             folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
-        } catch (ex: IndexOutOfBoundsException)
+        }
+        catch (ex: IndexOutOfBoundsException)
         {
             //  ignore
         }
@@ -87,7 +88,8 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
                 {
                     folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
                     Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)
-                } catch (ex: Exception)
+                }
+                catch (ex: Exception)
                 {
                     //  ignore
                 }
@@ -148,6 +150,13 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         }
     }
 
+    private fun setButtons(single: Array<Action>, multi: Array<Action>, selection: List<Int>)
+    {
+        println("SET BUTTONS")
+        single.forEach { it.isDisabled = selection.size != 1 }
+        multi.forEach { it.isDisabled = selection.isEmpty() }
+    }
+
     //  create the tool bar at the top of the view
     private fun createToolBar(folder: IFolder): HBox
     {
@@ -181,31 +190,32 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
         val singleMessageActions = arrayOf(reply, replyAll, forward)
         val multiMessageActions = arrayOf(delete, markJunk, markNotJunk)
 
-        val replyGroup = HBox(ButtonHelper.regular(reply), ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
+        val replyGroup = HBox(ButtonHelper.transparent(reply), ButtonHelper.transparent(replyAll), ButtonHelper.transparent(forward))
         replyGroup.spacing = 2.0
-        val markGroup = HBox(ButtonHelper.regular(delete), ButtonHelper.regular(markJunk), ButtonHelper.regular(markNotJunk))
+        val markGroup = HBox(ButtonHelper.transparent(delete), ButtonHelper.transparent(markJunk), ButtonHelper.transparent(markNotJunk))
         markGroup.spacing = 2.0
         val middleButtons = HBox(replyGroup, markGroup)
         middleButtons.spacing = 15.0
 
-        //val configButton = ButtonHelper.regular(config)
-//        val layoutButton = ButtonHelper.regular(layout)
+        singleMessageActions.forEach { it.isDisabled = false }
+        multiMessageActions.forEach { it.isDisabled = false }
+
+        //val configButton = ButtonHelper.transparent(config)
+//        val layoutButton = ButtonHelper.transparent(layout)
 
         val toolBar = HBox()
         toolBar.children.addAll(UIUtils.hSpacer(), middleButtons, UIUtils.hSpacer())
         toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
 
         accountViewModel.getSelectionModel(folder).selectedIndices.addListener { c: ListChangeListener.Change<out Int> ->
-            println("SET BUTTONS")
             while (c.next())
             {
-                println(c.list.size != 1)
-                println(c.list.isEmpty())
-                singleMessageActions.forEach { it.isDisabled = c.list.size != 1 }
-                reply.isDisabled = c.list.size != 1
-                multiMessageActions.forEach { it.isDisabled = c.list.isEmpty() }
+                setButtons(singleMessageActions, multiMessageActions, c.list)
             }
         }
+
+        accountViewModel.categorySelected.subscribe { setButtons(singleMessageActions, multiMessageActions,
+                accountViewModel.getSelectionModel(folder).selectedIndices) }
 
         return toolBar
     }
@@ -334,6 +344,8 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
         val toolBar = maxSizeable(createToolBar(folder.value))
         setVgrow(toolBar, Priority.NEVER)
+        //  need this to make disabling of buttons show up
+        toolBar.background = Background(BackgroundFill(Color.WHITE, null, null))
 
         setVgrow(hPerspective, Priority.ALWAYS)
 
@@ -363,17 +375,19 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
         accountViewModel.categorySelected.subscribe { view.selectionModel.select(it.newValue) }
 
-        val box = resizeable(VBox())
-
         val compose = ActionHelper.create(Icons.compose(), { Actions.composeMail(accountViewModel.account) }, Strings.COMPOSE, false)
 
         val toolBar = maxSizeable(HBox())
-        toolBar.children.addAll(ButtonHelper.regular(compose))
-        toolBar.padding = Insets(1.0, 0.0, 1.0, 0.0)
+        with(toolBar) {
+            children.addAll(ButtonHelper.transparent(compose))
+            padding = Insets(1.0, 0.0, 1.0, 0.0)
+            background = Background(BackgroundFill(Color.WHITE, null, null))
+        }
 
         setVgrow(toolBar, Priority.NEVER)
         setVgrow(view, Priority.ALWAYS)
 
+        val box = resizeable(VBox())
         box.children.addAll(toolBar, view)
 
         return box
