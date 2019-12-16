@@ -170,13 +170,12 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		val reply = ActionHelper.create(Icons.reply(), { Actions.replyToMessage(accountViewModel.getSelectionModel(folder).selectedItem, false) }, Strings.REPLY)
 		val replyAll = ActionHelper.create(Icons.replyAll(), { Actions.replyToMessage(accountViewModel.getSelectionModel(folder).selectedItem, true) }, Strings.REPLY_ALL)
 		val forward = ActionHelper.create(Icons.forward(), { Actions.forwardMail(accountViewModel.getSelectionModel(folder).selectedItem) }, Strings.FORWARD)
-		val delete = ActionHelper.create(Icons.delete(),
-				{
-					//  move to the next message
-					val indices = accountViewModel.getSelectionModel(folder).selectedIndices
-					Actions.deleteMessages(accountViewModel.getSelectionModel(folder).selectedItems)
-					accountViewModel.getSelectionModel(folder).clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
-				}, Strings.DELETE)
+		val delete = ActionHelper.create(Icons.delete(), {
+			//  move to the next message
+			val indices = accountViewModel.getSelectionModel(folder).selectedIndices
+			Actions.deleteMessages(accountViewModel.getSelectionModel(folder).selectedItems)
+			accountViewModel.getSelectionModel(folder).clearAndSelect(if (indices.isEmpty()) 0 else indices[indices.size - 1] + 1)
+		}, Strings.DELETE)
 		val markJunk = ActionHelper.create(Icons.markJunk(),
 				{
 					//  move to the next message

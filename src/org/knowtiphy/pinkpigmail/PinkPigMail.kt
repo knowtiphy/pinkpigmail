@@ -80,6 +80,7 @@ class PinkPigMail : Application(), IStorageListener
         private const val MESSAGE_STORAGE = "messages"
         private const val ACCOUNTS_FILE = "accounts.ttl"
         private const val UI_FILE = "ui.ttl"
+
         const val STYLE_SHEET = "styles.css"
 
         val synched = EventSource<IAccount>()
@@ -206,9 +207,7 @@ class PinkPigMail : Application(), IStorageListener
             //  shutdown the storage layer
             try
             {
-                println("CLOSING")
                 storage.close()
-                println("CLOSED")
             } catch (ex: Exception)
             {
                 ex.printStackTrace()
@@ -257,6 +256,7 @@ class PinkPigMail : Application(), IStorageListener
             //  synch has finished -- publish an event for it
             println("SYNCH IS DONE")
             accounts.forEach { later { synched.push(it) } }
+            println("SYNCH PUSHED")
             later {
                 //((bootPane.children[0] as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
                 mainFlipper.flip(root)
