@@ -35,7 +35,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 
     private val password = SimpleStringProperty()
     private val replyMode = EmailReplyMode.MATCH
-    private val sendMode = EmailSendMode.HTML
+    private val sendMode = EmailSendMode.TEXT
 
     var trashFolder: IMAPFolder? = null
     var junkFolder: IMAPFolder? = null

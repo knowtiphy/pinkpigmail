@@ -26,11 +26,11 @@ class Attachments : HBox()
         {
             val item = CustomMenuItem()
             val nameLabel = Label(attachment.fileName)
-            val removeButton = ButtonHelper.regular(ActionHelper.create(Icons.delete(Icons.SMALL_SIZE), {
+            val removeButton = ButtonHelper.button(ActionHelper.create(Icons.delete(Icons.SMALL_SIZE), {
                 attachments.remove(attachment)
                 items.remove(item)
             }, Strings.REMOVE_ATTACHMENT, false))
-            val showButton = ButtonHelper.regular(ActionHelper.create(Mime.glyph(attachment.mimeType, Icons.SMALL_SIZE), { Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
+            val showButton = ButtonHelper.button(ActionHelper.create(Mime.glyph(attachment.mimeType, Icons.SMALL_SIZE), { Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
                     !(Mime.isSafe(attachment.mimeType) || Mime.isSafeFileEnding(attachment.fileName))))
 
             val box = HBox(removeButton, showButton, nameLabel)
@@ -51,7 +51,7 @@ class Attachments : HBox()
                 items.add(0, addRemoveMenu(attachment, attachments, items))
             }
 
-            val removeAll = ButtonHelper.regular(ActionHelper.create(Icons.delete(Icons.SMALL_SIZE), {
+            val removeAll = ButtonHelper.button(ActionHelper.create(Icons.delete(Icons.SMALL_SIZE), {
                 attachments.clear()
                 items.clear()
             }, Strings.REMOVE_ALL_ATTACHMENTS, false))
@@ -64,12 +64,12 @@ class Attachments : HBox()
         {
             for (attachment in attachments)
             {
-                val saveButton = ButtonHelper.regular(ActionHelper.create(Icons.save(Icons.SMALL_SIZE),
+                val saveButton = ButtonHelper.button(ActionHelper.create(Icons.save(Icons.SMALL_SIZE),
                         { Actions.saveAttachment(attachment) }, Strings.SAVE_ATTACHMENT, false))
 
                 val label = Label(attachment.fileName)
 
-                val openButton = ButtonHelper.regular(
+                val openButton = ButtonHelper.button(
                         ActionHelper.create(Mime.glyph(attachment.mimeType, Icons.SMALL_SIZE),
                                 { Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
                                 !(Mime.isSafe(attachment.mimeType) || Mime.isSafeFileEnding(attachment.fileName))))
@@ -80,7 +80,7 @@ class Attachments : HBox()
                 items.add(item)
             }
 
-            val saveAllButton = ButtonHelper.regular(ActionHelper.create(Icons.save(Icons.SMALL_SIZE), { Actions.saveAttachments(attachments) }, Strings.SAVE_ATTACHMENT, false))
+            val saveAllButton = ButtonHelper.button(ActionHelper.create(Icons.save(Icons.SMALL_SIZE), { Actions.saveAttachments(attachments) }, Strings.SAVE_ATTACHMENT, false))
 
             items.add(CustomMenuItem(saveAllButton))
         }

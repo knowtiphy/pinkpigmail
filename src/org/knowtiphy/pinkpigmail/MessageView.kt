@@ -70,8 +70,8 @@ class MessageView(private val service: ExecutorService) : Replacer()
                 message.mailAccount.trustSender(message.from)
             }, Strings.TRUST_SENDER)
 
-    private val loadRemote = ButtonHelper.regular(loadRemoteAction)
-    private val trustSender = ButtonHelper.regular(trustSenderAction)
+    private val loadRemote = ButtonHelper.button(loadRemoteAction)
+    private val trustSender = ButtonHelper.button(trustSenderAction)
     private val trustContentMenu = SplitMenuButton()
     private val attachmentsMenu = MenuButton()
 

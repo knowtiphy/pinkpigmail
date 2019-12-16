@@ -186,7 +186,7 @@ object ComposeMessage
             }
         }
 
-        val sendB = ButtonHelper.regular(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
+        val sendB = ButtonHelper.button(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
         val attachB = SplitMenuButton()
         attachB.setOnAction {
             attachFile(stage)?.forEach { f ->
@@ -220,7 +220,7 @@ object ComposeMessage
             Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
         }
 
-        val saveB = ButtonHelper.regular(ActionHelper.create(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
+        val saveB = ButtonHelper.button(ActionHelper.create(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
 
         toolBar.spacing = 1.0
         toolBar.children.addAll(sendB, attachB, saveB)

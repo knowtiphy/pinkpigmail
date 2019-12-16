@@ -152,7 +152,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
 	private fun setButtons(single: Array<Action>, multi: Array<Action>, selection: List<Int>)
 	{
-		println("SET BUTTONS")
+//		println("SET BUTTONS")
 		single.forEach { it.isDisabled = selection.size != 1 }
 		multi.forEach { it.isDisabled = selection.isEmpty() }
 	}
@@ -190,9 +190,9 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		val singleMessageActions = arrayOf(reply, replyAll, forward)
 		val multiMessageActions = arrayOf(delete, markJunk, markNotJunk)
 
-		val replyGroup = HBox(ButtonHelper.regular(reply), ButtonHelper.regular(replyAll), ButtonHelper.regular(forward))
+		val replyGroup = HBox(ButtonHelper.button(reply), ButtonHelper.button(replyAll), ButtonHelper.button(forward))
 		replyGroup.spacing = 2.0
-		val markGroup = HBox(ButtonHelper.regular(delete), ButtonHelper.regular(markJunk), ButtonHelper.regular(markNotJunk))
+		val markGroup = HBox(ButtonHelper.button(delete), ButtonHelper.button(markJunk), ButtonHelper.button(markNotJunk))
 		markGroup.spacing = 2.0
 		val middleButtons = HBox(replyGroup, markGroup)
 		middleButtons.spacing = 15.0
@@ -381,7 +381,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 
 		val toolBar = maxSizeable(HBox())
 		with(toolBar) {
-			children.addAll(ButtonHelper.regular(compose))
+			children.addAll(ButtonHelper.button(compose))
 			padding = Insets(1.0, 0.0, 1.0, 0.0)
 			background = Background(BackgroundFill(Color.WHITE, null, null))
 		}

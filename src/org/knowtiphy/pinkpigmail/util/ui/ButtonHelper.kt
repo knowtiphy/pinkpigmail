@@ -12,17 +12,17 @@ object ButtonHelper
 {
     const val STANDARD_BUTTON_STYLE_CLASS = "stdButton"
 
-	fun button(action: Action, styleClass: String): Button
+	fun button(action: Action, styleClass: String = STANDARD_BUTTON_STYLE_CLASS): Button
 	{
 		val b = ActionUtils.createButton(action)
 		b.styleClass.add(styleClass)
 		return b
 	}
 
-	fun regular(action: Action): Button
-	{
-		return button(action, STANDARD_BUTTON_STYLE_CLASS)
-	}
+//	fun button(action: Action): Button
+//	{
+//		return button(action, STANDARD_BUTTON_STYLE_CLASS)
+//	}
 //
 //	fun transparent(action: Action): Button
 //	{
