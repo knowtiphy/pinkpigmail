@@ -3,6 +3,7 @@ package org.knowtiphy.pinkpigmail.util.ui
 import javafx.scene.control.Button
 import org.controlsfx.control.action.Action
 import org.controlsfx.control.action.ActionUtils
+import org.knowtiphy.pinkpigmail.StyleSheets
 
 /**
  *
@@ -10,9 +11,7 @@ import org.controlsfx.control.action.ActionUtils
  */
 object ButtonHelper
 {
-    const val STANDARD_BUTTON_STYLE_CLASS = "stdButton"
-
-	fun button(action: Action, styleClass: String = STANDARD_BUTTON_STYLE_CLASS): Button
+	fun button(action: Action, styleClass: String = StyleSheets.STANDARD_BUTTON_STYLE_CLASS): Button
 	{
 		val b = ActionUtils.createButton(action)
 		b.styleClass.add(styleClass)

@@ -17,10 +17,12 @@ interface IFolder : ITreeItem, IPeer
 
     val messages: ObservableList<IMessage>
 
-    val isTrashProperty: BooleanProperty
+    val isArchiveProperty: BooleanProperty
+    val isDraftsProperty: BooleanProperty
     val isInboxProperty: BooleanProperty
     val isJunkProperty: BooleanProperty
     val isSentProperty: BooleanProperty
+    val isTrashProperty: BooleanProperty
 
     val nameProperty: StringProperty
 

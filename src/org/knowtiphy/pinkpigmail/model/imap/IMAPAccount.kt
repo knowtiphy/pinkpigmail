@@ -25,212 +25,228 @@ import javax.mail.internet.InternetAddress
  */
 class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, storage), IEmailAccount
 {
-    override val nickNameProperty = SimpleStringProperty()
-    override val allowHTMLProperty = SimpleBooleanProperty(true)
-    override val folders: ObservableList<IFolder> = FXCollections.observableArrayList()
-    override val trustedContentProviders: ObservableList<String> = FXCollections.observableArrayList()
-    override val trustedSenders: ObservableList<EmailAddress> = FXCollections.observableArrayList()
-    override val serverNameProperty = SimpleStringProperty()
-    override val emailAddressProperty = SimpleStringProperty()
+	override val nickNameProperty = SimpleStringProperty()
+	override val allowHTMLProperty = SimpleBooleanProperty(true)
+	override val folders: ObservableList<IFolder> = FXCollections.observableArrayList()
+	override val trustedContentProviders: ObservableList<String> = FXCollections.observableArrayList()
+	override val trustedSenders: ObservableList<EmailAddress> = FXCollections.observableArrayList()
+	override val serverNameProperty = SimpleStringProperty()
+	override val emailAddressProperty = SimpleStringProperty()
 
-    private val password = SimpleStringProperty()
-    private val replyMode = EmailReplyMode.MATCH
-    private val sendMode = EmailSendMode.TEXT
+	private val password = SimpleStringProperty()
+	private val replyMode = EmailReplyMode.MATCH
+	private val sendMode = EmailSendMode.TEXT
 
-    var trashFolder: IMAPFolder? = null
-    var junkFolder: IMAPFolder? = null
-    var inbox: IMAPFolder? = null
-    var sentFolder: IMAPFolder? = null
-    var draftsFolder: IMAPFolder? = null
+	var archiveFolder: IMAPFolder? = null
+	var draftsFolder: IMAPFolder? = null
+	var inbox: IMAPFolder? = null
+	var junkFolder: IMAPFolder? = null
+	var sentFolder: IMAPFolder? = null
+	var trashFolder: IMAPFolder? = null
 
-    private val setting = AccountSettings()
+	private val setting = AccountSettings()
 
-    init
-    {
-        declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
-        declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
-        declareU(Vocabulary.HAS_PASSWORD, password)
-        declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
-        declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
-        declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.STMT_TO_EMAIL_ADDRESS)
-        declareU(Vocabulary.CONTAINS, ::addFolder)
-        declareD(Vocabulary.CONTAINS, folders)
-        emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
-            if (nickNameProperty.get() == null)
-                nickNameProperty.set(newValue)
-        }
-    }
+	init
+	{
+		declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
+		declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
+		declareU(Vocabulary.HAS_PASSWORD, password)
+		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
+		declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
+		declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.STMT_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.CONTAINS, ::addFolder)
+		declareD(Vocabulary.CONTAINS, folders)
+		emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
+			if (nickNameProperty.get() == null)
+				nickNameProperty.set(newValue)
+		}
+	}
 
-    override fun save(model: Model, name: Resource)
-    {
-        model.add(name, model.createProperty(Vocabulary.RDF_TYPE), model.createResource(Vocabulary.IMAP_ACCOUNT))
-        model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
-        model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
-        model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), password.get())
-        trustedContentProviders.forEach { model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER), it) }
-        trustedSenders.forEach {
-            model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_SENDER),
-                    InternetAddress(it.address, it.personal).toString())
-        }
-    }
+	override fun save(model: Model, name: Resource)
+	{
+		model.add(name, model.createProperty(Vocabulary.RDF_TYPE), model.createResource(Vocabulary.IMAP_ACCOUNT))
+		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
+		model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
+		model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), password.get())
+		trustedContentProviders.forEach { model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER), it) }
+		trustedSenders.forEach {
+			model.add(name, model.createProperty(Vocabulary.HAS_TRUSTED_SENDER),
+					InternetAddress(it.address, it.personal).toString())
+		}
+	}
 
-    override val isMoveDeletedMessagesToTrash: Boolean
-        get()
-        {
-            return setting.isMoveDeletedMessagesToTrash
-        }
+	override val isMoveDeletedMessagesToTrash: Boolean
+		get()
+		{
+			return setting.isMoveDeletedMessagesToTrash
+		}
 
-    override val isMoveJunkMessagesToJunk: Boolean
-        get()
-        {
-            return setting.isMoveJunkMessagesToJunk
-        }
+	override val isMoveJunkMessagesToJunk: Boolean
+		get()
+		{
+			return setting.isMoveJunkMessagesToJunk
+		}
 
-    override val isCopySentMessagesToSent: Boolean
-        get()
-        {
-            return setting.isCopySentMessagesToSent
-        }
+	override val isCopySentMessagesToSent: Boolean
+		get()
+		{
+			return setting.isCopySentMessagesToSent
+		}
 
-    override val isDisplayMessageMarksAsRead: Boolean
-        get()
-        {
-            return setting.isDisplayMessageMarksAsRead
-        }
+	override val isDisplayMessageMarksAsRead: Boolean
+		get()
+		{
+			return setting.isDisplayMessageMarksAsRead
+		}
 
-    override fun trustSender(addresses: Collection<EmailAddress>)
-    {
-        trustedSenders.addAll(addresses)
-    }
+	override fun trustSender(addresses: Collection<EmailAddress>)
+	{
+		trustedSenders.addAll(addresses)
+	}
 
-    override fun unTrustSender(addresses: Collection<EmailAddress>)
-    {
-        trustedSenders.removeAll(addresses)
-    }
+	override fun unTrustSender(addresses: Collection<EmailAddress>)
+	{
+		trustedSenders.removeAll(addresses)
+	}
 
-    override fun isTrustedSender(addresses: Collection<EmailAddress>) = trustedSenders.containsAll(addresses)
+	override fun isTrustedSender(addresses: Collection<EmailAddress>) = trustedSenders.containsAll(addresses)
 
-    override fun trustProvider(url: String)
-    {
-        trustedContentProviders.add(url)
-    }
+	override fun trustProvider(url: String)
+	{
+		trustedContentProviders.add(url)
+	}
 
-    override fun unTrustProvider(url: String)
-    {
-        trustedContentProviders.remove(url)
-    }
+	override fun unTrustProvider(url: String)
+	{
+		trustedContentProviders.remove(url)
+	}
 
-    override fun isTrustedProvider(url: String) = trustedContentProviders.contains(url)
+	override fun isTrustedProvider(url: String) = trustedContentProviders.contains(url)
 
-    override fun getSendModel(modelType: EmailModelType): IMessageModel
-    {
-        return IMAPMessageModel(storage, this, sentFolder!!,
-                null, sendMode, null, null, null)
-    }
+	override fun getSendModel(modelType: EmailModelType): IMessageModel
+	{
+		return IMAPMessageModel(storage, this, sentFolder!!,
+				null, sendMode, null, null, null)
+	}
 
-    @Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
-    override fun getReplyModel(message: IMessage, modelType: EmailModelType): IMessageModel
-    {
-        val sendMode = sendMode(message, modelType)
-        return IMAPMessageModel(storage, this, sentFolder!!, message, sendMode,
-                (if (modelType == EmailModelType.FORWARD) Strings.FWD else Strings.RE) + message.subjectProperty.get(),
-                if (modelType == EmailModelType.FORWARD) null else EmailAddress.format(this, message.from),
-                quote(message, sendMode))
-    }
+	@Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
+	override fun getReplyModel(message: IMessage, modelType: EmailModelType): IMessageModel
+	{
+		val sendMode = sendMode(message, modelType)
+		return IMAPMessageModel(storage, this, sentFolder!!, message, sendMode,
+				(if (modelType == EmailModelType.FORWARD) Strings.FWD else Strings.RE) + message.subjectProperty.get(),
+				if (modelType == EmailModelType.FORWARD) null else EmailAddress.format(this, message.from),
+				quote(message, sendMode))
+	}
 
-    @Throws(StorageException::class)
-    private fun quote(message: IMessage, sendMode: EmailSendMode): String
-    {
-        val builder = StringBuilder()
-        if (sendMode == EmailSendMode.HTML)
-        {
-            builder.append("<html><body>")
-            //	TODO -- I don't think is valid HTML for a blank line
-            builder.append("<p><br/><br/></p>")
-            builder.append("<div style=\"border-left:medium solid #0000ff\">\n")
-            builder.append("<div style=\"margin-left: 10px\">\n")
-        } else
-        {
-            builder.append("\n\n> ")
-        }
-        if (message.sentOnProperty.get() != null)
-        {
-            builder.append(" ").append(Strings.ON)
-            builder.append(message.sentOnProperty.get().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
-        }
-        val niceFrom = EmailAddress.format(message.mailAccount, message.from)
-        builder.append(" ").append(niceFrom)
-        //        if (!niceFrom.contains("@"))
-        //        {
-        //            builder.append(" (").append(replyToMessage.getFrom().toString()).append(")");
-        //        }
-        builder.append(" wrote\n")
+	@Throws(StorageException::class)
+	private fun quote(message: IMessage, sendMode: EmailSendMode): String
+	{
+		val builder = StringBuilder()
+		if (sendMode == EmailSendMode.HTML)
+		{
+			builder.append("<html><body>")
+			//	TODO -- I don't think is valid HTML for a blank line
+			builder.append("<p><br/><br/></p>")
+			builder.append("<div style=\"border-left:medium solid #0000ff\">\n")
+			builder.append("<div style=\"margin-left: 10px\">\n")
+		} else
+		{
+			builder.append("\n\n> ")
+		}
+		if (message.sentOnProperty.get() != null)
+		{
+			builder.append(" ").append(Strings.ON)
+			builder.append(message.sentOnProperty.get().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
+		}
+		val niceFrom = EmailAddress.format(message.mailAccount, message.from)
+		builder.append(" ").append(niceFrom)
+		//        if (!niceFrom.contains("@"))
+		//        {
+		//            builder.append(" (").append(replyToMessage.getFrom().toString()).append(")");
+		//        }
+		builder.append(" wrote\n")
 
-        //	TODO -- not sure this is correct
-        val raw = message.getContent(sendMode == EmailSendMode.HTML)
-        if (sendMode == EmailSendMode.HTML)
-        {
-            //	TODO: this is a hack
-            var processed = raw.content.replace("</html[^>]*>".toRegex(), "</div>")
-            processed = processed.replace("</body[^>]*>".toRegex(), "</div>")
-            processed = processed.replace("<html[^>]*>".toRegex(), "<div>")
-            processed = processed.replace("<body[^>]*>".toRegex(), "<div>")
-            builder.append("\n").append(processed)
-            builder.append("</div></div></body></html>")
-        } else
-        {
-            builder.append("> \n")
-            for (line in raw.content.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
-            {
-                builder.append("> ").append(line).append("\n")
-            }
-        }
+		//	TODO -- not sure this is correct
+		val raw = message.getContent(sendMode == EmailSendMode.HTML)
+		if (sendMode == EmailSendMode.HTML)
+		{
+			//	TODO: this is a hack
+			var processed = raw.content.replace("</html[^>]*>".toRegex(), "</div>")
+			processed = processed.replace("</body[^>]*>".toRegex(), "</div>")
+			processed = processed.replace("<html[^>]*>".toRegex(), "<div>")
+			processed = processed.replace("<body[^>]*>".toRegex(), "<div>")
+			builder.append("\n").append(processed)
+			builder.append("</div></div></body></html>")
+		} else
+		{
+			builder.append("> \n")
+			for (line in raw.content.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray())
+			{
+				builder.append("> ").append(line).append("\n")
+			}
+		}
 
-        return builder.toString()
-    }
+		return builder.toString()
+	}
 
-    @Throws(ExecutionException::class, InterruptedException::class, StorageException::class)
-    private fun sendMode(message: IMessage, modelType: EmailModelType): EmailSendMode
-    {
-        return when (modelType)
-        {
-            EmailModelType.COMPOSE -> sendMode
-            else ->
-            {
-                if (replyMode == EmailReplyMode.MATCH)
-                {
-                    if (message.isHTML) EmailSendMode.HTML else EmailSendMode.TEXT
-                } else
-                {
-                    if (replyMode == EmailReplyMode.HTML) EmailSendMode.HTML else EmailSendMode.TEXT
-                }
-            }
-        }
-    }
+	@Throws(ExecutionException::class, InterruptedException::class, StorageException::class)
+	private fun sendMode(message: IMessage, modelType: EmailModelType): EmailSendMode
+	{
+		return when (modelType)
+		{
+			EmailModelType.COMPOSE -> sendMode
+			else ->
+			{
+				if (replyMode == EmailReplyMode.MATCH)
+				{
+					if (message.isHTML) EmailSendMode.HTML else EmailSendMode.TEXT
+				} else
+				{
+					if (replyMode == EmailReplyMode.HTML) EmailSendMode.HTML else EmailSendMode.TEXT
+				}
+			}
+		}
+	}
 
-    private fun addFolder(stmt: Statement)
-    {
-        val folder = PeerState.peer(stmt.getObject().asResource())!! as IMAPFolder
-        assert(!folders.contains(folder)) { folder.id }
+	private fun addFolder(stmt: Statement)
+	{
+		val folder = PeerState.peer(stmt.getObject().asResource())!! as IMAPFolder
+		assert(!folders.contains(folder)) { folder.id }
 
-        folder.accountProperty.set(this)
+		folder.accountProperty.set(this)
 
-        if(folder.isInboxProperty.get())
-            inbox = folder
-        if(folder.isJunkProperty.get())
-            junkFolder = folder
-        if(folder.isTrashProperty.get())
-            trashFolder = folder
-        if(folder.isSentProperty.get())
-            sentFolder = folder
+		if (folder.isArchiveProperty.get())
+			archiveFolder = folder
+		if (folder.isDraftsProperty.get())
+			draftsFolder = folder
+		if (folder.isInboxProperty.get())
+			inbox = folder
+		if (folder.isJunkProperty.get())
+			junkFolder = folder
+		if (folder.isSentProperty.get())
+			sentFolder = folder
+		if (folder.isTrashProperty.get())
+			trashFolder = folder
 
+		//	can the special folders change?
+        folder.isArchiveProperty.addListener { _, _, new -> if (new) archiveFolder = folder }
+        folder.isDraftsProperty.addListener { _, _, new -> if (new) draftsFolder = folder }
         folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
-        folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
-        folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }
-        folder.isSentProperty.addListener { _, _, new -> if (new) sentFolder = folder }
+		folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
+		folder.isSentProperty.addListener { _, _, new -> if (new) sentFolder = folder }
+		folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }
 
-        folders.add(folder)
-    }
+//        println(nickNameProperty.get())
+//        println(archiveFolder)
+//        println(draftsFolder)
+//        println(inbox)
+//        println(junkFolder)
+//        println(sentFolder)
+//        println(trashFolder)
+
+		folders.add(folder)
+	}
 }
 
 //    private void setupOutBox()

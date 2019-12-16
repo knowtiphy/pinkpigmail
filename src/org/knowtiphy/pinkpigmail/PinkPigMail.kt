@@ -80,7 +80,7 @@ class PinkPigMail : Application(), IStorageListener
         private const val MESSAGE_STORAGE = "messages"
         private const val ACCOUNTS_FILE = "accounts.ttl"
         private const val UI_FILE = "ui.ttl"
-        private const val STYLE_SHEET = "styles.css"
+        const val STYLE_SHEET = "styles.css"
 
         val synched = EventSource<IAccount>()
         val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()

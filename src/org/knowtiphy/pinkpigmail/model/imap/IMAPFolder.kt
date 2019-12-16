@@ -31,9 +31,11 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
     override val nameProperty = SimpleStringProperty()
     override val messageCountProperty = SimpleIntegerProperty()
     override val unreadMessageCountProperty = SimpleIntegerProperty()
+    override val isArchiveProperty = SimpleBooleanProperty()
+    override val isDraftsProperty = SimpleBooleanProperty()
+    override val isInboxProperty = SimpleBooleanProperty()
     override val isJunkProperty = SimpleBooleanProperty()
     override val isTrashProperty = SimpleBooleanProperty()
-    override val isInboxProperty = SimpleBooleanProperty()
     override val isSentProperty = SimpleBooleanProperty()
 
     init
@@ -41,10 +43,12 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
         declareU(Vocabulary.HAS_MESSAGE_COUNT, messageCountProperty)
         declareU(Vocabulary.HAS_UNREAD_MESSAGE_COUNT, unreadMessageCountProperty)
         declareU(Vocabulary.HAS_NAME, nameProperty)
-        declareU(Vocabulary.IS_JUNK_FOLDER, isJunkProperty)
-        declareU(Vocabulary.IS_TRASH_FOLDER, isTrashProperty)
+        declareU(Vocabulary.IS_ARCHIVE_FOLDER, isArchiveProperty)
+        declareU(Vocabulary.IS_DRAFTS_FOLDER, isDraftsProperty)
         declareU(Vocabulary.IS_INBOX, isInboxProperty)
+        declareU(Vocabulary.IS_JUNK_FOLDER, isJunkProperty)
         declareU(Vocabulary.IS_SENT_FOLDER, isSentProperty)
+        declareU(Vocabulary.IS_TRASH_FOLDER, isTrashProperty)
         declareU(Vocabulary.CONTAINS, ::addMessage)
         declareD(Vocabulary.CONTAINS, messages)
     }
@@ -104,5 +108,10 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
 
         message.folder = this
         messages.add(message)
+    }
+
+    override fun toString(): String
+    {
+        return "IMAPFolder(nameProperty=" + nameProperty.get() + ")"
     }
 }

@@ -12,6 +12,22 @@
   -fx-background-color:transparent;
 }
 
+/*
 .stdButton:hover {
   -fx-background-color: #dae7f3;
+  	-fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+
+}
+*/
+/*	cribbed from modena with a color change for the background :-) */
+.stdButton:hover{
+	-fx-background-color: #dae7f3;
+	/*
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-radius: 3px, 3px, 2px, 1px;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; // 4 8 4 8
+    -fx-text-fill: -fx-text-base-color;
+    -fx-alignment: CENTER;
+    -fx-content-display: LEFT;
+    */
 }
