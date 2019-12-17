@@ -8,8 +8,6 @@ import javafx.scene.Node
  */
 open class MappedReplacer<T>(whichProperty : ReadOnlyObjectProperty<T>) : Replacer()
 {
-   // val whichProperty = SimpleObjectProperty<T>()
-
     private val nodes = HashMap<T, Node>()
 
     init

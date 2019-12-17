@@ -23,12 +23,12 @@ import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.pinkpigmail.util.Format
-import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.Replacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.HTMLUtils
@@ -45,7 +45,7 @@ class MessageView(private val service: ExecutorService) : Replacer()
 
 	private val messageProperty = SimpleObjectProperty<Pair<IMessage?, Collection<IMessage>>>()
 
-	private val viewer = MailViewer()
+	private val viewer = UIUtils.resizeable(MailViewer())
 	private val noMessageSelected = UIUtils.boxIt(Label(Strings.NO_MESSAGE_SELECTED))
 	private val loading = UIUtils.boxIt(WaitSpinner(Strings.LOADING_MESSAGE))
 
@@ -59,19 +59,19 @@ class MessageView(private val service: ExecutorService) : Replacer()
 	private val to = Label(Strings.TO)
 	private val subject = Label(Strings.SUBJECT)
 
-	private val loadRemoteAction = ActionHelper.create(Icons.loadRemote(),
+	private val loadRemoteAction = action(Icons.loadRemote(),
 			{
-				(messageProperty.get().first ?: return@create).loadRemoteProperty.set(true)
+				(messageProperty.get().first ?: return@action).loadRemoteProperty.set(true)
 			}, Strings.LOAD_REMOTE_CONTENT)
 
-	private val trustSenderAction = ActionHelper.create(Icons.trustSender(),
+	private val trustSenderAction = action(Icons.trustSender(),
 			{
-				val message = messageProperty.get().first ?: return@create
+				val message = messageProperty.get().first ?: return@action
 				message.mailAccount.trustSender(message.from)
 			}, Strings.TRUST_SENDER)
 
-	private val loadRemote = ButtonHelper.button(loadRemoteAction)
-	private val trustSender = ButtonHelper.button(trustSenderAction)
+	private val loadRemote = button(loadRemoteAction)
+	private val trustSender = button(trustSenderAction)
 	private val trustContentMenu = SplitMenuButton()
 	private val attachmentsMenu = MenuButton()
 
@@ -112,7 +112,6 @@ class MessageView(private val service: ExecutorService) : Replacer()
 
 		attachmentsMenu.graphic = Icons.attach()
 
-		UIUtils.resizeable(viewer)
 		viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
 			if (newState == Worker.State.SUCCEEDED)
 			{

@@ -1,14 +1,12 @@
 package org.knowtiphy.pinkpigmail
 
 import javafx.event.ActionEvent
-import javafx.event.EventHandler
 import javafx.geometry.Insets
-import javafx.scene.Scene
+import javafx.scene.Node
 import javafx.scene.control.Label
 import javafx.scene.control.SplitMenuButton
 import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
-import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
@@ -22,11 +20,10 @@ import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.ActionHelper
 import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
-import org.knowtiphy.pinkpigmail.util.ui.ButtonHelper
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
 import tornadofx.Dimension
 import java.io.File
 import java.io.IOException
@@ -54,15 +51,14 @@ object ComposeMessage
 		model.ccProperty().bindBidirectional(ccField.textProperty())
 
 		val grid = GridPane()
-		grid.hgap = 30.0
-		grid.vgap = 3.0
+		with(grid) {
+			hgap = 30.0
+			vgap = 3.0
+			addColumn(0, to, subject, cc)
+			addColumn(1, toField, subjectField, ccField)
+		}
 
-		grid.addColumn(0, to, subject, cc)
-		grid.addColumn(1, toField, subjectField, ccField)
-
-		GridPane.setHgrow(subjectField, Priority.ALWAYS)
-		GridPane.setHgrow(toField, Priority.ALWAYS)
-		GridPane.setHgrow(ccField, Priority.ALWAYS)
+		arrayOf(subjectField, toField, ccField).forEach { GridPane.setHgrow(it, Priority.ALWAYS) }
 
 		return grid
 	}
@@ -91,112 +87,102 @@ object ComposeMessage
 		println("END EVENT")
 	}
 
-	var xxx :KeyEvent? = null
-
 	fun compose(model: IMessageModel, send: (IMessageModel) -> Unit)
 	{
-		val stage = UIUtils.getStage(Strings.FROM + " : " + model.mailAccount.emailAddressProperty.get(), 800.0, 700.0)
+		val stage = UIUtils.getStage(Strings.FROM + ": " + model.mailAccount.emailAddressProperty.get(), 800.0, 700.0)
 
-		val toolBar = HBox()
-		val root = VBox(header(model), toolBar)
+		val toolBar = HBox(1.0)
+		val root = VBox(5.0, header(model), toolBar)
 
-		val scene = Scene(root)
-		scene.stylesheets.add(PinkPigMail::class.java.getResource(PinkPigMail.STYLE_SHEET).toExternalForm())
+		val scene = UIUtils.getScene(root)
 
 		var sendAction: ((ActionEvent) -> Unit)? = null
 		var saveAction: ((ActionEvent) -> Unit)? = null
+		var editor: Node? = null
 
 		when (model.sendMode)
 		{
 			EmailSendMode.TEXT ->
 			{
-				val editor = TextArea()
+				editor = TextArea()
 				editor.text = model.contentProperty().get()
 				model.contentProperty().bind(editor.textProperty())
 				editor.positionCaret(1)
-				VBox.setVgrow(editor, Priority.ALWAYS)
-				root.children.add(editor)
-				sendAction = {
-					stage.close()
-					send.invoke(model)
-				}
+				sendAction = { stage.close(); send.invoke(model) }
 				saveAction = { perform { model.saveToDrafts() } }
 			}
 			EmailSendMode.HTML ->
 			{
-				val editor = HTMLEditor()
+				editor = HTMLEditor()
 				editor.htmlText = model.contentProperty().get()
-				//	TODO -- initialize the insert cursor at the beginning?
-				VBox.setVgrow(editor, Priority.ALWAYS)
-				root.children.add(editor)
-				val filter = EventHandler<KeyEvent>() {
-					println("Filtering out event " + it.eventType)
-					println("ORIGINAL")
-					foo(it)
-					println(":" + it.character + ":")
-					println(":" + it.character.length + ":")
-					println(":" + (it.character.equals(KeyCode.CONTROL.toString())) + ":")
-
-                   	//	TODO -- why does this not detect ctrl-m????
-					if(it.character == "m" && it.isControlDown)
-					{
-						println("CCCC CONSUMING CTRL-M")
-						xxx = it
-						//it.consume()
-					}
-
-                    if (it.code == KeyCode.ENTER)
-                    {
-						println("TRANSFORMING");
-						//  pretty sure this is the right key-event
-//                        val ke = KeyEvent(it.source, it.target, it.eventType,
-//                                xxx!!.character, xxx!!.text, xxx!!.code, xxx!!.isShiftDown, xxx!!.isControlDown,
-//								xxx!!.isAltDown, xxx!!.isMetaDown);
-						val ke = KeyEvent(it.source, it.target, it.eventType,
-								"m", "m", null, false, true, false, false)
-						foo(ke);
-                        later { root.scene.processKeyEvent(ke) }
-                    }
-				}
-
-				root.addEventFilter(KeyEvent.KEY_TYPED, filter)
-
-				sendAction = {
-					stage.close()
-					model.contentProperty().set(editor.htmlText)
-					send.invoke(model)
-				}
-				saveAction = {
-					model.contentProperty().set(editor.htmlText)
-					model.saveToDrafts()
-				}
+//				//	TODO -- initialize the insert cursor at the beginning?
+//				val filter = EventHandler<KeyEvent>() {
+//					println("Filtering out event " + it.eventType)
+//					println("ORIGINAL")
+//					foo(it)
+//					println(":" + it.character + ":")
+//					println(":" + it.character.length + ":")
+//					println(":" + (it.character.equals(KeyCode.CONTROL.toString())) + ":")
+//
+//					//	TODO -- why does this not detect ctrl-m????
+//					if (it.character == "m" && it.isControlDown)
+//					{
+//						println("CCCC CONSUMING CTRL-M")
+//						//xxx = it
+//						//it.consume()
+//					}
+//
+//					if (it.code == KeyCode.ENTER)
+//					{
+//						println("TRANSFORMING")
+//						//  pretty sure this is the right key-event
+////                        val ke = KeyEvent(it.source, it.target, it.eventType,
+////                                xxx!!.character, xxx!!.text, xxx!!.code, xxx!!.isShiftDown, xxx!!.isControlDown,
+////								xxx!!.isAltDown, xxx!!.isMetaDown);
+//						val ke = KeyEvent(it.source, it.target, it.eventType,
+//								"m", "m", null, false, true, false, false)
+//						foo(ke)
+//						later { root.scene.processKeyEvent(ke) }
+//					}
+//				}
+//
+//				root.addEventFilter(KeyEvent.KEY_TYPED, filter)
+//
+				sendAction = { stage.close(); model.contentProperty().set(editor.htmlText); send.invoke(model) }
+				saveAction = { model.contentProperty().set(editor.htmlText); model.saveToDrafts() }
 			}
 		}
 
-		val sendB = ButtonHelper.button(ActionHelper.create(Icons.send(), sendAction, Strings.SEND, false))
+		VBox.setVgrow(editor, Priority.ALWAYS)
+		with(root) {
+			children.add(editor)
+			padding = INSETS
+		}
+
+		val sendB = button(action(Icons.send(), sendAction, Strings.SEND, false))
 		val attachB = SplitMenuButton()
-        with(attachB) {
-            setOnAction {
-                attachFile(stage)?.forEach { f ->
-                    val attachment = OutgoingAttachment(f.toPath())
-                    model.attachments.add(OutgoingAttachment(f.toPath()))
-                    try
-                    {
-                        attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
-                    }
-                    catch (ex: IOException)
-                    {
-                        Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-                    }
-                    catch (ex: StorageException)
-                    {
-                        Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, ex)
-                    }
-                }
-            }
-            graphic = Icons.attach()
-            styleClass.add(PinkPigMail.STYLE_SHEET)
-        }
+		with(attachB) {
+			setOnAction {
+				attachFile(stage)?.forEach { f ->
+					val attachment = OutgoingAttachment(f.toPath())
+					model.attachments.add(OutgoingAttachment(f.toPath()))
+					try
+					{
+						attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
+					}
+					catch (exc: IOException)
+					{
+						Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, exc)
+					}
+					catch (exc: StorageException)
+					{
+						Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, exc)
+					}
+				}
+			}
+			graphic = Icons.attach()
+			styleClass.add(PinkPigMail.STYLE_SHEET)
+		}
 		try
 		{
 			Attachments.addRemoveMenu(model.attachments, attachB.items)
@@ -210,15 +196,11 @@ object ComposeMessage
 			Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
 		}
 
-		val saveB = ButtonHelper.button(ActionHelper.create(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
+		val saveB = button(action(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
 
-		toolBar.spacing = 1.0
 		toolBar.children.addAll(sendB, attachB, saveB)
 
-		root.spacing = 5.0
-		root.padding = INSETS
 		stage.scene = scene
-
 		stage.show()
 	}
 }

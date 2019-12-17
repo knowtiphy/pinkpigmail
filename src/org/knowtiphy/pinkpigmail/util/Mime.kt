@@ -16,17 +16,17 @@ object Mime
 
     init
     {
-        GLYPHS["application/pdf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_PDF_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/vnd.oasis.opendocument.text"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/msword"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/vnd.oasis.opendocument.spreadsheet"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_EXCEL_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/rtf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["application/x-rtf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["text/plain"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["text/csv"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["image/jpeg"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_IMAGE_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
-        GLYPHS["image/png"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_IMAGE_ALT).color(Icons.ICON_COLOR).size(size.toDouble()) }
+        GLYPHS["application/pdf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_PDF_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/vnd.oasis.opendocument.text"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/msword"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/vnd.oasis.opendocument.spreadsheet"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_EXCEL_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_WORD_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/rtf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["application/x-rtf"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["text/plain"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["text/csv"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_TEXT_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["image/jpeg"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_IMAGE_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
+        GLYPHS["image/png"] = { size -> Fonts.FONT.create(FontAwesome.Glyph.FILE_IMAGE_ALT).color(Icons.DEFAULT_COLOR).size(size.toDouble()) }
     }
 
     //  TODO: there must be better way to do this safeness testing

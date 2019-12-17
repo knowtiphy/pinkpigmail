@@ -5,16 +5,14 @@ import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.layout.VBox
 
-class WaitSpinner(message : String): VBox()
+class WaitSpinner(message : String): VBox(35.0)
 {
-    val progressIndicator = ProgressBar()
+    private val progressIndicator = ProgressBar()
 
     init
     {
-        val progress = ProgressBar()
-        progress.progress = 1.0
-        children.addAll(progress, Label(message))
-        spacing = 35.0
+        progressIndicator.progress = 1.0
+        children.addAll(progressIndicator, Label(message))
         alignment = Pos.CENTER
     }
 }

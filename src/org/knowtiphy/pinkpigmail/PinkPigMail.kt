@@ -7,7 +7,6 @@ import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
 import javafx.collections.ObservableList
 import javafx.scene.Node
-import javafx.scene.Scene
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
@@ -140,7 +139,7 @@ class PinkPigMail : Application(), IStorageListener
         }
     }
 
-    private fun tabIt(box: Node, icon: Glyph, label: StringProperty): Tab
+    private fun createTab(box: Node, icon: Glyph, label: StringProperty): Tab
     {
         val tab = Tab()
         with(tab) {
@@ -160,18 +159,18 @@ class PinkPigMail : Application(), IStorageListener
         calendarView.calendarSources.add(account.source)
         calendarView.requestedTime = LocalTime.now()
         //  TODO -- the thread to update the requested time
-        rootTabPane.tabs.add(tabIt(calendarView, Icons.calendar(Icons.DEFAULT_SIZE), account.nickNameProperty))
+        rootTabPane.tabs.add(createTab(calendarView, Icons.calendar(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private fun addCardView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: ICardAccount)
     {
-        rootTabPane.tabs.add(tabIt(resizeable(ContactView(account)),
+        rootTabPane.tabs.add(createTab(resizeable(ContactView(account)),
                 Icons.book(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
     private fun addMailView(primaryStage: Stage, account: IEmailAccount)
     {
-        rootTabPane.tabs.add(tabIt(resizeable(MailAccountView(primaryStage, account)),
+        rootTabPane.tabs.add(createTab(resizeable(MailAccountView(primaryStage, account)),
                 Icons.mail(Icons.DEFAULT_SIZE), account.nickNameProperty))
     }
 
@@ -229,8 +228,7 @@ class PinkPigMail : Application(), IStorageListener
         VBox.setVgrow(appToolBar, Priority.NEVER)
 
         with(primaryStage) {
-            scene = Scene(mainFlipper)
-            scene.stylesheets.add(PinkPigMail::class.java.getResource(STYLE_SHEET).toExternalForm())
+            scene = UIUtils.getScene(mainFlipper)
             title = "Pink Pig Mail"
             icons.add(Image(Icons.thePig128()))
             width = uiSettings.widthProperty.get()

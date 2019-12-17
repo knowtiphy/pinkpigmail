@@ -1,13 +1,21 @@
 package org.knowtiphy.pinkpigmail.util.ui
 
 import javafx.application.Platform
+import javafx.event.ActionEvent
 import javafx.geometry.Pos
 import javafx.scene.Node
+import javafx.scene.Parent
+import javafx.scene.Scene
+import javafx.scene.control.Button
 import javafx.scene.image.Image
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import javafx.stage.Stage
+import org.controlsfx.control.action.Action
+import org.controlsfx.control.action.ActionUtils
+import org.knowtiphy.pinkpigmail.PinkPigMail
+import org.knowtiphy.pinkpigmail.StyleSheets
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import java.util.*
@@ -19,87 +27,122 @@ import java.util.concurrent.Callable
  */
 object UIUtils
 {
-    fun hSpacer(): Node
-    {
-        val box = maxSizeable(HBox())
-        HBox.setHgrow(box, Priority.ALWAYS)
-        return box
-    }
+	fun hSpacer(): Node
+	{
+		val box = maxSizeable(HBox())
+		HBox.setHgrow(box, Priority.ALWAYS)
+		return box
+	}
 
-    fun vSpacer(): Node
-    {
-        val box = maxSizeable(VBox())
-        VBox.setVgrow(box, Priority.ALWAYS)
-        return box
-    }
+	fun vSpacer(): Node
+	{
+		val box = maxSizeable(VBox())
+		VBox.setVgrow(box, Priority.ALWAYS)
+		return box
+	}
 
-    fun <T : Region> resizeable(node: T): T
-    {
-        node.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
-        node.setMinSize(0.0, 0.0)
-        return node
-    }
+	fun <T : Region> resizeable(node: T): T
+	{
+		node.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+		node.setMinSize(0.0, 0.0)
+		return node
+	}
 
-    fun <T : Region> maxSizeable(node: T): T
-    {
-        node.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
-        return node
-    }
+	fun <T : Region> maxSizeable(node: T): T
+	{
+		node.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
+		return node
+	}
 
-    fun <T> callable(f: () -> T): Callable<T>
-    {
-        return Callable { f.invoke() }
-    }
+	fun <T> callable(f: () -> T): Callable<T>
+	{
+		return Callable { f.invoke() }
+	}
 
-    fun <T : Comparable<T>> cmp(e: (IMessage) -> T?): Comparator<IMessage>
-    {
-        return kotlin.Comparator { x, y ->
-            val a = e.invoke(x)
-            val b = e.invoke(y)
-            val result = if (a == null) if (b == null) 0 else 1 else if (b == null) -1 else a.compareTo(b)
+	fun <T : Comparable<T>> cmp(e: (IMessage) -> T?): Comparator<IMessage>
+	{
+		return kotlin.Comparator { x, y ->
+			val a = e.invoke(x)
+			val b = e.invoke(y)
+			val result = if (a == null) if (b == null) 0 else 1 else if (b == null) -1 else a.compareTo(b)
 //            println((a?.toString() ?: "NULL") + " : " + (b?.toString() ?: "NULL") + " : " + result)
-            result
-        }
-    }
+			result
+		}
+	}
 
-    fun stage(): Stage
-    {
-        val stage = Stage()
-        stage.icons.add(Image(Icons.thePig128()))
-        return stage
-    }
+	fun stage(): Stage
+	{
+		val stage = Stage()
+		stage.icons.add(Image(Icons.thePig128()))
+		return stage
+	}
 
-    fun getStage(width: Double, height: Double): Stage
-    {
-        val stage = stage()
-        stage.minWidth = width
-        stage.minHeight = height
-        return stage
-    }
+	fun getStage(width: Double, height: Double): Stage
+	{
+		val stage = stage()
+		stage.minWidth = width
+		stage.minHeight = height
+		return stage
+	}
 
-    fun getStage(title : String, width: Double, height: Double): Stage
-    {
-        val stage = getStage(width, height)
-        stage.title = title
-        return stage
-    }
-    fun later(x: () -> Unit) = Platform.runLater(x)
+	fun getStage(title: String, width: Double, height: Double): Stage
+	{
+		val stage = getStage(width, height)
+		stage.title = title
+		return stage
+	}
 
-    fun boxIt(node: Node, color: Paint = Color.WHITE): GridPane
-    {
-        val b = resizeable(BorderPane())
-        b.background = Background(BackgroundFill(color, null, null))
-        b.center = node
+	fun getScene(root: Parent): Scene
+	{
+		val scene = Scene(root)
+		scene.stylesheets.add(PinkPigMail::class.java.getResource(PinkPigMail.STYLE_SHEET).toExternalForm())
+		return scene
+	}
 
-        val g = GridPane()
-        with(g) {
-            addRow(0, b)
-            alignment = Pos.CENTER
-        }
+	fun later(x: () -> Unit) = Platform.runLater(x)
 
-        GridPane.setHgrow(b, Priority.ALWAYS)
-        GridPane.setVgrow(b, Priority.ALWAYS)
+	fun boxIt(node: Node, color: Paint = Color.WHITE): GridPane
+	{
+		val b = resizeable(BorderPane())
+		b.background = Background(BackgroundFill(color, null, null))
+		b.center = node
 
-        return resizeable(g)
-    }
+		val g = GridPane()
+		with(g) {
+			addRow(0, b)
+			alignment = Pos.CENTER
+		}
+
+		GridPane.setHgrow(b, Priority.ALWAYS)
+		GridPane.setVgrow(b, Priority.ALWAYS)
+
+		return resizeable(g)
+	}
+
+	//	create a button from an action and a style class
+
+	fun button(action: Action, styleClass: String = StyleSheets.STANDARD_BUTTON_STYLE_CLASS): Button
+	{
+		val b = ActionUtils.createButton(action)
+		b.styleClass.add(styleClass)
+		return b
+	}
+
+	//	functions to create actions
+
+	private fun action(node: Node, handler: (ActionEvent) -> Unit, text: String?, tip: String, disabled: Boolean): Action
+	{
+		val action = Action(text) { handler.invoke(it) }
+		with(action) {
+			graphic = node
+			longText = tip
+			isDisabled = disabled
+		}
+
+		return action
+	}
+
+	fun action(node: Node, handler: (ActionEvent) -> Unit, tip: String, disabled: Boolean = true) = action(node, handler, null, tip, disabled)
+
+	fun action(node: Node, handler: (ActionEvent) -> Unit, tip: String) = action(node, handler, null, tip, false)
 }
