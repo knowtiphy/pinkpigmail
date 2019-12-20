@@ -11,10 +11,10 @@ import org.knowtiphy.pinkpigmail.resources.Icons
  */
 class StatusCell : BaseCell()
 {
-    private val junk = Icons.junk(Icons.SMALL_SIZE)
-    private val unread = Icons.unread(Icons.SMALL_SIZE)
-    private val answered = Icons.answered(Icons.SMALL_SIZE)
-    private val deleted = Icons.deleted(Icons.SMALL_SIZE)
+    private val junk = Icons.junk()
+    private val unread = Icons.unread()
+    private val answered = Icons.answered()
+    private val deleted = Icons.deleted()
 
     private val box = HBox(junk, unread, answered, deleted)
 

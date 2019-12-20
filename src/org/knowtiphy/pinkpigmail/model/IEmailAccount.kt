@@ -12,6 +12,7 @@ import java.util.concurrent.ExecutionException
  */
 interface IEmailAccount : ITreeItem, IAccount
 {
+    val inbox : IFolder
     val folders: ObservableList<IFolder>
 
     val isMoveDeletedMessagesToTrash: Boolean

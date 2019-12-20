@@ -26,7 +26,7 @@ class Attachments : HBox()
 		{
 			val item = CustomMenuItem()
 			val nameLabel = Label(attachment.fileName)
-			val removeButton = button(action(Icons.delete(Icons.SMALL_SIZE), {
+			val removeButton = button(action(Icons.delete(Icons.SMALL_ICON_STYLE_CLASS), {
 				attachments.remove(attachment)
 				items.remove(item)
 			}, Strings.REMOVE_ATTACHMENT, false))
@@ -51,7 +51,7 @@ class Attachments : HBox()
 				items.add(0, addRemoveMenu(attachment, attachments, items))
 			}
 
-			val removeAll = button(action(Icons.delete(Icons.SMALL_SIZE), {
+			val removeAll = button(action(Icons.delete(Icons.SMALL_ICON_STYLE_CLASS), {
 				attachments.clear()
 				items.clear()
 			}, Strings.REMOVE_ALL_ATTACHMENTS, false))
@@ -64,7 +64,7 @@ class Attachments : HBox()
 		{
 			for (attachment in attachments)
 			{
-				val saveButton = button(action(Icons.save(Icons.SMALL_SIZE),
+				val saveButton = button(action(Icons.save(Icons.SMALL_ICON_STYLE_CLASS),
 						{ Actions.saveAttachment(attachment) }, Strings.SAVE_ATTACHMENT, false))
 
 				val label = Label(attachment.fileName)
@@ -80,7 +80,7 @@ class Attachments : HBox()
 				items.add(item)
 			}
 
-			val saveAllButton = button(action(Icons.save(Icons.SMALL_SIZE), { Actions.saveAttachments(attachments) }, Strings.SAVE_ATTACHMENT, false))
+			val saveAllButton = button(action(Icons.save(Icons.SMALL_ICON_STYLE_CLASS), { Actions.saveAttachments(attachments) }, Strings.SAVE_ATTACHMENT, false))
 
 			items.add(CustomMenuItem(saveAllButton))
 		}

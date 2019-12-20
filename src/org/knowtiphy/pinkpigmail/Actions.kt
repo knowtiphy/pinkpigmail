@@ -66,19 +66,19 @@ object Actions
         ComposeMessage.compose(mailAccount.getSendModel(EmailModelType.COMPOSE)) { it.send() }
     }
 
-    fun markMessagesAsJunk(messages: List<IMessage>)
+    fun markMessagesAsJunk(messages: Collection<IMessage>)
     {
-        messages[0].folder.markMessagesAsJunk(messages)
+        messages.first().folder.markMessagesAsJunk(messages)
     }
 
-    fun markMessagesAsNotJunk(messages: List<IMessage>)
+    fun markMessagesAsNotJunk(messages: Collection<IMessage>)
     {
-        messages[0].folder.markMessagesAsNotJunk(messages)
+        messages.first().folder.markMessagesAsNotJunk(messages)
     }
 
-    fun deleteMessages(messages: List<IMessage>)
+    fun deleteMessages(messages: Collection<IMessage>)
     {
-        val folder = messages[0].folder
+        val folder = messages.first().folder
         if (folder.isTrashProperty.get())
         {
             val alert = Alert(Alert.AlertType.CONFIRMATION)
@@ -99,7 +99,7 @@ object Actions
         folder.deleteMessages(ArrayList(messages))
     }
 
-    fun replyToMessage(message: IMessage, all: Boolean) = perform {
+    fun replyToMessage(message: IMessage, all: Boolean = false) = perform {
         ComposeMessage.compose(message.mailAccount.getReplyModel(message,
                 if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY)) { it.send() }
     }

@@ -1,7 +1,5 @@
 package org.knowtiphy.pinkpigmail.resources
 
-import javafx.scene.Node
-import javafx.scene.paint.Color
 import org.controlsfx.glyphfont.FontAwesome
 import org.controlsfx.glyphfont.Glyph
 import java.io.ByteArrayInputStream
@@ -12,48 +10,50 @@ import java.io.InputStream
  */
 object Icons
 {
-    const val LARGE_SIZE = 24
-    const val DEFAULT_SIZE = 16
-    const val MEDIUM_SIZE = 12
-    const val SMALL_SIZE = 8
-    // same color as modena
-    val DEFAULT_COLOR = Color.valueOf("#039ED3") as Color
+	const val STD_ICON_STYLE_CLASS = "stdIcon"
+	const val JUNK_ICON_STYLE_CLASS = "junkIcon"
+	const val SMALL_ICON_STYLE_CLASS = "smallIcon"
 
-    //  cache the pigs
-    private val cachedPig32 = Resources::class.java.getResourceAsStream("cubed_piggy-32.png").readBytes()
-    private val cachedPig128 = Resources::class.java.getResourceAsStream("cubed_piggy-128.png").readBytes()
+	const val SMALL_SIZE = 8
 
-    //  private helper functions
-    private fun f(g: FontAwesome.Glyph): Glyph = Fonts.FONT.create(g)
+	//  cache the pigs
+	private val cachedPig32 = Resources::class.java.getResourceAsStream("cubed_piggy-32.png").readBytes()
+	private val cachedPig128 = Resources::class.java.getResourceAsStream("cubed_piggy-128.png").readBytes()
 
-    private fun c(g: Glyph, color: Color): Glyph = g.color(color)
-    private fun s(g: Glyph, size: Int): Glyph = g.size(size.toDouble())
+	fun style(glyph: FontAwesome.Glyph, styleClass: String = STD_ICON_STYLE_CLASS): Glyph
+	{
+		val result = Fonts.FONT.create(glyph)
+//		result.styleClass.remove("label");
+		result.styleClass.add(styleClass)
+		return result
+	}
 
-    fun attach(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR) = Icons.s(c(f(FontAwesome.Glyph.PAPERCLIP), color), size)
-    fun reply(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_REPLY), color), size)
-    fun replyAll(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_REPLY_ALL), color), size)
-    fun forward(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.MAIL_FORWARD), color), size)
-    fun delete(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.TRASH), color), size)
-    fun markJunk(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.EYE), color), size)
-    fun markNotJunk(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.EYE_SLASH), color), size)
-    fun compose(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.PENCIL), color), size)
-    fun trustSender(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.THUMBS_UP), color), size)
-    fun loadRemote(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.DOWNLOAD), color), size)
-    fun save(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.SAVE), color), size)
-    fun send(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.PAPER_PLANE), color), size)
-    fun trustContentProvider(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.HTML5), color), size)
-    fun junk(size: Int = DEFAULT_SIZE, color: Color = Color.ORANGE): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
-    fun unread(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CIRCLE), color), size)
-    fun answered(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.REPLY), color), size)
-    fun deleted(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CLOSE), color), size)
-    fun calendar(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.CALENDAR), color), size)
-    fun book(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.BOOK), color), size)
-    fun mail(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.ENVELOPE), color), size)
-    fun configure(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.GEAR), color), size)
-    fun switchHorizontal(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Node = s(c(f(FontAwesome.Glyph.ANGLE_DOUBLE_RIGHT), color), size)
-    fun notification(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.EXCLAMATION_TRIANGLE), color), size)
-    fun untrustSender(size: Int = DEFAULT_SIZE, color: Color = DEFAULT_COLOR): Glyph = s(c(f(FontAwesome.Glyph.THUMBS_DOWN), color), size)
+	fun attach(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.PAPERCLIP, styleClass)
+	fun reply(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.MAIL_REPLY, styleClass)
+	fun replyAll(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.MAIL_REPLY_ALL, styleClass)
+	fun forward(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.MAIL_FORWARD, styleClass)
+	fun delete(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.TRASH, styleClass)
+	fun markJunk(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.EYE, styleClass)
+	fun markNotJunk(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.EYE_SLASH, styleClass)
+	fun compose(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.PENCIL, styleClass)
+	fun trustSender(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.THUMBS_UP, styleClass)
+	fun loadRemote(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.DOWNLOAD, styleClass)
+	fun save(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.SAVE, styleClass)
+	fun send(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.PAPER_PLANE, styleClass)
+	fun trustContentProvider(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.HTML5, styleClass)
+	fun calendar(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.CALENDAR, styleClass)
+	fun book(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.BOOK, styleClass)
+	fun mail(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.ENVELOPE, styleClass)
+	fun switchHorizontal(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.ANGLE_DOUBLE_RIGHT, styleClass)
+	fun configure(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.GEAR, styleClass)
+	fun notification(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.EXCLAMATION_TRIANGLE, styleClass)
+	fun untrustSender(styleClass: String = STD_ICON_STYLE_CLASS) = style(FontAwesome.Glyph.THUMBS_DOWN, styleClass)
+	//	TODO -- move the sizing into the CSS
+	fun junk(styleClass: String = JUNK_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.CIRCLE, styleClass).size(8.0)
+	fun unread(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.CIRCLE, styleClass).size(8.0)
+	fun answered(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.REPLY, styleClass).size(8.0)
+	fun deleted(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.CLOSE, styleClass).size(8.0)
 
-    fun thePig128(): InputStream = ByteArrayInputStream(cachedPig128)
-    fun thePig32(): InputStream = ByteArrayInputStream(cachedPig32)
+	fun thePig128(): InputStream = ByteArrayInputStream(cachedPig128)
+	fun thePig32(): InputStream = ByteArrayInputStream(cachedPig32)
 }

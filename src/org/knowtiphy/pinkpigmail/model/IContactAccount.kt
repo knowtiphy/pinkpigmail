@@ -5,7 +5,7 @@ import javafx.collections.ObservableList
 import org.knowtiphy.pinkpigmail.ITreeItem
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 
-interface ICardAccount : ITreeItem, IAccount
+interface IContactAccount : ITreeItem, IAccount
 {
     val emailAddressProperty: StringProperty
 

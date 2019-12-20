@@ -10,20 +10,20 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.knowtiphy.pinkpigmail.cell.AddressBookOrGroupCell
 import org.knowtiphy.pinkpigmail.cell.CardCell
-import org.knowtiphy.pinkpigmail.model.ICardAccount
+import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVCard
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVGroup
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 
-class ContactView(account: ICardAccount) : VBox()
+class ContactView(account: IContactAccount) : VBox()
 {
     private val groupsRoot = TreeItem<Any>()
 
     init
     {
-        val pad = AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>(account)
+        val pad = AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>(account)
 
         val accountView = createAccountView(pad)
         val toolBar = createToolBar(pad)
@@ -78,7 +78,7 @@ class ContactView(account: ICardAccount) : VBox()
 //        }
     }
 
-    private fun createToolBar(pad: AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>): Node
+    private fun createToolBar(pad: AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>): Node
     {
 //        val delete = ActionHelper.create(Icons.delete(),
 //                {
@@ -107,7 +107,7 @@ class ContactView(account: ICardAccount) : VBox()
         return toolBar
     }
 
-    private fun createAccountView(pad: AccountViewModel<ICardAccount, CardDAVAddressBook, CardDAVCard>): TreeView<Any>
+    private fun createAccountView(pad: AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>): TreeView<Any>
     {
         val view = resizeable(TreeView(groupsRoot))
         view.isShowRoot = false

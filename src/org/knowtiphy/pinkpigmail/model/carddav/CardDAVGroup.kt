@@ -1,20 +1,21 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
 import javafx.beans.property.SimpleStringProperty
+import javafx.collections.FXCollections
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
 
 class CardDAVGroup(id: String, storage: IStorage) : StoredPeer(id, storage)
 {
-   val nameProperty = SimpleStringProperty()
-    //, optional: 0+ telephone numbers (each with a type), 0+ emails (each with a type)
+	val nameProperty = SimpleStringProperty()
+	val cards = FXCollections.observableArrayList<CardDAVCard>()
 
-    init
-    {
-        declareU(Vocabulary.HAS_NAME, nameProperty)
-//        declareU(Vocabulary.HAS_DATE_START, ::setStartDate)
-//        declareU(Vocabulary.HAS_DATE_END, ::setEndDate)
-    }
+	init
+	{
+		declareU(Vocabulary.HAS_NAME, nameProperty)
+		declareOU(Vocabulary.HAS_CARD, cards)
+		declareD(Vocabulary.HAS_CARD, cards)
+	}
 }
 

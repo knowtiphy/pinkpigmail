@@ -1,8 +1,8 @@
 package org.knowtiphy.pinkpigmail
 
 import javafx.beans.binding.Bindings
+import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleBooleanProperty
-import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
@@ -39,11 +39,9 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService) : Replacer()
+class MessageView(private val service: ExecutorService, private val messageProperty : ReadOnlyObjectProperty<Pair<IMessage?, Collection<IMessage>>>) : Replacer()
 {
 	private val logger = Logger.getLogger(MessageView::class.qualifiedName)
-
-	private val messageProperty = SimpleObjectProperty<Pair<IMessage?, Collection<IMessage>>>()
 
 	private val viewer = UIUtils.resizeable(MailViewer())
 	private val noMessageSelected = UIUtils.boxIt(Label(Strings.NO_MESSAGE_SELECTED))
@@ -116,6 +114,7 @@ class MessageView(private val service: ExecutorService) : Replacer()
 			if (newState == Worker.State.SUCCEEDED)
 			{
 				later {
+					println("FLIPPING TO MESSAGE SPACE")
 					flip(messageSpace)                         /*loadAhead(messageProperty.get().second)*/
 				}
 			}
@@ -157,11 +156,6 @@ class MessageView(private val service: ExecutorService) : Replacer()
 		trustContentMenu.graphic = Icons.trustContentProvider()
 
 		messageProperty.addListener { _ -> newMessage() }
-	}
-
-	fun setMessage(message: Pair<IMessage?, Collection<IMessage>>)
-	{
-		messageProperty.set(message)
 	}
 
 //    private fun loadAhead(messages : Collection<IMessage> )

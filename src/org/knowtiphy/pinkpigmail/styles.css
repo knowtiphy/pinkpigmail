@@ -6,6 +6,11 @@
     -fx-alignment:center-left;
 }
 
+.root {
+	/*	cribbed from modena */
+	-icons-color: #039ED3;
+}
+
 /*	style class for buttons */
 
 .stdButton {
@@ -30,4 +35,21 @@
     -fx-alignment: CENTER;
     -fx-content-display: LEFT;
     */
+}
+
+.stdIcon {
+	-fx-text-fill: -icons-color;
+	-fx-fill: -icons-color;
+	/* cant size them */
+}
+
+.junkIcon {
+	-fx-text-fill: orange;
+	-fx-fill: orange;
+}
+
+.smallIcon {
+  -fx-text-fill: -icons-color;
+  -fx-fill: -icons-color;
+	/* cant size them */
 }

@@ -39,10 +39,12 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 
 	var archiveFolder: IMAPFolder? = null
 	var draftsFolder: IMAPFolder? = null
-	var inbox: IMAPFolder? = null
+	var inboxFolder: IMAPFolder? = null
 	var junkFolder: IMAPFolder? = null
 	var sentFolder: IMAPFolder? = null
 	var trashFolder: IMAPFolder? = null
+
+	override val inbox by lazy { inboxFolder!! }
 
 	private val setting = AccountSettings()
 
@@ -221,7 +223,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 		if (folder.isDraftsProperty.get())
 			draftsFolder = folder
 		if (folder.isInboxProperty.get())
-			inbox = folder
+			inboxFolder = folder
 		if (folder.isJunkProperty.get())
 			junkFolder = folder
 		if (folder.isSentProperty.get())
@@ -230,9 +232,9 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 			trashFolder = folder
 
 		//	can the special folders change?
-        folder.isArchiveProperty.addListener { _, _, new -> if (new) archiveFolder = folder }
-        folder.isDraftsProperty.addListener { _, _, new -> if (new) draftsFolder = folder }
-        folder.isInboxProperty.addListener { _, _, new -> if (new) inbox = folder }
+		folder.isArchiveProperty.addListener { _, _, new -> if (new) archiveFolder = folder }
+		folder.isDraftsProperty.addListener { _, _, new -> if (new) draftsFolder = folder }
+		folder.isInboxProperty.addListener { _, _, new -> if (new) inboxFolder = folder }
 		folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
 		folder.isSentProperty.addListener { _, _, new -> if (new) sentFolder = folder }
 		folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }

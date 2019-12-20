@@ -9,12 +9,12 @@ import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
-import org.knowtiphy.pinkpigmail.model.ICardAccount
+import org.knowtiphy.pinkpigmail.model.IContactAccount
 
 /**
  * @author graham
  */
-class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), ICardAccount
+class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), IContactAccount
 {
     override val addressBooks : ObservableList<CardDAVAddressBook> = FXCollections.observableArrayList()
     override val nickNameProperty = SimpleStringProperty()
@@ -23,6 +23,8 @@ class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), I
     private val serverNameProperty = SimpleStringProperty()
     private val serverHeaderProperty = SimpleStringProperty()
     private val passwordProperty = SimpleStringProperty()
+
+    private val groups = FXCollections.observableArrayList<CardDAVGroup>()
 
     init
     {
@@ -33,6 +35,8 @@ class CardDAVAccount(id: String, storage: IStorage) : StoredPeer(id, storage), I
         declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
         declareOU(Vocabulary.CONTAINS, addressBooks)
         declareD(Vocabulary.CONTAINS, addressBooks)
+        declareOU(Vocabulary.HAS_GROUP, groups)
+        declareD(Vocabulary.HAS_GROUP, groups)
 
         emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
             if (nickNameProperty.get() == null)

@@ -9,10 +9,10 @@ import org.knowtiphy.owlorm.javafx.StoredPeer
 
 class CardDAVAddressBook(accountId: String, storage: IStorage) : StoredPeer(accountId, storage)
 {
+    val nameProperty = SimpleStringProperty()
+
     val cards: ObservableList<CardDAVCard> = FXCollections.observableArrayList()
     val groups: ObservableList<CardDAVGroup> = FXCollections.observableArrayList()
-    
-    val nameProperty = SimpleStringProperty()
 
     init
     {
