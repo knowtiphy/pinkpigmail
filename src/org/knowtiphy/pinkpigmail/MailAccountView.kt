@@ -140,7 +140,11 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 	private fun displayMessage(folder: IFolder, messages: Collection<IMessage>, total: List<IMessage>,
 							   messageProp: ObjectProperty<Pair<IMessage?, Collection<IMessage>>>)
 	{
-		if (messages.size == 1)
+		if (messages.size != 1)
+		{
+			messageProp.set(Pair(null, loadAhead(folder, total)))
+		}
+		else
 		{
 			val message = messages.first()
 			PinkPigMail.htmlState.message = message
@@ -289,7 +293,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		setVgrow(splitPane, Priority.ALWAYS)
 
 		//	if the selection on the folder changes display a new message
-		model.selection[folder]!!.filter { isCP(folder, name) && it.size() == 1 }.subscribe { displayMessage(folder, it.selectedItems, ArrayList(), messageProperty) }
+		model.selection[folder]!!.filter { isCP(folder, name) }.subscribe { displayMessage(folder, it.selectedItems, ArrayList(), messageProperty) }
 
 		return resizeable(VBox(toolBar, splitPane))
 	}

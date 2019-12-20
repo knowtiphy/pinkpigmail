@@ -184,7 +184,11 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 	private fun newMessage()
 	{
 		val message = messageProperty.get().first
-		if (message != null)
+		if(message == null)
+		{
+			flip(noMessageSelected)
+		}
+		else
 		{
 			println("FLIP Loading")
 			flip(loading)
