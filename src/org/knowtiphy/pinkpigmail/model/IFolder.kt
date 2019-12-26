@@ -6,12 +6,11 @@ import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
 import org.knowtiphy.owlorm.javafx.IPeer
-import org.knowtiphy.pinkpigmail.ITreeItem
 
 /**
  * @author graham
  */
-interface IFolder : ITreeItem, IPeer
+interface IFolder : IPeer
 {
     val accountProperty: ObjectProperty<IEmailAccount>
 
@@ -37,4 +36,6 @@ interface IFolder : ITreeItem, IPeer
     fun markMessagesAsJunk(messages: Collection<IMessage>)
 
     fun markMessagesAsNotJunk(messages: Collection<IMessage>)
+
+    fun loadAhead(messages : Collection<IMessage>)
 }

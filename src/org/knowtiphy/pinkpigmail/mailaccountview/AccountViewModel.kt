@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.mailaccountview
 
 import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleObjectProperty
@@ -16,13 +16,13 @@ import org.reactfx.EventStreams
 
 class AccountViewModel<A, C, E>(val account: A)
 {
-	//  the currently selected category and perspective
+	//  the currently selected category
 	private val currentCategory = SimpleObjectProperty<C>()
-	//  one selection model per category
-	val tableViewSelectionModels = HashMap<C, TableView.TableViewSelectionModel<E>>()
-	//	one actual selection model per categoy
+	//  one tableview selection model per category
+	private val tableViewSelectionModels = HashMap<C, TableView.TableViewSelectionModel<E>>()
+	//	one selection model per categoy
 	private val selectionModels = HashMap<C, EntitySelection<C, E>>()
-	//  the current perspective for each category
+	//  one current perspective for each category
 	private val perspectives = HashMap<C, SimpleObjectProperty<String>>()
 
 	//  event sources -- the selected category, selection model per category, perspective per category
@@ -31,7 +31,10 @@ class AccountViewModel<A, C, E>(val account: A)
 	val selection = HashMap<C, EventSource<EntitySelection<C, E>>>()
 	val perspective = HashMap<C, EventStream<Change<String>>>()
 
-	fun currentCategoryProperty() : ReadOnlyObjectProperty<C> = currentCategory
+	fun currentCategoryProperty(): ReadOnlyObjectProperty<C> = currentCategory
+	fun currentSelection(category: C) = selectionModels[category]!!
+	fun currentTableViewSelectionModel(category: C) = tableViewSelectionModels[category]!!
+	fun isCurrentPerspective(category: C, name: String) = perspectives[category]!!.get() == name
 
 	fun addCategory(category: C)
 	{
@@ -45,7 +48,7 @@ class AccountViewModel<A, C, E>(val account: A)
 		currentCategory.set(category)
 	}
 
-	private fun outputSelection(category : C, sel : EntitySelection<C, E>)
+	private fun outputSelection(category: C, sel: EntitySelection<C, E>)
 	{
 		selectionModels[category] = sel
 		selection[category]!!.push(sel)
@@ -76,10 +79,6 @@ class AccountViewModel<A, C, E>(val account: A)
 		//	and hence the selection model to be created (see the comment in bindSelection)
 		perspectives[category]!!.value = name
 		val es = tableViewSelectionModels[category]!!
-		outputSelection(category, EntitySelection<C, E>(category, es.selectedIndices, es.selectedItems))
+		outputSelection(category, EntitySelection(category, es.selectedIndices, es.selectedItems))
 	}
-
-	fun currentSelection(category: C) = selectionModels[category]!!
-
-	fun isCurrentPerspective(category: C, name: String) = perspectives[category]!!.get() == name
 }

@@ -10,6 +10,8 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.VBox
 import org.knowtiphy.pinkpigmail.cell.AddressBookOrGroupCell
 import org.knowtiphy.pinkpigmail.cell.CardCell
+import org.knowtiphy.pinkpigmail.mailaccountview.AccountViewModel
+import org.knowtiphy.pinkpigmail.mailaccountview.CategoryViewModel
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVCard

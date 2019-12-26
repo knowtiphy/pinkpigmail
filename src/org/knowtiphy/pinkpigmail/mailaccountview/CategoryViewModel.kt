@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.mailaccountview
 
 //  the view-model for a category view
 class CategoryViewModel<C, E>(val category: C)

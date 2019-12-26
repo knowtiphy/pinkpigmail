@@ -88,14 +88,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
             storage.copyMessages(mailAccount.id, id, ids, mailAccount.trashFolder?.id, true)
         }
     }
-
-//    override fun loadAhead(messages: Collection<IMessage>): Future<*>
-//    {
-//        val future = storage.ensureMessageContentLoaded(account.id, id, ids(messages))
-//        messages.forEach { it.setFuture(future) }
-//        return future
-//    }
-
+    
     private fun ids(msgList: Collection<IMessage>): List<String>
     {
         return msgList.map { x -> x.id }
@@ -108,6 +101,11 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
 
         message.folder = this
         messages.add(message)
+    }
+
+    override fun loadAhead(messages: Collection<IMessage>)
+    {
+        storage.loadAhead(mailAccount.id, id, ids(messages))
     }
 
     override fun toString(): String

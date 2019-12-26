@@ -1,6 +1,6 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.mailaccountview
 
-class EntitySelection<C, E>(val category : C, val selectedIndices : Collection<Int>, val selectedItems : Collection<E>)
+class EntitySelection<C, E>(val category : C, val selectedIndices : Collection<Int>, val selectedItems : List<E>)
 {
 	fun size() = selectedIndices.size
 

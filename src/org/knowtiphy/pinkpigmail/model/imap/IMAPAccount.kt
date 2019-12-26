@@ -45,6 +45,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : StoredPeer(accountId, 
 	var trashFolder: IMAPFolder? = null
 
 	override val inbox by lazy { inboxFolder!! }
+	override val trash by lazy { trashFolder!! }
 
 	private val setting = AccountSettings()
 

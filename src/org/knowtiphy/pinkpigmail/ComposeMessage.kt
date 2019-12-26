@@ -15,7 +15,6 @@ import javafx.scene.layout.VBox
 import javafx.scene.web.HTMLEditor
 import javafx.stage.FileChooser
 import javafx.stage.Stage
-import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.resources.Icons
@@ -24,11 +23,7 @@ import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
-import tornadofx.Dimension
 import java.io.File
-import java.io.IOException
-import java.util.logging.Level
-import java.util.logging.Logger
 
 /**
  * @author graham
@@ -166,35 +161,16 @@ object ComposeMessage
 				attachFile(stage)?.forEach { f ->
 					val attachment = OutgoingAttachment(f.toPath())
 					model.attachments.add(OutgoingAttachment(f.toPath()))
-					try
-					{
+					perform {
 						attachB.items.add(0, Attachments.addRemoveMenu(attachment, model.attachments, attachB.items))
-					}
-					catch (exc: IOException)
-					{
-						Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, exc)
-					}
-					catch (exc: StorageException)
-					{
-						Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, exc)
 					}
 				}
 			}
 			graphic = Icons.attach()
 			styleClass.add(PinkPigMail.STYLE_SHEET)
 		}
-		try
-		{
-			Attachments.addRemoveMenu(model.attachments, attachB.items)
-		}
-		catch (ex: IOException)
-		{
-			Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
-		}
-		catch (ex: StorageException)
-		{
-			Logger.getLogger(ComposeMessage::class.java.name).log(Level.SEVERE, null, Dimension.LinearUnits.ex)
-		}
+
+		perform { Attachments.addRemoveMenu(model.attachments, attachB.items) }
 
 		val saveB = button(action(Icons.save(), saveAction, Strings.SAVE_TO_DRAFTS, false))
 

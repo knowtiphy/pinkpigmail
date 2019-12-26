@@ -54,19 +54,19 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
     }
 
     @Synchronized
-    override fun ensureContentLoaded(immediate: Boolean)
+    override fun ensureContentLoaded()
     {
         if (future == null)
         {
             //  TODO probably want to do different things in embedded vs non embedded mode (e.g. cache the future)
-            future = storage.ensureMessageContentLoaded(folder.accountProperty.get().id, folder.id, id, immediate)
+            future = storage.ensureMessageContentLoaded(folder.accountProperty.get().id, folder.id, id)
             future!!.get()
         }
     }
 
     override fun getContent(allowHTML: Boolean): IPart
     {
-        ensureContentLoaded(true)
+        ensureContentLoaded()
         val context = storage.readContext
         context.start()
         try
@@ -75,7 +75,7 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
             //  TODO this replace stuff should be done in the database
             val content = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(context.model,
                     id, Vocabulary.HAS_CONTENT)).replace("\\\"", "\"")
-            return IMAPPart(id, storage, mimeType, content)
+            return IMAPPart(id, mimeType, content)
         } finally
         {
             context.end()
@@ -85,7 +85,7 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
     override val attachments: ObservableList<IAttachment>
         get()
         {
-            ensureContentLoaded(true)
+            ensureContentLoaded()
             val result = FXCollections.observableArrayList<IAttachment>()
             val context = storage.readContext
             context.start()
@@ -110,7 +110,7 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
     override val cidMap: Map<URL, IMAPCIDPart>
         get()
         {
-            ensureContentLoaded(true)
+            ensureContentLoaded()
             val result = HashMap<URL, IMAPCIDPart>()
             val context = storage.readContext
             context.start()
@@ -132,7 +132,7 @@ class IMAPMessage(id: String, storage: IStorage) : StoredPeer(id, storage), IMes
     override val isHTML: Boolean
         get()
         {
-            ensureContentLoaded(true)
+            ensureContentLoaded()
             val context = storage.readContext
             context.start()
             try

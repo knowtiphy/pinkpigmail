@@ -5,14 +5,12 @@ import javafx.scene.control.CustomMenuItem
 import javafx.scene.control.Label
 import javafx.scene.control.MenuItem
 import javafx.scene.layout.HBox
-import org.knowtiphy.babbage.storage.StorageException
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.Mime
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
-import java.io.IOException
 
 /**
  * @author graham
@@ -21,7 +19,6 @@ class Attachments : HBox()
 {
 	companion object
 	{
-		@Throws(IOException::class, StorageException::class)
 		fun addRemoveMenu(attachment: IAttachment, attachments: MutableList<IAttachment>, items: ObservableList<MenuItem>): CustomMenuItem
 		{
 			val item = CustomMenuItem()
@@ -42,7 +39,6 @@ class Attachments : HBox()
 		}
 
 		//  this is ugly -- not very MVC
-		@Throws(IOException::class, StorageException::class)
 		fun addRemoveMenu(attachments: MutableList<IAttachment>, items: ObservableList<MenuItem>)
 		{
 			items.clear()
@@ -59,7 +55,6 @@ class Attachments : HBox()
 			items.add(CustomMenuItem(removeAll))
 		}
 
-		@Throws(IOException::class, StorageException::class)
 		fun viewSaveMenu(attachments: List<IAttachment>, items: ObservableList<MenuItem>)
 		{
 			for (attachment in attachments)

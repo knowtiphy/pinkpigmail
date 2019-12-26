@@ -39,7 +39,8 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService, private val messageProperty : ReadOnlyObjectProperty<Pair<IMessage?, Collection<IMessage>>>) : Replacer()
+class MessageView(private val service: ExecutorService,
+				  private val messageProperty: ReadOnlyObjectProperty<Pair<IMessage?, Collection<Collection<IMessage>>>>) : Replacer()
 {
 	private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 
@@ -78,6 +79,8 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 	private val header = HBox(headerLeft, headerRight)
 	private val messageSpace = VBox(header, viewer)
 
+	var startTime : Long = 0
+
 	private val listener = { _: ObservableValue<out Document?>, _: Document?, document: Document? ->
 		assert(messageProperty.get() != null)
 		if (document != null)
@@ -114,8 +117,10 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 			if (newState == Worker.State.SUCCEEDED)
 			{
 				later {
-					println("FLIPPING TO MESSAGE SPACE")
-					flip(messageSpace)                         /*loadAhead(messageProperty.get().second)*/
+					println("FLIPPING TO MESSAGE SPACE : " + (System.currentTimeMillis() - startTime))
+					flip(messageSpace)
+					println("STARTING LOAD AHEADS")
+					messageProperty.get().second.forEach { messageProperty.get().first!!.folder.loadAhead(it) }
 				}
 			}
 		}
@@ -158,41 +163,18 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 		messageProperty.addListener { _ -> newMessage() }
 	}
 
-//    private fun loadAhead(messages : Collection<IMessage> )
-//    {
-//        //val pos = model.selectedIndices[model.selectedIndices.size - 1]
-//        //  TODO -- should do better than this, expand outwards, especially if we have a multi-selection
-//        //  load ahead radially 4 messages either side of pos
-//       // val n = model.tableView.items.size
-//        println("Starting loadAhead")
-//        messages.forEach { it.ensureContentLoaded(false)}
-////        for (i in 1 until 5)
-////        {
-////            val before = pos - i
-////            if (before in 0 until n)
-////            {
-////                model.tableView.items[before].ensureContentLoaded(false)
-////            }
-////            val after = pos + i
-////            if (after in 0 until n)
-////            {
-////                model.tableView.items[after].ensureContentLoaded(false)
-////            }
-////        }
-//    }
-
 	private fun newMessage()
 	{
 		val message = messageProperty.get().first
-		if(message == null)
+		if (message == null)
 		{
 			flip(noMessageSelected)
-		}
-		else
+		} else
 		{
 			println("FLIP Loading")
 			flip(loading)
 			println("STARTING TASK")
+			startTime = System.currentTimeMillis()
 
 			val task = object : Task<Void>()
 			{
@@ -203,10 +185,11 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 					val part = message.getContent(account.allowHTMLProperty.get())
 
 					later {
+					//	val startTime = System.currentTimeMillis()
 						try
 						{
-                            //  they may have clicked on a new message in the time between the task was started
-                            //  and the time at which we get to this point
+							//  they may have clicked on a new message in the time between the task was started
+							//  and the time at which we get to this point
 							if (message == messageProperty.get().first)
 							{
 								println("Client GOT content :: " + message.id)
@@ -248,9 +231,8 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 									account.trustedSenders.addListener { _: ListChangeListener.Change<out EmailAddress> -> viewer.reload() }
 									loadRemoteProperty.set(loadRemoteProperty.get() || account.isTrustedSender(from))
 								}
-							}
-                            else
-                                println("IGNORING MESSAGE")
+							} else
+								println("IGNORING MESSAGE")
 						}
 						catch (exception: Exception)
 						{
@@ -258,6 +240,8 @@ class MessageView(private val service: ExecutorService, private val messagePrope
 							viewer.clear()
 							Fail.fail(exception)
 						}
+
+						println("Client LOAD DONE :: " + (System.currentTimeMillis() - startTime))
 					}
 
 					return null

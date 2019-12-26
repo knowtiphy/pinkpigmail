@@ -4,15 +4,16 @@ import javafx.beans.property.ReadOnlyBooleanProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
 import org.knowtiphy.babbage.storage.StorageException
-import org.knowtiphy.pinkpigmail.ITreeItem
 import java.util.concurrent.ExecutionException
 
 /**
  * @author graham
  */
-interface IEmailAccount : ITreeItem, IAccount
+interface IEmailAccount : IAccount
 {
     val inbox : IFolder
+    val trash : IFolder
+
     val folders: ObservableList<IFolder>
 
     val isMoveDeletedMessagesToTrash: Boolean

@@ -1,7 +1,6 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.resources
 
 import javafx.scene.media.AudioClip
-import org.knowtiphy.pinkpigmail.resources.Resources
 import org.knowtiphy.pinkpigmail.util.Operation
 
 object Beep
