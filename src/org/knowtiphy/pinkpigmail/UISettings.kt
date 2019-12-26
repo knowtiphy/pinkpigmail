@@ -18,6 +18,7 @@ import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
 import java.io.IOException
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.*
 
 /**
@@ -107,7 +108,7 @@ class UISettings
         fun read(fileName: String): UISettings
         {
             val uiModel = ModelFactory.createDefaultModel()
-            RDFDataMgr.read(uiModel, Files.newInputStream(OS.getAppFile(PinkPigMail::class.java, fileName)), Lang.TURTLE)
+            RDFDataMgr.read(uiModel, Files.newInputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), fileName)), Lang.TURTLE)
 
             val settings = UISettings()
 

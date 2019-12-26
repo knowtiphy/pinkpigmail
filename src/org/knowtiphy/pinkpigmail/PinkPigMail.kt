@@ -88,9 +88,9 @@ class PinkPigMail : Application(), IStorageListener
 		val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
 		val storage: IStorage by lazy {
-			val dir = Paths.get(OS.getAppDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
+			val dir = Paths.get(OS.getDataDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
 			Files.createDirectories(dir)
-			StorageFactory.getLocal(dir, OS.getAppFile(PinkPigMail::class.java, ACCOUNTS_FILE))
+			StorageFactory.getLocal(dir, Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), ACCOUNTS_FILE))
 		}
 
 		val uiSettings: UISettings by lazy {
@@ -186,7 +186,7 @@ class PinkPigMail : Application(), IStorageListener
 		uiModel.setNsPrefix("n", Vocabulary.NBASE)
 		uiModel.setNsPrefix("o", Vocabulary.TBASE)
 		accounts.forEach { uiSettings.save(uiModel, names, it) }
-		RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, UI_FILE)), uiModel, Lang.TURTLE)
+		RDFDataMgr.write(Files.newOutputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), UI_FILE)), uiModel, Lang.TURTLE)
 	}
 
 	//  shutdown sequence
