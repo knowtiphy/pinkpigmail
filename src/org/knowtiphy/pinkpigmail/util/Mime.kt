@@ -39,14 +39,16 @@ object Mime
 			"application/x-rtf",
 			"text/plain",
 			"text/csv",
+			"text/turtle",
 			"image/jpeg",
 			"image/png",
+			"application/x-turtle",
 			"application/vnd.oasis.opendocument.text",
 			"application/msword",
 			"application/vnd.oasis.opendocument.spreadsheet",
 			"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-	private val SAFE_FILE_ENDINGS = setOf("pdf", "rtf", "txt", "csv", "jpeg", "jpg", "png", "ods", "odt", "ics")
+	private val SAFE_FILE_ENDINGS = setOf("pdf", "rtf", "txt", "csv", "jpeg", "jpg", "png", "ods", "odt", "ics", "ttl")
 	private val IMAGE = setOf("image/jpeg", "image/png")
 
 	fun glyph(mimeType: String, size: Int): Node
