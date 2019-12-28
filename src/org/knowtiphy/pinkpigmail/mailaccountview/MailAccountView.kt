@@ -21,6 +21,7 @@ import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.mailview.HTMLState
+import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
@@ -28,6 +29,7 @@ import org.knowtiphy.pinkpigmail.resources.Beep
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.Format
+import org.knowtiphy.pinkpigmail.util.Functions
 import org.knowtiphy.pinkpigmail.util.ui.LazyMappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
@@ -38,6 +40,7 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
+import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 
 class MailAccountView(stage: Stage, private val service: ExecutorService, private val htmlState: HTMLState, account: IEmailAccount) : VBox()
@@ -85,8 +88,10 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 					//	TODO -- get the initial perspective from some sort of UI settings
 					model.changePerspective(folder, VERTICAL)
 
+					//  message load-ahead
+					//model.selection[folder]!!.filter { !it.isEmpty() }.subscribe { loadAhead(folder, it) }
+
 					//	loadahed should go here
-//					viewModel.selection[folder]!!.subscribe { println("Selected " + it) }
 					//  publish events -- new message selected
 					//   fvm.entitySelected.subscribe { accountViewModel.getCategoryViewModel()!!.entitySelected.set(fvm) })
 				}
@@ -108,9 +113,6 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 			}
 		}
 
-		//  message load-ahead
-		// accountViewModel.entitySelected.filter { it.getSelectionModel(folder).selectedIndices.isNotEmpty() }.subscribe { loadAhead(it) }
-
 		//  on synch finished set the view to the inbox, beep if there are unread messages in the inbox, and
 		//  set up beeping on any new messages arriving in the inbox
 		PinkPigMail.synched.filter { it == account }.subscribe {
@@ -121,6 +123,30 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 			}
 		}
 	}
+
+//	private fun loadAhead(folder: IFolder, selection: EntitySelection<IFolder, IMessage>)
+//	{
+//		val pos = selection.selectedIndices.first()
+//		val underlyingMessages = model.currentTableViewSelectionModel(folder).tableView.items
+//		val n = underlyingMessages.size
+//		val range = 0 until n
+//		for (i in 1 until 5)
+//		{
+//			val disti = ArrayList<IMessage>()
+//			val after = pos + i
+//			if (after in range)
+//			{
+//				disti.add(underlyingMessages[after])
+//			}
+//			val before = pos - i
+//			if (before in range)
+//			{
+//				disti.add(underlyingMessages[before])
+//			}
+//
+//			folder.loadAhead(disti)
+//		}
+//	}
 
 	//  load ahead radially 4 messages either side of the selection
 
@@ -183,9 +209,9 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		val cellValueFactory = { param: TableColumn.CellDataFeatures<IMessage, IMessage> -> ReadOnlyObjectWrapper(param.value) }
 
 		val statusColumn = TableColumn<IMessage, IMessage>()
-		statusColumn.setCellValueFactory(cellValueFactory)
-		statusColumn.setCellFactory { StatusCell() }
 		with(statusColumn) {
+			setCellValueFactory(cellValueFactory)
+			statusColumn.setCellFactory { StatusCell() }
 			prefWidth = 35.0
 			maxWidth = 35.0
 			minWidth = 35.0
@@ -193,20 +219,21 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		}
 
 		val fromColumn = TableColumn<IMessage, IMessage>(Strings.FROM)
-		fromColumn.setCellValueFactory(cellValueFactory)
 		with(fromColumn) {
+			setCellValueFactory(cellValueFactory)
 			setCellFactory { AddressCell(model.account) { it.from } }
 			prefWidth = 300.0
-			comparator = UIUtils.cmp { it.from[0] }
+			comparator = Functions.cmp<IMessage, EmailAddress> { it.from[0] }
 		}
 
 		val receivedCol = TableColumn<IMessage, IMessage>(Strings.RECEIVED)
-		receivedCol.setCellValueFactory(cellValueFactory)
 		with(receivedCol) {
+			setCellValueFactory(cellValueFactory)
 			setCellFactory { DateCell { it.receivedOnProperty } }
 			prefWidth = 200.0
+			//	by default sort on the received date
 			sortType = TableColumn.SortType.DESCENDING
-			comparator = UIUtils.cmp { it.receivedOnProperty.get() }
+			comparator = Functions.cmp<IMessage, ZonedDateTime> { it.receivedOnProperty.get() }
 		}
 
 		val subjectCol = TableColumn<IMessage, IMessage>(Strings.SUBJECT)
@@ -215,7 +242,7 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 			setCellFactory { GeneralCell<String, StringProperty>({ it.subjectProperty }, { Format.asDate(it) }) }
 			remainingWidth()
 			prefWidth = 750.0
-			comparator = UIUtils.cmp { it.subjectProperty.get() }
+			comparator = Functions.cmp<IMessage, String> { it.subjectProperty.get() }
 		}
 
 		val sortedList = SortedList(folder.messages)

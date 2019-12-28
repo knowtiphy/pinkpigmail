@@ -6,7 +6,6 @@ import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
 import javafx.collections.ObservableList
-import javafx.collections.transformation.SortedList
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
@@ -207,15 +206,6 @@ class PinkPigMail : Application(), IStorageListener
 	//  boot sequence
 	override fun start(primaryStage: Stage)
 	{
-		val foo = FXCollections.observableArrayList<Int>()
-		val sorted = SortedList(foo)
-		sorted.comparator =  kotlin.Comparator { x, y -> x - y }
-		foo.add(1)
-		foo.add(0)
-		foo.add(2)
-		println(sorted)
-//		exitProcess(1)
-
 		Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
 		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 

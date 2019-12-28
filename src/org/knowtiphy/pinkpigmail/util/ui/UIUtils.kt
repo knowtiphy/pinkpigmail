@@ -16,10 +16,7 @@ import org.controlsfx.control.action.Action
 import org.controlsfx.control.action.ActionUtils
 import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.StyleSheets
-import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
-import java.util.*
-import java.util.concurrent.Callable
 
 /**
  *
@@ -52,21 +49,6 @@ object UIUtils
 	{
 		node.setMaxSize(java.lang.Double.MAX_VALUE, java.lang.Double.MAX_VALUE)
 		return node
-	}
-
-	fun <T> callable(f: () -> T): Callable<T>
-	{
-		return Callable { f.invoke() }
-	}
-
-	fun <T : Comparable<T>> cmp(e: (IMessage) -> T?): Comparator<IMessage>
-	{
-		return kotlin.Comparator { x, y ->
-			val a = e.invoke(x)
-			val b = e.invoke(y)
-			val result = if (a == null) if (b == null) 0 else 1 else if (b == null) -1 else a.compareTo(b)
-			result
-		}
 	}
 
 	fun stage(): Stage

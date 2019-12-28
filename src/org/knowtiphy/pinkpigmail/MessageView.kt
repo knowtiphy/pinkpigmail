@@ -25,6 +25,7 @@ import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.pinkpigmail.util.Format
+import org.knowtiphy.pinkpigmail.util.Functions
 import org.knowtiphy.pinkpigmail.util.ui.Replacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
@@ -79,7 +80,7 @@ class MessageView(private val service: ExecutorService,
 	private val header = HBox(headerLeft, headerRight)
 	private val messageSpace = VBox(header, viewer)
 
-	var startTime : Long = 0
+	var startTime: Long = 0
 
 	private val listener = { _: ObservableValue<out Document?>, _: Document?, document: Document? ->
 		assert(messageProperty.get() != null)
@@ -103,7 +104,7 @@ class MessageView(private val service: ExecutorService,
 			loadRemoteAction.disabledProperty().bind(Bindings.or(message.first!!.loadRemoteProperty,
 					SimpleBooleanProperty(!message.first!!.isHTML || externalRefs.isEmpty())).or(
 					Bindings.createBooleanBinding(
-							UIUtils.callable { account.isTrustedSender(message.first!!.from) }, account.trustedSenders)))
+							Functions.callable { account.isTrustedSender(message.first!!.from) }, account.trustedSenders)))
 		}
 	}
 
@@ -160,7 +161,15 @@ class MessageView(private val service: ExecutorService,
 
 		trustContentMenu.graphic = Icons.trustContentProvider()
 
-		messageProperty.addListener { _ -> newMessage() }
+		messageProperty.addListener() { _, newValue, oldValue ->
+			//	TODO -- not sure this explanation makes sense but it does stop the flashing scenario
+			//	stops message flashing when a delete causes the selection to change but the message itself  hasn't changed
+			//	(just the index of the current message in the list has changed)
+			if (newValue != null && (oldValue == null || newValue.first != oldValue.first))
+			{
+				newMessage()
+			}
+		}
 	}
 
 	private fun newMessage()
@@ -185,7 +194,7 @@ class MessageView(private val service: ExecutorService,
 					val part = message.getContent(account.allowHTMLProperty.get())
 
 					later {
-					//	val startTime = System.currentTimeMillis()
+						//	val startTime = System.currentTimeMillis()
 						try
 						{
 							//  they may have clicked on a new message in the time between the task was started
@@ -202,7 +211,7 @@ class MessageView(private val service: ExecutorService,
 
 								trustSenderAction.disabledProperty().unbind()
 								trustSenderAction.disabledProperty().bind(Bindings.createBooleanBinding(
-										UIUtils.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
+										Functions.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
 
 								fromText.text = EmailAddress.format(message.mailAccount, message.from)
 								subjectText.text = Format.formatN(message.subjectProperty.get())
