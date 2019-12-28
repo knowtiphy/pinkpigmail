@@ -59,23 +59,12 @@ object UIUtils
 		return Callable { f.invoke() }
 	}
 
-//	fun cmpDates(e: (IMessage) -> ZonedDateTime?): Comparator<IMessage>
-//	{
-//		return kotlin.Comparator { x, y ->
-//			val a = e.invoke(x)
-//			val b = e.invoke(y)
-//			a?.compareTo(b) ?: 1
-//		}
-//	}
-
 	fun <T : Comparable<T>> cmp(e: (IMessage) -> T?): Comparator<IMessage>
 	{
 		return kotlin.Comparator { x, y ->
 			val a = e.invoke(x)
 			val b = e.invoke(y)
 			val result = if (a == null) if (b == null) 0 else 1 else if (b == null) -1 else a.compareTo(b)
-			println(a.toString() + " : " + b.toString() + " : " + result)
-//            println((a?.toString() ?: "NULL") + " : " + (b?.toString() ?: "NULL") + " : " + result)
 			result
 		}
 	}
