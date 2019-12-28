@@ -20,6 +20,7 @@ import org.knowtiphy.pinkpigmail.MessageView
 import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
+import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
@@ -37,8 +38,9 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
+import java.util.concurrent.ExecutorService
 
-class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
+class MailAccountView(stage: Stage, private val service: ExecutorService, private val htmlState: HTMLState, account: IEmailAccount) : VBox()
 {
 	companion object
 	{
@@ -120,7 +122,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		}
 	}
 
-	//  load ahead radially 2 messages either side of the selection
+	//  load ahead radially 4 messages either side of the selection
 
 	private fun loadAhead(folder: IFolder, selection: EntitySelection<IFolder, IMessage>): List<List<IMessage>>
 	{
@@ -128,16 +130,17 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		val underlyingMessages = model.currentTableViewSelectionModel(folder).tableView.items
 		val n = underlyingMessages.size
 		val result = ArrayList<ArrayList<IMessage>>()
-		for (i in 1 until 3)
+		val range = 0 until n
+		for (i in 1 until 5)
 		{
 			val disti = ArrayList<IMessage>()
 			val after = pos + i
-			if (after in 0 until n)
+			if (after in range)
 			{
 				disti.add(underlyingMessages[after])
 			}
 			val before = pos - i
-			if (before in 0 until n)
+			if (before in range)
 			{
 				disti.add(underlyingMessages[before])
 			}
@@ -157,7 +160,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		} else
 		{
 			val message = selection.selectedItem()
-			PinkPigMail.htmlState.message = message
+			htmlState.message = message
 			messageProp.set(Pair(message, loadAhead(folder, selection)))
 			//	don't mark junk as read
 			if (message.mailAccount.isDisplayMessageMarksAsRead && !message.junkProperty.get())
@@ -202,8 +205,8 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 		with(receivedCol) {
 			setCellFactory { DateCell { it.receivedOnProperty } }
 			prefWidth = 200.0
-			comparator = UIUtils.cmp { it.receivedOnProperty.get() }
 			sortType = TableColumn.SortType.DESCENDING
+			comparator = UIUtils.cmp { it.receivedOnProperty.get() }
 		}
 
 		val subjectCol = TableColumn<IMessage, IMessage>(Strings.SUBJECT)
@@ -289,7 +292,7 @@ class MailAccountView(stage: Stage, account: IEmailAccount) : VBox()
 	{
 		val messageProperty = SimpleObjectProperty<Pair<IMessage?, Collection<Collection<IMessage>>>>()
 
-		val messageView = resizeable(MessageView(PinkPigMail.service, messageProperty))
+		val messageView = resizeable(MessageView(service, messageProperty))
 		val messageList = SplitPane(folderMessageList(folder))
 
 		val splitPane = resizeable(SplitPane(messageList, messageView))

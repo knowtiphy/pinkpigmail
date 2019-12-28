@@ -5,6 +5,8 @@ package org.knowtiphy.pinkpigmail.resources
  */
 object Strings
 {
+    const val APP_NAME = "Pink Pig"
+
     const val REPLY = "Reply to message"
     const val REPLY_ALL = "Reply all to message"
     const val FORWARD = "Forward message"

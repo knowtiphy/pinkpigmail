@@ -6,6 +6,7 @@ import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener.Change
 import javafx.collections.ObservableList
+import javafx.collections.transformation.SortedList
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
@@ -44,6 +45,7 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
+import org.knowtiphy.utils.IProcedure.doAndIgnore
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
 import org.reactfx.EventSource
@@ -85,7 +87,8 @@ class PinkPigMail : Application(), IStorageListener
 		const val STYLE_SHEET = "styles.css"
 
 		val synched = EventSource<IAccount>()
-		val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
+
+		private val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
 		val storage: IStorage by lazy {
 			val dir = Paths.get(OS.getDataDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
@@ -97,37 +100,36 @@ class PinkPigMail : Application(), IStorageListener
 			UISettings.read(UI_FILE)
 		}
 
-		val htmlState = HTMLState()
+		private val htmlState = HTMLState()
+		private val service: ExecutorService = Executors.newCachedThreadPool()
 
+		private val mainFlipper = resizeable(Replacer())
 		private val appToolBar = HBox()
 		private val rootTabPane = resizeable(TabPane())
 		private val root = resizeable(VBox(appToolBar, rootTabPane))
 		private val bootPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS)))
 		private val shutdownPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS)))
-		private val mainFlipper = resizeable(Replacer())
+	}
 
-		init
-		{
-			//  peer constructors
-			PeerState.addConstructor(Vocabulary.IMAP_ACCOUNT) { IMAPAccount(it, storage) }
-			PeerState.addConstructor(Vocabulary.IMAP_FOLDER) { IMAPFolder(it, storage) }
-			PeerState.addConstructor(Vocabulary.IMAP_MESSAGE) { IMAPMessage(it, storage) }
-			PeerState.addConstructor(Vocabulary.CALDAV_ACCOUNT) { CalDAVAccount(it, storage) }
-			PeerState.addConstructor(Vocabulary.CALDAV_CALENDAR) { CalDAVCalendar(it, storage) }
-			PeerState.addConstructor(Vocabulary.CALDAV_EVENT) { CalDAVEvent(it, storage) }
-			PeerState.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { CardDAVAccount(it, storage) }
-			PeerState.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { CardDAVAddressBook(it, storage) }
-			PeerState.addConstructor(Vocabulary.CARDDAV_GROUP) { CardDAVGroup(it, storage) }
-			PeerState.addConstructor(Vocabulary.CARDDAV_CARD) { CardDAVCard(it, storage) }
-			//  peer roots
-			PeerState.addRoot(Vocabulary.IMAP_ACCOUNT) { accounts.add(it as IAccount) }
-			PeerState.addRoot(Vocabulary.CALDAV_ACCOUNT) { accounts.add(it as IAccount) }
-			PeerState.addRoot(Vocabulary.CARDDAV_ACCOUNT) { accounts.add(it as IAccount) }
+	init
+	{
+		//  peer constructors
+		PeerState.addConstructor(Vocabulary.IMAP_ACCOUNT) { IMAPAccount(it, storage) }
+		PeerState.addConstructor(Vocabulary.IMAP_FOLDER) { IMAPFolder(it, storage) }
+		PeerState.addConstructor(Vocabulary.IMAP_MESSAGE) { IMAPMessage(it, storage) }
+		PeerState.addConstructor(Vocabulary.CALDAV_ACCOUNT) { CalDAVAccount(it, storage) }
+		PeerState.addConstructor(Vocabulary.CALDAV_CALENDAR) { CalDAVCalendar(it, storage) }
+		PeerState.addConstructor(Vocabulary.CALDAV_EVENT) { CalDAVEvent(it, storage) }
+		PeerState.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { CardDAVAccount(it, storage) }
+		PeerState.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { CardDAVAddressBook(it, storage) }
+		PeerState.addConstructor(Vocabulary.CARDDAV_GROUP) { CardDAVGroup(it, storage) }
+		PeerState.addConstructor(Vocabulary.CARDDAV_CARD) { CardDAVCard(it, storage) }
+		//  peer roots
+		PeerState.addRoot(Vocabulary.IMAP_ACCOUNT) { accounts.add(it as IAccount) }
+		PeerState.addRoot(Vocabulary.CALDAV_ACCOUNT) { accounts.add(it as IAccount) }
+		PeerState.addRoot(Vocabulary.CARDDAV_ACCOUNT) { accounts.add(it as IAccount) }
 
-			mainFlipper.children.addAll(shutdownPane, root, bootPane)
-		}
-
-		val service: ExecutorService = Executors.newCachedThreadPool()
+		mainFlipper.children.addAll(shutdownPane, root, bootPane)
 	}
 
 	//  all UI model updates go through this code
@@ -171,7 +173,7 @@ class PinkPigMail : Application(), IStorageListener
 
 	private fun addMailView(primaryStage: Stage, account: IEmailAccount)
 	{
-		rootTabPane.tabs.add(createTab(MailAccountView(primaryStage, account), Icons.mail(), account.nickNameProperty))
+		rootTabPane.tabs.add(createTab(MailAccountView(primaryStage, service, htmlState, account), Icons.mail(), account.nickNameProperty))
 	}
 
 	private val viewCreator = mapOf(
@@ -194,27 +196,9 @@ class PinkPigMail : Application(), IStorageListener
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
-			try
-			{
-				saveUISettings()
-			}
-			catch (ex: Exception)
-			{
-				ex.printStackTrace()
-				//  ignore
-			}
-
+			doAndIgnore<RuntimeException>(::saveUISettings)
 			//  shutdown the storage layer
-			try
-			{
-				storage.close()
-			}
-			catch (ex: Exception)
-			{
-				ex.printStackTrace()
-				//  ignore
-			}
-
+			doAndIgnore<RuntimeException>(storage::close)
 			//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
 			exitProcess(1)
 		}.start()
@@ -223,6 +207,15 @@ class PinkPigMail : Application(), IStorageListener
 	//  boot sequence
 	override fun start(primaryStage: Stage)
 	{
+		val foo = FXCollections.observableArrayList<Int>()
+		val sorted = SortedList(foo)
+		sorted.comparator =  kotlin.Comparator { x, y -> x - y }
+		foo.add(1)
+		foo.add(0)
+		foo.add(2)
+		println(sorted)
+//		exitProcess(1)
+
 		Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
 		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
@@ -231,7 +224,7 @@ class PinkPigMail : Application(), IStorageListener
 
 		with(primaryStage) {
 			scene = UIUtils.getScene(mainFlipper)
-			title = "Pink Pig Mail"
+			title = Strings.APP_NAME
 			icons.add(Image(Icons.thePig128()))
 			width = uiSettings.widthProperty.get()
 			height = uiSettings.heightProperty.get()
