@@ -1,6 +1,5 @@
 package org.knowtiphy.pinkpigmail.mailaccountview
 
-import javafx.beans.binding.Bindings
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.beans.property.SimpleObjectProperty
@@ -35,7 +34,6 @@ import org.knowtiphy.pinkpigmail.util.ui.MappedReplacer
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.maxSizeable
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import tornadofx.SmartResize
@@ -87,28 +85,8 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 					folderViewFlipper.addNode(folder, folderView(folder))
 					//	TODO -- get the initial perspective from some sort of UI settings
 					model.changePerspective(folder, VERTICAL)
-
 					//  message load-ahead
 					//model.selection[folder]!!.filter { !it.isEmpty() }.subscribe { loadAhead(folder, it) }
-
-					//	loadahed should go here
-					//  publish events -- new message selected
-					//   fvm.entitySelected.subscribe { accountViewModel.getCategoryViewModel()!!.entitySelected.set(fvm) })
-				}
-			}
-		}
-
-		//  TODO -- this is necessary (is it still necessary?) to try to work around a JavaFX bug with setting split pane positions?
-		stage.setOnShown {
-			later {
-				try
-				{
-					folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
-					Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)
-				}
-				catch (ex: Exception)
-				{
-					//  ignore
 				}
 			}
 		}
@@ -124,31 +102,7 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		}
 	}
 
-//	private fun loadAhead(folder: IFolder, selection: EntitySelection<IFolder, IMessage>)
-//	{
-//		val pos = selection.selectedIndices.first()
-//		val underlyingMessages = model.currentTableViewSelectionModel(folder).tableView.items
-//		val n = underlyingMessages.size
-//		val range = 0 until n
-//		for (i in 1 until 5)
-//		{
-//			val disti = ArrayList<IMessage>()
-//			val after = pos + i
-//			if (after in range)
-//			{
-//				disti.add(underlyingMessages[after])
-//			}
-//			val before = pos - i
-//			if (before in range)
-//			{
-//				disti.add(underlyingMessages[before])
-//			}
-//
-//			folder.loadAhead(disti)
-//		}
-//	}
-
-	//  load ahead radially 4 messages either side of the selection
+	//  load ahead radially 3 messages either side of the selection
 
 	private fun loadAhead(folder: IFolder, selection: EntitySelection<IFolder, IMessage>): List<List<IMessage>>
 	{
@@ -157,7 +111,7 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		val n = underlyingMessages.size
 		val result = ArrayList<ArrayList<IMessage>>()
 		val range = 0 until n
-		for (i in 1 until 5)
+		for (i in 1 until 4)
 		{
 			val disti = ArrayList<IMessage>()
 			val after = pos + i
@@ -187,7 +141,13 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		{
 			val message = selection.selectedItem()
 			htmlState.message = message
+			//	TODO -- should do better -- pass the future on, start the loadhead when the future completes
+			message.loadAhead()
 			messageProp.set(Pair(message, loadAhead(folder, selection)))
+
+			//	do it later just to add a little delay to allow the current message to load
+			//later { println("STARTING LOAD AHEADS"); loadAhead(folder, selection).forEach { folder.loadAhead(it) } }
+
 			//	don't mark junk as read
 			if (message.mailAccount.isDisplayMessageMarksAsRead && !message.junkProperty.get())
 			{
@@ -198,7 +158,7 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 
 	//  the message list for one folder perspective
 
-	private fun folderMessageList(folder: IFolder): TableView<IMessage>
+	private fun messageList(folder: IFolder): TableView<IMessage>
 	{
 		val view = resizeable(TableView<IMessage>())
 
@@ -313,14 +273,14 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		return toolBar
 	}
 
-	//  create a perspective of one folder -- layed out either horizontally or vertically
+	//  create a vertical/horizontal perspective of one folder
 
 	private fun folderPerspective(folder: IFolder, orientation: Orientation, name: String): VBox
 	{
 		val messageProperty = SimpleObjectProperty<Pair<IMessage?, Collection<Collection<IMessage>>>>()
 
-		val messageView = resizeable(MessageView(service, messageProperty))
-		val messageList = SplitPane(folderMessageList(folder))
+		val messageView = resizeable(MessageView(model.account, service, messageProperty))
+		val messageList = SplitPane(messageList(folder))
 
 		val splitPane = resizeable(SplitPane(messageList, messageView))
 		splitPane.orientation = orientation
@@ -388,3 +348,45 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		return resizeable(VBox(toolBar, view))
 	}
 }
+
+//	private fun loadAhead(folder: IFolder, selection: EntitySelection<IFolder, IMessage>)
+//	{
+//		val pos = selection.selectedIndices.first()
+//		val underlyingMessages = model.currentTableViewSelectionModel(folder).tableView.items
+//		val n = underlyingMessages.size
+//		val range = 0 until n
+//		for (i in 1 until 5)
+//		{
+//			val disti = ArrayList<IMessage>()
+//			val after = pos + i
+//			if (after in range)
+//			{
+//				disti.add(underlyingMessages[after])
+//			}
+//			val before = pos - i
+//			if (before in range)
+//			{
+//				disti.add(underlyingMessages[before])
+//			}
+//
+//			folder.loadAhead(disti)
+//		}
+//	}
+
+//		//  TODO -- this is necessary (is it still necessary?) to try to work around a JavaFX bug with setting split pane positions?
+//		stage.setOnShown {
+//			later {
+//				try
+//				{
+//					folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+//					Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)
+//				}
+//				catch (ex: Exception)
+//				{
+//					//  ignore
+//				}
+//			}
+//		}
+
+//		folderSpace.setDividerPositions(PinkPigMail.uiSettings.verticalPosition[0].position)
+//		Bindings.bindContent<SplitPane.Divider>(PinkPigMail.uiSettings.verticalPosition, folderSpace.dividers)

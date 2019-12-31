@@ -8,6 +8,7 @@ import org.knowtiphy.owlorm.javafx.IPeer
 import org.knowtiphy.pinkpigmail.model.imap.IMAPCIDPart
 import java.net.URL
 import java.time.ZonedDateTime
+import java.util.concurrent.Future
 
 /**
  * @author graham
@@ -46,7 +47,7 @@ interface IMessage : IPeer
 
     val loadRemoteProperty: BooleanProperty
 
-    fun ensureContentLoaded()
+    fun loadAhead() : Future<*>?
 
     fun getContent(allowHTML: Boolean): IPart
 }

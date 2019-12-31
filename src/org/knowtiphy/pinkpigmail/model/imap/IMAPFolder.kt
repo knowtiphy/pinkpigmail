@@ -105,6 +105,7 @@ class IMAPFolder(folderId: String, storage: IStorage) : StoredPeer(folderId, sto
 
     override fun loadAhead(messages: Collection<IMessage>)
     {
+        //  TODO -- need to save these futures somehow
         storage.loadAhead(mailAccount.id, id, ids(messages))
     }
 

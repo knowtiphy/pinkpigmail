@@ -27,10 +27,11 @@ import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.Functions
 import org.knowtiphy.pinkpigmail.util.ui.Replacer
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.action
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.boxIt
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.button
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.HTMLUtils
 import org.w3c.dom.Document
@@ -40,14 +41,14 @@ import java.util.logging.Logger
 /**
  * @author graham
  */
-class MessageView(private val service: ExecutorService,
+class MessageView(private val account: IEmailAccount, private val service: ExecutorService,
 				  private val messageProperty: ReadOnlyObjectProperty<Pair<IMessage?, Collection<Collection<IMessage>>>>) : Replacer()
 {
 	private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 
-	private val viewer = UIUtils.resizeable(MailViewer())
-	private val noMessageSelected = UIUtils.boxIt(Label(Strings.NO_MESSAGE_SELECTED))
-	private val loading = UIUtils.boxIt(WaitSpinner(Strings.LOADING_MESSAGE))
+	private val viewer = resizeable(MailViewer())
+	private val noMessageSelected = boxIt(Label(Strings.NO_MESSAGE_SELECTED))
+	private val loading = boxIt(WaitSpinner(Strings.LOADING_MESSAGE))
 
 	private val fromText = Label()
 	private val subjectText = Label()
@@ -67,7 +68,7 @@ class MessageView(private val service: ExecutorService,
 	private val trustSenderAction = action(Icons.trustSender(),
 			{
 				val message = messageProperty.get().first ?: return@action
-				message.mailAccount.trustSender(message.from)
+				account.trustSender(message.from)
 			}, Strings.TRUST_SENDER)
 
 	private val loadRemote = button(loadRemoteAction)
@@ -75,10 +76,10 @@ class MessageView(private val service: ExecutorService,
 	private val trustContentMenu = SplitMenuButton()
 	private val attachmentsMenu = MenuButton()
 
-	private val buttons = HBox(attachmentsMenu, trustContentMenu, loadRemote, trustSender)
-	private val headerRight = VBox(buttons, receivedOn)
+	private val buttons = HBox(1.0, attachmentsMenu, trustContentMenu, loadRemote, trustSender)
+	private val headerRight = VBox(5.0, buttons, receivedOn)
 	private val header = HBox(headerLeft, headerRight)
-	private val messageSpace = VBox(header, viewer)
+	private val messageSpace = resizeable(VBox(header, viewer))
 
 	var startTime: Long = 0
 
@@ -87,7 +88,6 @@ class MessageView(private val service: ExecutorService,
 		if (document != null)
 		{
 			val message = messageProperty.get()!!
-			val account = message.first!!.mailAccount
 			trustContentMenu.items.clear()
 			val externalRefs = HTMLUtils.computeExternalReferences(document)
 			for (ref in externalRefs)
@@ -114,37 +114,22 @@ class MessageView(private val service: ExecutorService,
 
 		attachmentsMenu.graphic = Icons.attach()
 
-		viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
-			if (newState == Worker.State.SUCCEEDED)
-			{
-				later {
-					println("FLIPPING TO MESSAGE SPACE : " + (System.currentTimeMillis() - startTime))
-					flip(messageSpace)
-					println("STARTING LOAD AHEADS")
-					messageProperty.get().second.forEach { messageProperty.get().first!!.folder.loadAhead(it) }
-				}
-			}
-		}
-
 		val labelFont = Font.font(from.font.family, FontWeight.BOLD, from.font.size)
-		arrayOf(from, subject, to).forEach { it.font = labelFont }
+		listOf(from, subject, to).forEach { it.font = labelFont }
 
-		headerLeft.addColumn(0, from, subject, to)
-		headerLeft.addColumn(1, fromText, subjectText, toText)
-		for (label in arrayOf(from, subject, to, fromText, subjectText, toText))
-		{
-			GridPane.setHgrow(label, Priority.NEVER)
-			GridPane.setVgrow(label, Priority.NEVER)
-			label.alignment = Pos.CENTER
+		with(headerLeft) {
+			addColumn(0, from, subject, to)
+			addColumn(1, fromText, subjectText, toText)
+			hgap = 15.0
+			vgap = 5.0
 		}
 
-		headerLeft.hgap = 15.0
-		headerLeft.vgap = 5.0
+		listOf(from, subject, to, fromText, subjectText, toText).forEach {
+			GridPane.setHgrow(it, Priority.NEVER)
+			GridPane.setVgrow(it, Priority.NEVER)
+			it.alignment = Pos.CENTER
+		}
 
-		buttons.spacing = 1.0
-		buttons.alignment = Pos.CENTER_RIGHT
-
-		headerRight.spacing = 5.0
 		headerRight.alignment = Pos.TOP_RIGHT
 
 		HBox.setHgrow(headerLeft, Priority.NEVER)
@@ -152,12 +137,10 @@ class MessageView(private val service: ExecutorService,
 
 		header.background = Background(BackgroundFill(Color.WHITESMOKE, null, null))
 		header.padding = Insets(3.0, 3.0, 5.0, 3.0)
-
 		VBox.setVgrow(header, Priority.NEVER)
 		VBox.setVgrow(viewer, Priority.ALWAYS)
-		UIUtils.resizeable(messageSpace)
 
-		viewer.webView.engine.documentProperty().addListener(listener)
+		buttons.alignment = Pos.CENTER_RIGHT
 
 		trustContentMenu.graphic = Icons.trustContentProvider()
 
@@ -170,6 +153,23 @@ class MessageView(private val service: ExecutorService,
 				newMessage()
 			}
 		}
+
+		viewer.webView.engine.documentProperty().addListener(listener)
+
+		viewer.webView.engine.loadWorker.stateProperty().addListener { _, _, newState: Worker.State ->
+			if (newState == Worker.State.SUCCEEDED)
+			{
+				later {
+					println("FLIPPING TO MESSAGE SPACE : " + (System.currentTimeMillis() - startTime))
+					flip(messageSpace)
+					println("STARTING LOAD AHEADS :: " + messageProperty.get().second)
+					messageProperty.get().second.forEach { messageProperty.get().first!!.folder.loadAhead(it) }
+				}
+			}
+		}
+
+		account.trustedContentProviders.addListener { _: ListChangeListener.Change<out String> -> viewer.reload() }
+		account.trustedSenders.addListener { _: ListChangeListener.Change<out EmailAddress> -> viewer.reload() }
 	}
 
 	private fun newMessage()
@@ -189,7 +189,6 @@ class MessageView(private val service: ExecutorService,
 			{
 				override fun call(): Void?
 				{
-					val account = message.mailAccount
 					println("Client grabbing content :: " + message.id)
 					val part = message.getContent(account.allowHTMLProperty.get())
 
@@ -213,9 +212,9 @@ class MessageView(private val service: ExecutorService,
 								trustSenderAction.disabledProperty().bind(Bindings.createBooleanBinding(
 										Functions.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
 
-								fromText.text = EmailAddress.format(message.mailAccount, message.from)
+								fromText.text = EmailAddress.format(account, message.from)
 								subjectText.text = Format.formatN(message.subjectProperty.get())
-								toText.text = EmailAddress.format(message.mailAccount, message.to)
+								toText.text = EmailAddress.format(account, message.to)
 								receivedOn.text = Format.asDate(message.receivedOnProperty.get())
 
 								println("Client LOAD content :: " + message.id)
@@ -236,8 +235,6 @@ class MessageView(private val service: ExecutorService,
 
 								with(message) {
 									loadRemoteProperty.addListener { _ -> viewer.reload() }
-									account.trustedContentProviders.addListener { _: ListChangeListener.Change<out String> -> viewer.reload() }
-									account.trustedSenders.addListener { _: ListChangeListener.Change<out EmailAddress> -> viewer.reload() }
 									loadRemoteProperty.set(loadRemoteProperty.get() || account.isTrustedSender(from))
 								}
 							} else

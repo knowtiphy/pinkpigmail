@@ -79,6 +79,7 @@ class AccountViewModel<A, C, E>(val account: A)
 		//	and hence the selection model to be created (see the comment in bindSelection)
 		perspectives[category]!!.value = name
 		val es = tableViewSelectionModels[category]!!
+		//	TODO -- this is hacky crap, why "change" selection on a perspective change?
 		outputSelection(category, EntitySelection(category, es.selectedIndices, es.selectedItems))
 	}
 }

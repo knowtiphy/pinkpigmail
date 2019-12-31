@@ -9,6 +9,7 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
+import org.knowtiphy.babbage.Babbage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
@@ -108,7 +109,7 @@ class UISettings
         fun read(fileName: String): UISettings
         {
             val uiModel = ModelFactory.createDefaultModel()
-            RDFDataMgr.read(uiModel, Files.newInputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), fileName)), Lang.TURTLE)
+            RDFDataMgr.read(uiModel, Files.newInputStream(Paths.get(OS.getSettingsDir(Babbage::class.java).toString(), fileName)), Lang.TURTLE)
 
             val settings = UISettings()
 
