@@ -1,4 +1,4 @@
-package org.knowtiphy.pinkpigmail
+package org.knowtiphy.pinkpigmail.mailaccountview
 
 import javafx.beans.binding.Bindings
 import javafx.beans.property.ReadOnlyObjectProperty
@@ -17,13 +17,13 @@ import javafx.scene.layout.*
 import javafx.scene.paint.Color
 import javafx.scene.text.Font
 import javafx.scene.text.FontWeight
+import org.knowtiphy.pinkpigmail.Attachments
 import org.knowtiphy.pinkpigmail.mailview.MailViewer
 import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.pinkpigmail.util.Format
 import org.knowtiphy.pinkpigmail.util.Functions
 import org.knowtiphy.pinkpigmail.util.ui.Replacer
@@ -42,7 +42,7 @@ import java.util.logging.Logger
  * @author graham
  */
 class MessageView(private val account: IEmailAccount, private val service: ExecutorService,
-				  private val messageProperty: ReadOnlyObjectProperty<Pair<IMessage?, Collection<Collection<IMessage>>>>) : Replacer()
+				  private val messageProperty: ReadOnlyObjectProperty<IMessage>) : Replacer()
 {
 	private val logger = Logger.getLogger(MessageView::class.qualifiedName)
 
@@ -60,16 +60,9 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 	private val to = Label(Strings.TO)
 	private val subject = Label(Strings.SUBJECT)
 
-	private val loadRemoteAction = action(Icons.loadRemote(),
-			{
-				(messageProperty.get().first ?: return@action).loadRemoteProperty.set(true)
-			}, Strings.LOAD_REMOTE_CONTENT)
+	private val loadRemoteAction = action(Icons.loadRemote(), { messageProperty.get().loadRemoteProperty.set(true) }, Strings.LOAD_REMOTE_CONTENT)
 
-	private val trustSenderAction = action(Icons.trustSender(),
-			{
-				val message = messageProperty.get().first ?: return@action
-				account.trustSender(message.from)
-			}, Strings.TRUST_SENDER)
+	private val trustSenderAction = action(Icons.trustSender(), { account.trustSender(messageProperty.get().from) }, Strings.TRUST_SENDER)
 
 	private val loadRemote = button(loadRemoteAction)
 	private val trustSender = button(trustSenderAction)
@@ -101,10 +94,10 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 			}
 
 			trustContentMenu.isDisable = externalRefs.isEmpty()
-			loadRemoteAction.disabledProperty().bind(Bindings.or(message.first!!.loadRemoteProperty,
-					SimpleBooleanProperty(!message.first!!.isHTML || externalRefs.isEmpty())).or(
+			loadRemoteAction.disabledProperty().bind(Bindings.or(message.loadRemoteProperty,
+					SimpleBooleanProperty(!message.isHTML || externalRefs.isEmpty())).or(
 					Bindings.createBooleanBinding(
-							Functions.callable { account.isTrustedSender(message.first!!.from) }, account.trustedSenders)))
+							Functions.callable { account.isTrustedSender(message.from) }, account.trustedSenders)))
 		}
 	}
 
@@ -144,11 +137,11 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 
 		trustContentMenu.graphic = Icons.trustContentProvider()
 
-		messageProperty.addListener() { _, newValue, oldValue ->
+		messageProperty.addListener() { _, oldValue, newValue ->
 			//	TODO -- not sure this explanation makes sense but it does stop the flashing scenario
 			//	stops message flashing when a delete causes the selection to change but the message itself  hasn't changed
 			//	(just the index of the current message in the list has changed)
-			if (newValue != null && (oldValue == null || newValue.first != oldValue.first))
+			if (newValue != null && (oldValue == null || newValue != oldValue))
 			{
 				newMessage()
 			}
@@ -162,8 +155,7 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 				later {
 					println("FLIPPING TO MESSAGE SPACE : " + (System.currentTimeMillis() - startTime))
 					flip(messageSpace)
-					println("STARTING LOAD AHEADS :: " + messageProperty.get().second)
-					messageProperty.get().second.forEach { messageProperty.get().first!!.folder.loadAhead(it) }
+					AccountViewModel.messageShown.push(messageProperty.get())
 				}
 			}
 		}
@@ -174,7 +166,7 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 
 	private fun newMessage()
 	{
-		val message = messageProperty.get().first
+		val message = messageProperty.get()
 		if (message == null)
 		{
 			flip(noMessageSelected)
@@ -191,61 +183,65 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 				{
 					println("Client grabbing content :: " + message.id)
 					val part = message.getContent(account.allowHTMLProperty.get())
+					println("Client GOT content :: " + message.id)
 
 					later {
 						//	val startTime = System.currentTimeMillis()
-						try
+//						try
+//						{
+						//  they may have clicked on a new message in the time between the task was started
+						//  and the time at which we get to this point
+						if (message == messageProperty.get())
 						{
-							//  they may have clicked on a new message in the time between the task was started
-							//  and the time at which we get to this point
-							if (message == messageProperty.get().first)
+							//  disable and clear trustContent menu until the load finishes
+							trustContentMenu.items.clear()
+							trustContentMenu.isDisable = true
+
+							loadRemoteAction.disabledProperty().unbind()
+							loadRemoteAction.isDisabled = true
+
+							trustSenderAction.disabledProperty().unbind()
+							trustSenderAction.disabledProperty().bind(Bindings.createBooleanBinding(
+									Functions.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
+
+							fromText.text = EmailAddress.format(account, message.from)
+							subjectText.text = Format.formatN(message.subjectProperty.get())
+							toText.text = EmailAddress.format(account, message.to)
+							receivedOn.text = Format.asDate(message.receivedOnProperty.get())
+
+							println("Client LOAD content :: " + message.id)
+							viewer.loadContent(part.content, part.mimeType)
+
+							println("Client LOAD ATTACHMENTS :: " + message.id)
+							//  call getAttachments() once because they do database queries so can be slow
+							val attachments = message.attachments
+							if (attachments.isEmpty())
 							{
-								println("Client GOT content :: " + message.id)
-								//  disable and clear trustContent menu until the load finishes
-								trustContentMenu.items.clear()
-								trustContentMenu.isDisable = true
-
-								loadRemoteAction.disabledProperty().unbind()
-								loadRemoteAction.isDisabled = true
-
-								trustSenderAction.disabledProperty().unbind()
-								trustSenderAction.disabledProperty().bind(Bindings.createBooleanBinding(
-										Functions.callable { account.isTrustedSender(message.from) }, account.trustedSenders))
-
-								fromText.text = EmailAddress.format(account, message.from)
-								subjectText.text = Format.formatN(message.subjectProperty.get())
-								toText.text = EmailAddress.format(account, message.to)
-								receivedOn.text = Format.asDate(message.receivedOnProperty.get())
-
-								println("Client LOAD content :: " + message.id)
-								viewer.loadContent(part.content, part.mimeType)
-
-								println("Client LOAD ATTACHMENTS :: " + message.id)
-								//  call getAttachments() once because they do database queries so can be slow
-								val attachments = message.attachments
-								if (attachments.isEmpty())
-								{
-									attachmentsMenu.isDisable = true
-								} else
-								{
-									attachmentsMenu.isDisable = false
-									attachmentsMenu.items.clear()
-									Attachments.viewSaveMenu(attachments, attachmentsMenu.items)
-								}
-
-								with(message) {
-									loadRemoteProperty.addListener { _ -> viewer.reload() }
-									loadRemoteProperty.set(loadRemoteProperty.get() || account.isTrustedSender(from))
-								}
+								attachmentsMenu.isDisable = true
 							} else
-								println("IGNORING MESSAGE")
-						}
-						catch (exception: Exception)
+							{
+								attachmentsMenu.isDisable = false
+								attachmentsMenu.items.clear()
+								Attachments.viewSaveMenu(attachments, attachmentsMenu.items)
+							}
+
+							with(message) {
+								loadRemoteProperty.addListener { _ -> viewer.reload() }
+								loadRemoteProperty.set(loadRemoteProperty.get() || account.isTrustedSender(from))
+							}
+						} else
 						{
-							logger.warning(exception.localizedMessage)
-							viewer.clear()
-							Fail.fail(exception)
+							AccountViewModel.messageShown.push(message)
+							println("IGNORING MESSAGE")
 						}
+//						}
+						//	can we have an exception?
+//						catch (exception: Exception)
+//						{
+//							logger.warning(exception.localizedMessage)
+//							viewer.clear()
+//							Fail.fail(exception)
+//						}
 
 						println("Client LOAD DONE :: " + (System.currentTimeMillis() - startTime))
 					}

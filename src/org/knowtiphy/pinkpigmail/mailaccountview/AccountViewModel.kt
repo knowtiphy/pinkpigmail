@@ -1,9 +1,11 @@
 package org.knowtiphy.pinkpigmail.mailaccountview
 
-import javafx.beans.property.ReadOnlyObjectProperty
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.ListChangeListener
 import javafx.scene.control.TableView
+import org.knowtiphy.pinkpigmail.model.IMessage
+import org.knowtiphy.pinkpigmail.model.MessageFrame
+import org.knowtiphy.pinkpigmail.util.MatchFunction
 import org.reactfx.Change
 import org.reactfx.EventSource
 import org.reactfx.EventStream
@@ -16,8 +18,22 @@ import org.reactfx.EventStreams
 
 class AccountViewModel<A, C, E>(val account: A)
 {
+	companion object
+	{
+		//	a message has been shown
+		val messageShown = EventSource<IMessage>()
+
+		val loadAhead = MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages -> MessageFrame(msg, surroundingMessages) }
+
+		init
+		{
+			//	for each message we show that has a matching frame, start a loadhead of the frame
+			messageShown.map(loadAhead).filter { it != null }.subscribe { it!!.loadAhead() }
+		}
+	}
+
 	//  the currently selected category
-	private val currentCategory = SimpleObjectProperty<C>()
+	//private val currentCategory = SimpleObjectProperty<C>()
 	//  one tableview selection model per category
 	private val tableViewSelectionModels = HashMap<C, TableView.TableViewSelectionModel<E>>()
 	//	one selection model per categoy
@@ -27,11 +43,10 @@ class AccountViewModel<A, C, E>(val account: A)
 
 	//  event sources -- the selected category, selection model per category, perspective per category
 
-	val category: EventStream<Change<C>> = EventStreams.changesOf(currentCategory)
+	val category = EventSource<C>()
 	val selection = HashMap<C, EventSource<EntitySelection<C, E>>>()
 	val perspective = HashMap<C, EventStream<Change<String>>>()
 
-	fun currentCategoryProperty(): ReadOnlyObjectProperty<C> = currentCategory
 	fun currentSelection(category: C) = selectionModels[category]!!
 	fun currentTableViewSelectionModel(category: C) = tableViewSelectionModels[category]!!
 	fun isCurrentPerspective(category: C, name: String) = perspectives[category]!!.get() == name
@@ -43,9 +58,9 @@ class AccountViewModel<A, C, E>(val account: A)
 		perspective[category] = EventStreams.changesOf(perspectives[category])
 	}
 
-	fun changeCategory(category: C)
+	fun changeCategory(c: C)
 	{
-		currentCategory.set(category)
+		category.push(c)
 	}
 
 	private fun outputSelection(category: C, sel: EntitySelection<C, E>)

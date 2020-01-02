@@ -4,7 +4,7 @@ import com.calendarfx.view.CalendarView
 import javafx.application.Application
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
-import javafx.collections.ListChangeListener.Change
+import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
@@ -47,7 +47,6 @@ import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.IProcedure.doAndIgnore
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
-import org.reactfx.EventSource
 import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
@@ -79,26 +78,17 @@ class PinkPigMail : Application(), IStorageListener
 
 	companion object
 	{
-//		private const val MESSAGE_STORAGE = "messages"
+		//		private const val MESSAGE_STORAGE = "messages"
 //		private const val ACCOUNTS_FILE = "accounts.ttl"
 		private const val UI_FILE = "ui.ttl"
 
 		const val STYLE_SHEET = "styles.css"
 
-		val synched = EventSource<IAccount>()
-
 		private val accounts: ObservableList<IAccount> = FXCollections.observableArrayList()
 
-		val storage: IStorage by lazy {
-//			val dir = Paths.get(OS.getDataDir(PinkPigMail::class.java).toString(), MESSAGE_STORAGE)
-//			Files.createDirectories(dir)
-			StorageFactory.getLocal()
-			//Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), ACCOUNTS_FILE))
-		}
+		val storage: IStorage by lazy { StorageFactory.getLocal() }
 
-		val uiSettings: UISettings by lazy {
-			UISettings.read(UI_FILE)
-		}
+		val uiSettings: UISettings by lazy { UISettings.read(UI_FILE) }
 
 		private val htmlState = HTMLState()
 		private val service: ExecutorService = Executors.newCachedThreadPool()
@@ -192,14 +182,15 @@ class PinkPigMail : Application(), IStorageListener
 	}
 
 	//  shutdown sequence
+	//	- save UI settings
+	//  - shutdown the storage layer
+	//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
 	private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
 			doAndIgnore<RuntimeException>(::saveUISettings)
-			//  shutdown the storage layer
 			doAndIgnore<RuntimeException>(storage::close)
-			//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
 			exitProcess(1)
 		}.start()
 	}
@@ -225,25 +216,24 @@ class PinkPigMail : Application(), IStorageListener
 		uiSettings.widthProperty.bind(primaryStage.widthProperty())
 		uiSettings.heightProperty.bind(primaryStage.heightProperty())
 
-		//  on adding of a new account, add an account view for it
-		accounts.addListener { c: Change<out IAccount> ->
-			while (c.next())
-			{
-				if (c.wasAdded())
-					c.addedSubList.forEach { later { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } } }
-			}
-		}
-
 		//  sync and switch to main pane when done
 		Thread {
 			storage.addListener(this).forEach { it.value.get() }
+			//	TODO -- these two lines merge when the new synch setup is done
+			accounts.forEach { later { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } } }
 			//  synch has finished -- publish an event for it
-			println("SYNCH IS DONE")
-			accounts.forEach { later { synched.push(it) } }
-			println("SYNCH PUSHED")
+			accounts.forEach { later { Globals.synched.push(it) } }
 			later {
 				//((bootPane.children[0] as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
 				mainFlipper.flip(root)
+			}
+			//  on adding of a new account, add an account view for it
+			accounts.addListener { c: ListChangeListener.Change<out IAccount> ->
+				while (c.next())
+				{
+					if (c.wasAdded())
+						c.addedSubList.forEach { later { viewCreator[it::class]?.let { it1 -> it1(primaryStage, it) } } }
+				}
 			}
 		}.start()
 

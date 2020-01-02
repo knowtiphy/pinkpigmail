@@ -26,13 +26,6 @@ class IMAPAttachment(id: String, val storage: IStorage, override val fileName: S
             {
                 val fname = fileName
                 //	TODO -- maybe use the mime type getAttr generate a suffix
-                //  TODO - these to uses of PinkPigMail are bad
-                //            if (id == null)
-                //            {
-                //                path = Files.createTempFile(fname == null ? "PinkPigMail" : fname, "");
-                //            }
-                //            else
-                //            {
                 //   	TODO -- will this work in Windows since org.knowtiphy.pinkpigmail.messages IDs are crazy
                 path = Paths.get(Files.createTempDirectory("FOO").toString(), fname)
                 Files.copy(inputStream, path!!, StandardCopyOption.REPLACE_EXISTING)
