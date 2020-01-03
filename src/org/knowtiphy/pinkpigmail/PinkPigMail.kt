@@ -25,9 +25,10 @@ import org.knowtiphy.babbage.storage.IStorageListener
 import org.knowtiphy.babbage.storage.StorageFactory
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.PeerState
+import org.knowtiphy.pinkpigmail.Globals.htmlState
+import org.knowtiphy.pinkpigmail.Globals.timerService
 import org.knowtiphy.pinkpigmail.mailaccountview.MailAccountView
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
-import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.IContactAccount
@@ -51,9 +52,11 @@ import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import kotlin.system.exitProcess
 
@@ -90,15 +93,14 @@ class PinkPigMail : Application(), IStorageListener
 
 		val uiSettings: UISettings by lazy { UISettings.read(UI_FILE) }
 
-		private val htmlState = HTMLState()
 		private val service: ExecutorService = Executors.newCachedThreadPool()
 
 		private val mainFlipper = resizeable(Replacer())
 		private val appToolBar = HBox()
 		private val rootTabPane = resizeable(TabPane())
 		private val root = resizeable(VBox(appToolBar, rootTabPane))
-		private val bootPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS)))
-		private val shutdownPane = resizeable(UIUtils.boxIt(WaitSpinner(Strings.CLOSING_ACCOUNTS)))
+		private val bootPaneSpinner = WaitSpinner(Strings.SYNCHRONIZING_ACCOUNTS).resume()
+		private val bootPane = resizeable(UIUtils.boxIt(bootPaneSpinner))
 	}
 
 	init
@@ -119,7 +121,7 @@ class PinkPigMail : Application(), IStorageListener
 		PeerState.addRoot(Vocabulary.CALDAV_ACCOUNT) { accounts.add(it as IAccount) }
 		PeerState.addRoot(Vocabulary.CARDDAV_ACCOUNT) { accounts.add(it as IAccount) }
 
-		mainFlipper.children.addAll(shutdownPane, root, bootPane)
+		mainFlipper.children.addAll(root, bootPane)
 	}
 
 	//  all UI model updates go through this code
@@ -134,7 +136,7 @@ class PinkPigMail : Application(), IStorageListener
 		}
 	}
 
-	private fun createTab(tabContent: Region, icon: Glyph, label: StringProperty): Tab
+	private fun createAccountTab(tabContent: Region, icon: Glyph, label: StringProperty): Tab
 	{
 		val tab = Tab()
 		with(tab) {
@@ -151,19 +153,27 @@ class PinkPigMail : Application(), IStorageListener
 	{
 		val calendarView = CalendarView()
 		calendarView.calendarSources.add(account.source)
-		calendarView.requestedTime = LocalTime.now()
-		//  TODO -- the thread to update the requested time
-		rootTabPane.tabs.add(createTab(calendarView, Icons.calendar(), account.nickNameProperty))
+		val now = LocalTime.now()
+		val initialDelay = 60L - now.second
+		calendarView.requestedTime = now
+		timerService.scheduleAtFixedRate({
+			later {
+				val dateTime = LocalDateTime.now()
+				calendarView.today = dateTime.toLocalDate()
+				calendarView.time = dateTime.toLocalTime()
+			}
+		}, initialDelay, 60L, TimeUnit.SECONDS)
+		rootTabPane.tabs.add(createAccountTab(calendarView, Icons.calendar(), account.nickNameProperty))
 	}
 
 	private fun addCardView(@Suppress("UNUSED_PARAMETER") primaryStage: Stage, account: IContactAccount)
 	{
-		rootTabPane.tabs.add(createTab(ContactView(account), Icons.book(), account.nickNameProperty))
+		rootTabPane.tabs.add(createAccountTab(ContactView(account), Icons.book(), account.nickNameProperty))
 	}
 
 	private fun addMailView(primaryStage: Stage, account: IEmailAccount)
 	{
-		rootTabPane.tabs.add(createTab(MailAccountView(primaryStage, service, htmlState, account), Icons.mail(), account.nickNameProperty))
+		rootTabPane.tabs.add(createAccountTab(MailAccountView(primaryStage, service, account), Icons.mail(), account.nickNameProperty))
 	}
 
 	private val viewCreator = mapOf(
@@ -189,8 +199,12 @@ class PinkPigMail : Application(), IStorageListener
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
-			doAndIgnore<RuntimeException>(::saveUISettings)
-			doAndIgnore<RuntimeException>(storage::close)
+			doAndIgnore { timerService.shutdown() }
+			doAndIgnore { timerService.awaitTermination(10, TimeUnit.SECONDS) }
+			doAndIgnore { service.shutdown() }
+			doAndIgnore { service.awaitTermination(10, TimeUnit.SECONDS) }
+			doAndIgnore(::saveUISettings)
+			doAndIgnore(storage::close)
 			exitProcess(1)
 		}.start()
 	}
@@ -224,7 +238,7 @@ class PinkPigMail : Application(), IStorageListener
 			//  synch has finished -- publish an event for it
 			accounts.forEach { later { Globals.synched.push(it) } }
 			later {
-				//((bootPane.children[0] as BorderPane).center as WaitSpinner).progressIndicator.progress = 1.0;
+				bootPaneSpinner.finish()
 				mainFlipper.flip(root)
 			}
 			//  on adding of a new account, add an account view for it
@@ -240,3 +254,40 @@ class PinkPigMail : Application(), IStorageListener
 		primaryStage.show()
 	}
 }
+
+
+
+//class Foo(private val xxx: String, private val n : Int) : Callable<Void?>, PriorityExecutor.Important
+//{
+//	override fun call(): Void?
+//	{
+//		println("FOOO " + xxx)
+//		return null
+//	}
+//
+//	override fun getPriority(): Int
+//	{
+//		return n
+//	}
+//}
+//		workQ = new LinkedBlockingDeque<>();
+//		val s = PriorityExecutor(CustomThreadFactory("WorkQ"))
+//		s.submit {
+//			println("X1")
+//			Thread.sleep(5000)
+//			println("X1 Done")
+//		}
+//		s.submit {
+//			println("X2")
+//		}
+//		s.submit {
+//			println("X3")
+//		}
+//
+//		s.submit(Foo("AAA",10))
+//		s.submit(Foo("BBB", 10))
+//		s.submit(Foo("CCC", 5))
+//		s.submit(Foo("DDD", 20))
+//
+//		Thread.sleep(20000)
+//		exitProcess(1)

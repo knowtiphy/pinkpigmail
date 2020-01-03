@@ -19,7 +19,6 @@ import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
-import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
@@ -41,7 +40,7 @@ import tornadofx.remainingWidth
 import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 
-class MailAccountView(stage: Stage, private val service: ExecutorService, private val htmlState: HTMLState, account: IEmailAccount) : VBox()
+class MailAccountView(stage: Stage, private val service: ExecutorService, account: IEmailAccount) : VBox()
 {
 	companion object
 	{
@@ -145,24 +144,17 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 
 	private fun displayMessage(folder: IFolder, selection: EntitySelection<IFolder, IMessage>, messageProp: ObjectProperty<IMessage>)
 	{
-		if (selection.size() != 1)
-		{
-			messageProp.set(null)
-		} else
-		{
-			val message = selection.selectedItem()
-			htmlState.message = message
-			message.loadAhead()
-			AccountViewModel.loadAhead.addMatch(message, loadAhead(folder, selection))
-			messageProp.set(message)
+		assert(selection.size() == 1)
+		val message = selection.selectedItem()
+		Globals.htmlState.message = message
+		message.loadAhead()
+		AccountViewModel.loadAhead.addMatch(message, loadAhead(folder, selection))
+		messageProp.set(message)
 
-			//	don't mark junk as read
-			System.out.println("XXXXXXXXXXXXXXXXXXXXXX isDisplayMessageMarksAsRead " + message.mailAccount.isDisplayMessageMarksAsRead)
-			if (message.mailAccount.isDisplayMessageMarksAsRead && !message.folder.isJunkProperty.get())
-			{
-				System.out.println("XXXXXXXXXXXXXXXXXXXXXX MARKING READ")
-				message.folder.markMessagesAsRead(listOf(message))
-			}
+		//	don't mark junk as read
+		if (message.mailAccount.isDisplayMessageMarksAsRead && !message.folder.isJunkProperty.get())
+		{
+			message.folder.markMessagesAsRead(listOf(message))
 		}
 	}
 
@@ -302,8 +294,11 @@ class MailAccountView(stage: Stage, private val service: ExecutorService, privat
 		setVgrow(toolBar, Priority.NEVER)
 		setVgrow(splitPane, Priority.ALWAYS)
 
-		//	if the selection on the folder changes display a new message
-		model.selection[folder]!!.filter { isCP(folder, name) }.subscribe { displayMessage(folder, it, messageProperty) }
+		//	if the selection changes to multiple clear the message display
+		model.selection[folder]!!.filter { isCP(folder, name) }.filter { it.size() != 1 }.subscribe { messageProperty.set(null) }
+
+		//	if the selection on the folder changes to a new single message display  it
+		model.selection[folder]!!.filter { isCP(folder, name) }.filter { it.size() == 1 }.subscribe { displayMessage(folder, it, messageProperty) }
 
 		return resizeable(VBox(toolBar, splitPane))
 	}

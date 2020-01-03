@@ -48,7 +48,8 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 
 	private val viewer = resizeable(MailViewer())
 	private val noMessageSelected = boxIt(Label(Strings.NO_MESSAGE_SELECTED))
-	private val loading = boxIt(WaitSpinner(Strings.LOADING_MESSAGE))
+	private val loadingSpinner = WaitSpinner(Strings.LOADING_MESSAGE).finish()
+	private val loading = boxIt(loadingSpinner)
 
 	private val fromText = Label()
 	private val subjectText = Label()
@@ -154,6 +155,7 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 			{
 				later {
 					println("FLIPPING TO MESSAGE SPACE : " + (System.currentTimeMillis() - startTime))
+					loadingSpinner.finish()
 					flip(messageSpace)
 					AccountViewModel.messageShown.push(messageProperty.get())
 				}
@@ -173,6 +175,7 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 		} else
 		{
 			println("FLIP Loading")
+			loadingSpinner.resume()
 			flip(loading)
 			println("STARTING TASK")
 			startTime = System.currentTimeMillis()
@@ -231,6 +234,7 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 							}
 						} else
 						{
+							loadingSpinner.finish()
 							AccountViewModel.messageShown.push(message)
 							println("IGNORING MESSAGE")
 						}
