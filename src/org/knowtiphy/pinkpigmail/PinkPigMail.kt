@@ -255,9 +255,7 @@ class PinkPigMail : Application(), IStorageListener
 	}
 }
 
-
-
-//class Foo(private val xxx: String, private val n : Int) : Callable<Void?>, PriorityExecutor.Important
+//class Foo(private val xxx: String, private val n: Int) : Callable<Void?>, HasPriority
 //{
 //	override fun call(): Void?
 //	{
@@ -270,24 +268,24 @@ class PinkPigMail : Application(), IStorageListener
 //		return n
 //	}
 //}
-//		workQ = new LinkedBlockingDeque<>();
-//		val s = PriorityExecutor(CustomThreadFactory("WorkQ"))
-//		s.submit {
-//			println("X1")
-//			Thread.sleep(5000)
-//			println("X1 Done")
-//		}
-//		s.submit {
-//			println("X2")
-//		}
-//		s.submit {
-//			println("X3")
-//		}
 //
-//		s.submit(Foo("AAA",10))
-//		s.submit(Foo("BBB", 10))
-//		s.submit(Foo("CCC", 5))
-//		s.submit(Foo("DDD", 20))
+//val s = PriorityExecutor(CustomThreadFactory("WorkQ"))
+//s.submit {
+//	println("X1")
+//	Thread.sleep(5000)
+//	println("X1 Done")
+//}
+//s.submit {
+//	println("X2")
+//}
+//s.submit {
+//	println("X3")
+//}
 //
-//		Thread.sleep(20000)
-//		exitProcess(1)
+//s.submit(Foo("AAA", 10))
+//s.submit(Foo("BBB", 10))
+//s.submit(Foo("CCC", 5))
+//s.submit(Foo("DDD", 20))
+//
+//Thread.sleep(10000)
+//exitProcess(1)

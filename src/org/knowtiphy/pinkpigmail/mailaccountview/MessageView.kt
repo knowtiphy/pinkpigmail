@@ -36,7 +36,6 @@ import org.knowtiphy.pinkpigmail.util.ui.WaitSpinner
 import org.knowtiphy.utils.HTMLUtils
 import org.w3c.dom.Document
 import java.util.concurrent.ExecutorService
-import java.util.logging.Logger
 
 /**
  * @author graham
@@ -44,8 +43,6 @@ import java.util.logging.Logger
 class MessageView(private val account: IEmailAccount, private val service: ExecutorService,
 				  private val messageProperty: ReadOnlyObjectProperty<IMessage>) : Replacer()
 {
-	private val logger = Logger.getLogger(MessageView::class.qualifiedName)
-
 	private val viewer = resizeable(MailViewer())
 	private val noMessageSelected = boxIt(Label(Strings.NO_MESSAGE_SELECTED))
 	private val loadingSpinner = WaitSpinner(Strings.LOADING_MESSAGE).finish()
@@ -234,8 +231,8 @@ class MessageView(private val account: IEmailAccount, private val service: Execu
 							}
 						} else
 						{
-							loadingSpinner.finish()
-							AccountViewModel.messageShown.push(message)
+							//loadingSpinner.finish()
+							//AccountViewModel.messageShown.push(message)
 							println("IGNORING MESSAGE")
 						}
 //						}
