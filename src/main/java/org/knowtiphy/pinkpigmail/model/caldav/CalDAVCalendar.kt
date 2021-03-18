@@ -1,0 +1,31 @@
+package org.knowtiphy.pinkpigmail.model.caldav
+
+import com.calendarfx.model.Calendar
+import org.apache.jena.rdf.model.Statement
+import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.PeerState
+import org.knowtiphy.owlorm.javafx.StoredPeer
+import org.knowtiphy.pinkpigmail.model.storage.DavStorage
+
+class CalDAVCalendar(id: String, storage: DavStorage) : StoredPeer<DavStorage>(id, storage)
+{
+    val calendar = Calendar()
+
+    init
+    {
+        declareU(Vocabulary.HAS_NAME) { calendar.name = it.literal.string }
+        declareU(Vocabulary.CONTAINS, ::addEvent)
+        declareD(Vocabulary.CONTAINS, ::deleteEvent)
+        calendar.setStyle(Calendar.Style.STYLE1)
+    }
+
+    private fun addEvent(stmt: Statement)
+    {
+        calendar.addEntry((PeerState.peer(stmt.getObject().asResource())!! as CalDAVEvent).event)
+    }
+
+    private fun deleteEvent(stmt: Statement)
+    {
+        calendar.removeEntry((PeerState.peer(stmt.getObject().asResource()) as CalDAVEvent).event)
+    }
+}
