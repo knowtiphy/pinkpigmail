@@ -14,6 +14,7 @@ import org.apache.jena.rdf.model.RDFNode
 import org.apache.jena.sparql.core.Var
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
+import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
@@ -22,7 +23,6 @@ import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.JenaUtils.P
 import org.knowtiphy.utils.JenaUtils.R
-import org.knowtiphy.utils.NameSource
 
 /**
  * @author graham
@@ -234,7 +234,7 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 
 	private fun getOp(type: String): Pair<String, Model>
 	{
-		val opId = NameSource().get()
+		val opId = PinkPigMail.nameSource.get()
 		val operation = ModelFactory.createDefaultModel()
 		JenaUtils.addType(operation, opId, type)
 		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)

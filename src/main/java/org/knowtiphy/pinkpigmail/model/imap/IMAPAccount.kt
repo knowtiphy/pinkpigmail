@@ -12,9 +12,9 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.sparql.core.Var
 import org.apache.jena.vocabulary.RDF
-import org.knowtiphy.babbage.storage.StorageException
+import org.apache.jena.vocabulary.RDFS
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.owlorm.javafx.StoredPeer
+import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.pinkpigmail.model.*
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -28,14 +28,25 @@ import javax.mail.internet.InternetAddress
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStorage>(accountId, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailStorage>(accountId, storage), IEmailAccount
 {
 	companion object
 	{
+		val GET_ACCOUNT_ATTRIBUTES: SelectBuilder = SelectBuilder()
+			.addVar("*")
+			.addWhere("?aid", "?p", "?o")
+
 		val GET_FOLDER_IDS: SelectBuilder = SelectBuilder()
 			.addVar("*")
 			.addWhere("?aid", "<${Vocabulary.CONTAINS}>", "?fid")
 			.addWhere("?fid", "<${RDF.type}>", "<${Vocabulary.IMAP_FOLDER}>")
+
+		val GET_SPECIAL_IDS: SelectBuilder = SelectBuilder()
+			.addVar("*")
+			.addWhere("?aid", "<${Vocabulary.HAS_SPECIAL}>", "?fid")
+			.addWhere("?fid", "<${RDF.type}>", "?type")
+			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.IMAP_FOLDER}>")
+			.addFilter("?type != <${Vocabulary.IMAP_FOLDER}>")
 	}
 
 	override val nickNameProperty = SimpleStringProperty()
@@ -72,15 +83,31 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 		eventHandlers[Vocabulary.MESSAGE_FLAGS_CHANGED] = ::folderBasedEvent
 		eventHandlers[Vocabulary.MESSAGE_ARRIVED] = ::folderBasedEvent
 		eventHandlers[Vocabulary.MESSAGE_DELETED] = ::folderBasedEvent
+
+		events.subscribe(::handleEvent)
 	}
 
 	override fun initialize()
 	{
-		//	get the data properties of this account
-		initialize(storage.getAccountInfo(id))
+		//	sync the account -- why? it's already been initalized?
+		storage.sync(id)
+
+		val aidR = NodeFactory.createURI(id)
+
+		//	initialize the attributes of this account
+		GET_ACCOUNT_ATTRIBUTES.setVar(Var.alloc("aid"), aidR)
+		storage.query(id, GET_ACCOUNT_ATTRIBUTES.buildString()).forEach {
+			initialize(it)
+		}
+
+		//	work out the special folders
+		GET_SPECIAL_IDS.setVar(Var.alloc("aid"), aidR)
+		storage.query(id, GET_SPECIAL_IDS.buildString()).forEach {
+			specials[it.get("type").toString()] = it.get("fid").toString()
+		}
 
 		//	get the folders in this account
-		GET_FOLDER_IDS.setVar(Var.alloc("aid"), NodeFactory.createURI(id))
+		GET_FOLDER_IDS.setVar(Var.alloc("aid"), aidR)
 		storage.query(id, GET_FOLDER_IDS.buildString()).forEach {
 			addFolder(it.getResource("fid").toString())
 		}
@@ -88,20 +115,13 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 
 	override fun sync()
 	{
-		//	for the moment assume the folder structure hasn't changed so just sync the messages
-
-		//	work out the special folders, adding ones we don't already have
-
-		storage.specialFolders.listStatements().forEach {
-			specials[it.`object`.toString()] = it.subject.toString()
-		}
-
 		//	sync all relevant folders -- for the moment just the inbox
+		//	for the moment assume the folder structure hasn't changed so just sync the messages
 		val inbox = specials[Vocabulary.INBOX_FOLDER]!!
 		storage.sync(id, inbox)
 	}
 
-	override fun handleEvent(event: StorageEvent)
+	private fun handleEvent(event: StorageEvent)
 	{
 		assert(eventHandlers.containsKey(event.type)) { event.type }
 		eventHandlers[event.type]?.invoke(event)
@@ -121,41 +141,13 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 
 	private fun addFolder(fid: String)
 	{
-		println("IMAP ACCOUNT ADD FOLDER $fid")
 		assert(!folders.contains(fid)) { fid }
 		val folder = IMAPFolder(fid, this, storage)
 		folder.initialize()
-
-//		if (folder.isArchiveProperty.get())
-//			archiveFolder = folder
-//		if (folder.isDraftsProperty.get())
-//			draftsFolder = folder
-//		if (folder.isInboxProperty.get())
-//			inboxFolder = folder
-//		if (folder.isJunkProperty.get())
-//			junkFolder = folder
-//		if (folder.isSentProperty.get())
-//			sentFolder = folder
-//		if (folder.isTrashProperty.get())
-//			trashFolder = folder
-
-		//	can the special folders change?
-//		folder.isArchiveProperty.addListener { _, _, new -> if (new) archiveFolder = folder }
-//		folder.isDraftsProperty.addListener { _, _, new -> if (new) draftsFolder = folder }
-//		folder.isInboxProperty.addListener { _, _, new -> if (new) inboxFolder = folder }
-//		folder.isJunkProperty.addListener { _, _, new -> if (new) junkFolder = folder }
-//		folder.isSentProperty.addListener { _, _, new -> if (new) sentFolder = folder }
-//		folder.isTrashProperty.addListener { _, _, new -> if (new) trashFolder = folder }
-
 		folders[folder.id] = folder
 	}
 
-	private fun deleteFolder(fid: String)
-	{
-		//	TODO -- is this all we need to do?
-		folders.remove(fid)
-	}
-
+	//	todo -- this all needs to be on the server
 	override fun save(model: Model, name: Resource)
 	{
 		model.add(name, model.createProperty(RDF.type.toString()), model.createResource(Vocabulary.IMAP_ACCOUNT))
@@ -211,7 +203,10 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 		trustedSenders.removeAll(addresses)
 	}
 
-	override fun isTrustedSender(addresses: Collection<EmailAddress>) = trustedSenders.containsAll(addresses)
+	override fun isTrustedSender(addresses: Collection<EmailAddress>)  : Boolean
+		{
+			return trustedSenders.containsAll(addresses)
+		}
 
 	override fun trustProvider(url: String)
 	{
@@ -223,7 +218,10 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 		trustedContentProviders.remove(url)
 	}
 
-	override fun isTrustedProvider(url: String) = trustedContentProviders.contains(url)
+	override fun isTrustedProvider(url: String) : Boolean
+	{
+		return trustedContentProviders.contains(url)
+	}
 
 	override fun getSendModel(modelType: EmailModelType): IMessageModel
 	{
@@ -315,6 +313,19 @@ class IMAPAccount(accountId: String, storage: MailStorage) : StoredPeer<MailStor
 		}
 	}
 }
+
+//	private fun deleteFolder(fid: String)
+//	{
+//		//	TODO -- is this all we need to do?
+//		folders.remove(fid)
+//	}
+
+//	old way of computing specials -- may go back to it
+//		GET_SPECIAL_IDS.setVar(Var.alloc("aid"), NodeFactory.createURI(id))
+//		val query = QueryFactory.create(GET_SPECIAL_IDS.buildString())
+//		QueryExecutionFactory.create(query, model).execSelect().forEachRemaining {
+//			specials[it.get("type").toString()] = it.get("fid").toString()
+//		}
 
 //    private void setupOutBox()
 //    {

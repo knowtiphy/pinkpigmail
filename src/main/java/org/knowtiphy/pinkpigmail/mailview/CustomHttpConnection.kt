@@ -33,8 +33,9 @@ class CustomHttpConnection(private val state: HTMLState, url: URL) : URLConnecti
             {
                 return client.open(url).inputStream
             }
-        } catch (_: Exception)
+        } catch (ex: Exception)
         {
+            ex.printStackTrace()
             //	ignore
         }
 

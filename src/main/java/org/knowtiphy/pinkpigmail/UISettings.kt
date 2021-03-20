@@ -2,18 +2,14 @@ package org.knowtiphy.pinkpigmail
 
 import javafx.beans.property.DoubleProperty
 import javafx.beans.property.SimpleDoubleProperty
-import javafx.collections.FXCollections
-import javafx.scene.control.SplitPane.Divider
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.vocabulary.RDF
-import org.knowtiphy.babbage.Babbage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.IAccount
-import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.NameSource
@@ -21,116 +17,147 @@ import org.knowtiphy.utils.OS
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.*
 
 /**
  * @author graham
  */
 class UISettings
 {
-    val verticalPosition: MutableList<Divider> = FXCollections.observableArrayList()
-    //  have to set defaults here in case we boot with no UI settings at all
-    val widthProperty: DoubleProperty = SimpleDoubleProperty(DEFAULT_WIDTH.toDouble())
-    val heightProperty: DoubleProperty = SimpleDoubleProperty(DEFAULT_HEIGHT.toDouble())
+	companion object
+	{
+		@Throws(IOException::class)
+		fun read(fileName: String): UISettings
+		{
+			val model = ModelFactory.createDefaultModel()
+			RDFDataMgr.read(
+				model,
+				Files.newInputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), fileName)),
+				Lang.TURTLE
+			)
 
-    private val folderSettings = HashMap<String, FolderSettings>()
+			val settings = UISettings()
 
-    private fun saveFolderSettings(model: Model, ui: Resource, names: NameSource, folder: IFolder)
-    {
-        val fSettings = folderSettings[folder.id]
-        if (fSettings != null)
-        {
-            val pref = model.createResource(names.get())
-            model.add(ui, model.createProperty(UIVocabulary.HAS_FOLDER_PREFERENCE), pref)
-            model.add(pref, model.createProperty(RDF.type.toString()), model.createResource(UIVocabulary.FOLDER_PREFERENCE))
-            model.add(pref, model.createProperty(UIVocabulary.FOR), model.createTypedLiteral(folder.id))
-            fSettings.save(model, pref)
-        }
-    }
+			val uid: String
+			try
+			{
+				uid = JenaUtils.listTypes(model, UIVocabulary.UI_SETTING).toString()
+			} catch (ex: NoSuchElementException)
+			{
+				//  boot with the defaults
+				return settings
+			}
 
-    fun save(model: Model, names: NameSource, account: IAccount)
-    {
-        val ui = model.createResource(names.get())
-        model.add(ui, model.createProperty(RDF.type.toString()), model.createResource(UIVocabulary.UI_SETTING))
-        model.add(ui, model.createProperty(UIVocabulary.HAS_WIDTH), model.createTypedLiteral(widthProperty.get()))
-        model.add(ui, model.createProperty(UIVocabulary.HAS_HEIGHT), model.createTypedLiteral(heightProperty.get()))
-        try
-        {
-            model.add(ui, model.createProperty(UIVocabulary.HAS_VERTICAL_POSITION), model.createTypedLiteral(verticalPosition[0].position))
-        } catch (ex: IndexOutOfBoundsException)
-        {
-            //  ignore
-        }
+			settings.widthProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH))
+			settings.heightProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT))
 
-        if (account is IEmailAccount)
-        {
-            account.folders.forEach { (_, folder) ->
-                saveFolderSettings(model, ui, names, folder)
-            }
-        }
-    }
+			JenaUtils.listObjectsOfProperty(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS).forEach {
+				val uaid = it.toString()
+				val aid = JenaUtils.getR(model, uaid, Vocabulary.HAS_ACCOUNT).toString()
+				val accountSettings = UIAccountSettings()
+				accountSettings.read(model, uaid)
+				settings.accountSettings[aid] = accountSettings
+			}
 
-    fun getFolderSettings(folder: IFolder): FolderSettings
-    {
-        val fSettings = folderSettings[folder.id]
-        if (fSettings == null)
-        {
-            folderSettings[folder.id] = FolderSettings()
-        }
-        return folderSettings[folder.id]!!
-    }
+			// settings.readFolderPrefs(uiModel, name)
 
-    //  accounts view width I guess
-    private fun readVerticalPosition(model: Model, name: String)
-    {
-        val div = Divider()
-        div.position = JenaUtils.getD(model, name, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_DIVIDER_POSITION)
-        verticalPosition.add(div)
-    }
+			return settings
+		}
 
-    private fun readFolderPrefs(model: Model, name: String)
-    {
-        val it = JenaUtils.listObjectsOfProperty(model, name, UIVocabulary.HAS_FOLDER_PREFERENCE)
-        while (it.hasNext())
-        {
-            val pref = it.next().asResource()
-            val folderId = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(model, pref.toString(), UIVocabulary.FOR))
-            folderSettings[folderId] = FolderSettings.read(model, pref)
-        }
-    }
+		private const val DEFAULT_WIDTH = 1250.0
+		private const val DEFAULT_HEIGHT = 750.0
+	}
 
-    companion object
-    {
-        const val DEFAULT_DIVIDER_POSITION = 0.15
-        const val DEFAULT_WIDTH = 1250
-        const val DEFAULT_HEIGHT = 750
+	//  have to set defaults here in case we boot with no UI settings at all
+	val widthProperty: DoubleProperty = SimpleDoubleProperty(DEFAULT_WIDTH)
+	val heightProperty: DoubleProperty = SimpleDoubleProperty(DEFAULT_HEIGHT)
 
-        @Throws(IOException::class)
-        fun read(fileName: String): UISettings
-        {
-            val uiModel = ModelFactory.createDefaultModel()
-            RDFDataMgr.read(uiModel, Files.newInputStream(Paths.get(OS.getSettingsDir(Babbage::class.java).toString(), fileName)), Lang.TURTLE)
+	private val folderSettings = HashMap<String, UIFolderSettings>()
+	private val accountSettings = HashMap<String, UIAccountSettings>()
 
-            val settings = UISettings()
+	private fun saveFolderSettings(model: Model, ui: Resource, names: NameSource, folder: IFolder)
+	{
+		val fSettings = folderSettings[folder.id]
+		if (fSettings != null)
+		{
+			val pref = model.createResource(names.get())
+			model.add(ui, model.createProperty(UIVocabulary.HAS_FOLDER_PREFERENCE), pref)
+			model.add(
+				pref,
+				model.createProperty(RDF.type.toString()),
+				model.createResource(UIVocabulary.FOLDER_PREFERENCE)
+			)
+			model.add(pref, model.createProperty(UIVocabulary.FOR), model.createTypedLiteral(folder.id))
+			fSettings.save(model, pref)
+		}
+	}
 
-            val name: String
-            try
-            {
-                name = JenaUtils.listSubjectsWithPropertyU(uiModel, RDF.type.toString(), UIVocabulary.UI_SETTING).toString()
-            } catch (ex: NoSuchElementException)
-            {
-                //  boot with the defaults
-                return settings
-            }
+	fun save(accounts: Collection<IAccount>): Model
+	{
+		val model = ModelFactory.createDefaultModel()
+		model.setNsPrefix("n", Vocabulary.NBASE)
+		model.setNsPrefix("o", Vocabulary.TBASE)
 
-            settings.widthProperty.set(JenaUtils.getD(uiModel, name, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH.toDouble()))
-            settings.heightProperty.set(JenaUtils.getD(uiModel, name, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT.toDouble()))
+		val uid = PinkPigMail.nameSource.get()
 
-            settings.readVerticalPosition(uiModel, name)
+		JenaUtils.addType(model, uid, UIVocabulary.UI_SETTING)
+		JenaUtils.addDP(model, uid, UIVocabulary.HAS_WIDTH, widthProperty.get())
+		JenaUtils.addDP(model, uid, UIVocabulary.HAS_HEIGHT, heightProperty.get())
 
-            settings.readFolderPrefs(uiModel, name)
+		accounts.forEach { save(model, uid, it) }
 
-            return settings
-        }
-    }
+		return model
+	}
+
+	fun save(model: Model, uid: String, account: IAccount)
+	{
+		val uaid = PinkPigMail.nameSource.get()
+
+		JenaUtils.addOP(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS, uaid)
+		JenaUtils.addType(model, uaid, UIVocabulary.UI_ACCOUNT_SETTING)
+		JenaUtils.addOP(model, uaid, Vocabulary.HAS_ACCOUNT, account.id)
+		getAccountSettings(account).save(model, uaid)
+
+//        if (account is IEmailAccount)
+//        {
+//            account.folders.forEach { (_, folder) ->
+//                saveFolderSettings(model, ui, names, folder)
+//            }
+//        }
+	}
+
+	fun getAccountSettings(account: IAccount): UIAccountSettings
+	{
+		if (!accountSettings.containsKey(account.id))
+			accountSettings[account.id] = UIAccountSettings()
+		return accountSettings.get(account.id)!!
+	}
+
+	fun getFolderSettings(folder: IFolder): UIFolderSettings
+	{
+		val fSettings = folderSettings[folder.id]
+		if (fSettings == null)
+		{
+			folderSettings[folder.id] = UIFolderSettings()
+		}
+		return folderSettings[folder.id]!!
+	}
+
+//	//  accounts view width I guess
+//	private fun readVerticalPosition(model: Model, name: String)
+//	{
+//		val div = Divider()
+//		div.position = JenaUtils.getD(model, name, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_DIVIDER_POSITION)
+//		verticalPosition.add(div)
+//	}
+
+	private fun readFolderPrefs(model: Model, name: String)
+	{
+		val it = JenaUtils.listObjectsOfProperty(model, name, UIVocabulary.HAS_FOLDER_PREFERENCE)
+		while (it.hasNext())
+		{
+			val pref = it.next().asResource()
+			val folderId = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(model, pref.toString(), UIVocabulary.FOR))
+			folderSettings[folderId] = UIFolderSettings.read(model, pref)
+		}
+	}
 }

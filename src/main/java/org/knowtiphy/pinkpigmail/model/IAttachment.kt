@@ -1,6 +1,6 @@
 package org.knowtiphy.pinkpigmail.model
 
-import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.owlorm.javafx.IEntity
 import java.awt.Desktop
 import java.io.IOException

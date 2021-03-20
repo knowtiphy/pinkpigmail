@@ -25,7 +25,6 @@ class CustomURLStreamHandlerFactory(private val state: HTMLState) : URLStreamHan
     override fun createURLStreamHandler(protocol: String): URLStreamHandler?
     {
         //  have to allow jars, even though it's dangerous
-        //  TODO why can't we put the jar -> null in the map?
         if (protocol == "jar")
             return null
 

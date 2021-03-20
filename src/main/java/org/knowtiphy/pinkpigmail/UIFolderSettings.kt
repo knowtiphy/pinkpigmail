@@ -7,9 +7,9 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.utils.JenaUtils
 
-class FolderSettings(val viewType: String = DEFAULT_VIEW,
-                     val horizontalPositions: ObservableList<SplitPane.Divider> = makeDivider(DEFAULT_HORIZONTAL_POSITION),
-                     private val verticalPositions: ObservableList<SplitPane.Divider> = makeDivider(DEFAULT_VERTICAL_POSITION))
+class UIFolderSettings(val viewType: String = DEFAULT_VIEW,
+                       val horizontalPositions: ObservableList<SplitPane.Divider> = makeDivider(DEFAULT_HORIZONTAL_POSITION),
+                       private val verticalPositions: ObservableList<SplitPane.Divider> = makeDivider(DEFAULT_VERTICAL_POSITION))
 {
     fun save(model: Model, pref: Resource)
     {
@@ -36,12 +36,12 @@ class FolderSettings(val viewType: String = DEFAULT_VIEW,
             return FXCollections.observableArrayList(div)
         }
 
-        fun read(model: Model, pref: Resource): FolderSettings
+        fun read(model: Model, pref: Resource): UIFolderSettings
         {
             val viewType = DEFAULT_VIEW//JenaUtils.getI(JenaUtils.listObjectsOfPropertyU(model, pref.toString(), UIVocabulary.HAS_VIEW_TYPE));
             val hPos = makeDivider(JenaUtils.getD(model, pref.toString(), UIVocabulary.HAS_HORIZONTAL_POSITION, DEFAULT_HORIZONTAL_POSITION))
             val vPos = makeDivider(JenaUtils.getD(model, pref.toString(), UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_POSITION))
-            return FolderSettings(viewType, hPos, vPos)
+            return UIFolderSettings(viewType, hPos, vPos)
         }
     }
 }

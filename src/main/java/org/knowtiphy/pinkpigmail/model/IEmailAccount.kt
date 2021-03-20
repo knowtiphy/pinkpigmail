@@ -4,8 +4,6 @@ import javafx.beans.property.ReadOnlyBooleanProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
-import org.knowtiphy.babbage.storage.StorageException
-import java.util.concurrent.ExecutionException
 
 /**
  * @author graham

@@ -4,7 +4,7 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 
 /**

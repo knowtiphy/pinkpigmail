@@ -9,6 +9,7 @@ import org.apache.jena.rdf.model.Resource
 import org.apache.jena.vocabulary.RDF
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
+import org.knowtiphy.pinkpigmail.model.BaseAccount
 import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
@@ -17,7 +18,7 @@ import org.knowtiphy.utils.JenaUtils
 /**
  * @author graham
  */
-class CardDAVAccount(id: String, storage: DavStorage) : StoredPeer<DavStorage>(id, storage), IContactAccount
+class CardDAVAccount(id: String, storage: DavStorage) : BaseAccount<DavStorage>(id, storage), IContactAccount
 {
 	override val addressBooks: ObservableList<CardDAVAddressBook> = FXCollections.observableArrayList()
 	override val nickNameProperty = SimpleStringProperty()
@@ -45,13 +46,6 @@ class CardDAVAccount(id: String, storage: DavStorage) : StoredPeer<DavStorage>(i
 			if (nickNameProperty.get() == null)
 				nickNameProperty.set(newValue)
 		}
-	}
-
-	override fun handleEvent(event: StorageEvent)
-	{
-		println("IN EVENT HANDLER for CardDav")
-		println("Event $event")
-		JenaUtils.printModel(event.model, "Model $id")
 	}
 
 	override fun save(model: Model, name: Resource)

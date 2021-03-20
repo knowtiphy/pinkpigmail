@@ -10,8 +10,6 @@ import java.util.concurrent.Future
 
 class MailStorage(storage: IStorage) : BaseStorage(storage)
 {
-	val specialFolders: Model get() = storage.specialFolders
-
 	fun ensureMessageContentLoaded(accountId: String, folderId: String, messageId: String): Future<*> =
 		storage.ensureMessageContentLoaded(accountId, folderId, messageId)
 

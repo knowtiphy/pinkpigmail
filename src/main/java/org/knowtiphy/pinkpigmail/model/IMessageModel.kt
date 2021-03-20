@@ -2,7 +2,7 @@ package org.knowtiphy.pinkpigmail.model
 
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.babbage.storage.exceptions.StorageException
 
 import java.io.IOException
 

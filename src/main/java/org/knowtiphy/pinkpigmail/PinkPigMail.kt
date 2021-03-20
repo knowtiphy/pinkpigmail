@@ -25,9 +25,9 @@ import org.apache.jena.vocabulary.RDFS
 import org.controlsfx.glyphfont.Glyph
 import org.knowtiphy.babbage.storage.*
 import org.knowtiphy.owlorm.javafx.PeerState
-import org.knowtiphy.pinkpigmail.Globals.timerService
 import org.knowtiphy.pinkpigmail.mailaccountview.MailAccountView
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
+import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.IContactAccount
@@ -46,6 +46,7 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.knowtiphy.utils.IProcedure.doAndIgnore
 import org.knowtiphy.utils.NameSource
 import org.knowtiphy.utils.OS
+import org.reactfx.EventSource
 import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
@@ -54,6 +55,7 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import kotlin.system.exitProcess
@@ -62,36 +64,21 @@ import kotlin.system.exitProcess
  * @author graham
  */
 
-class PinkPigMail : Application(), IOldStorageListener
+class PinkPigMail : Application()
 {
-	init
-	{
-		val stream = PinkPigMail::class.java.getResource("/logging.properties")!!.openStream()
-		try
-		{
-			LogManager.getLogManager().readConfiguration(stream)
-		} catch (ex: IOException)
-		{
-			ex.printStackTrace()
-		}
-	}
-
 	companion object
 	{
-		//		private const val MESSAGE_STORAGE = "messages"
-//		private const val ACCOUNTS_FILE = "accounts.ttl"
 		private const val UI_FILE = "ui.ttl"
-
 		const val STYLE_SHEET = "/styles.css"
 
-		val GET_ACCOUNTS: String = SelectBuilder()
+		private val GET_ACCOUNTS: String = SelectBuilder()
 			.addVar("*")
-			.addWhere("?id", "<${RDF.type.toString()}>", "?type")
+			.addWhere("?aid", "<${RDF.type}>", "?type")
 			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.ACCOUNT}>")
 			.addFilter("?type != <${Vocabulary.ACCOUNT}>")
 			.buildString()
 
-		val EVENT_IDS: String = SelectBuilder()
+		private val EVENT_IDS: String = SelectBuilder()
 			.addVar("*")
 			.addWhere("?eid", "<${RDF.type}>", "?type")
 			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.EVENT}>")
@@ -102,18 +89,38 @@ class PinkPigMail : Application(), IOldStorageListener
 		private val accounts: ObservableMap<String, IAccount> = FXCollections.observableHashMap()
 
 		private val storage: IStorage by lazy { StorageFactory.getLocal() }
+		private val service: ExecutorService = Executors.newCachedThreadPool()
+
+		//	shared globals
 
 		val uiSettings: UISettings by lazy { UISettings.read(UI_FILE) }
 
-		private val service: ExecutorService = Executors.newCachedThreadPool()
+		val htmlState = HTMLState()
 
-		private val appToolBar = HBox()
-		private val rootTabPane = resizeable(TabPane())
-		private val root = resizeable(VBox(appToolBar, rootTabPane))
+		//	executor pool for doing periodic tasks like updating the current time in calendar views
+		val timerService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+
+		val nameSource = NameSource(Vocabulary.NBASE)
+
+		//	all events are posted here
+		val events = EventSource<StorageEvent>()
 	}
+
+	private val appToolBar = HBox()
+	private val rootTabPane = resizeable(TabPane())
+	private val root = resizeable(VBox(appToolBar, rootTabPane))
 
 	init
 	{
+		val stream = PinkPigMail::class.java.getResource("/logging.properties")!!.openStream()
+		try
+		{
+			LogManager.getLogManager().readConfiguration(stream)
+		} catch (ex: IOException)
+		{
+			ex.printStackTrace()
+		}
+
 		//  peer constructors for roots -- this goes away with the event handling framework
 		//	only need roots
 		PeerState.addConstructor(Vocabulary.IMAP_ACCOUNT) { IMAPAccount(it, MailStorage(storage)) }
@@ -128,12 +135,6 @@ class PinkPigMail : Application(), IOldStorageListener
 
 		VBox.setVgrow(rootTabPane, Priority.ALWAYS)
 		VBox.setVgrow(appToolBar, Priority.NEVER)
-	}
-
-	//  all UI model updates go through this code
-	override fun delta(added: Model, deleted: Model)
-	{
-		PeerState.delta(added, deleted)
 	}
 
 	private fun createAccountTab(tabContent: Region, icon: Glyph, label: StringProperty): Tab
@@ -163,6 +164,7 @@ class PinkPigMail : Application(), IOldStorageListener
 				calendarView.time = dateTime.toLocalTime()
 			}
 		}, initialDelay, 60L, TimeUnit.SECONDS)
+
 		rootTabPane.tabs.add(createAccountTab(calendarView, Icons.calendar(), account.nickNameProperty))
 	}
 
@@ -174,40 +176,28 @@ class PinkPigMail : Application(), IOldStorageListener
 	private fun addMailView(account: IEmailAccount)
 	{
 		rootTabPane.tabs.add(
-			createAccountTab(
-				MailAccountView(service, account),
-				Icons.mail(),
-				account.nickNameProperty
-			)
+			createAccountTab(MailAccountView(service, account), Icons.mail(), account.nickNameProperty)
 		)
 	}
 
-	private val viewCreator = mapOf(
+	private val createAccountView = mapOf(
 		IMAPAccount::class to { account: IAccount -> addMailView(account as IEmailAccount) },
 		CalDAVAccount::class to { account -> addCalendarView(account as ICalendarAccount) },
 		CardDAVAccount::class to { account -> addCardView(account as IContactAccount) })
 
 	private fun saveUISettings()
 	{
-		val names = NameSource(Vocabulary.NBASE)
-		val uiModel = ModelFactory.createDefaultModel()
-		uiModel.setNsPrefix("n", Vocabulary.NBASE)
-		uiModel.setNsPrefix("o", Vocabulary.TBASE)
-		accounts.values.forEach { uiSettings.save(uiModel, names, it) }
+		val model = uiSettings.save(accounts.values)
 		RDFDataMgr.write(
 			Files.newOutputStream(
-				Paths.get(
-					OS.getSettingsDir(PinkPigMail::class.java).toString(),
-					UI_FILE
-				)
-			), uiModel, Lang.TURTLE
+				Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), UI_FILE)
+			),
+			model, Lang.TURTLE
 		)
 	}
 
 	//  shutdown sequence
-	//	- save UI settings
-	//  - shutdown the storage layer
-	//                RDFDataMgr.write(Files.newOutputStream(OS.getAppFile(PinkPigMail::class.java, Constants.ACCOUNTS_FILE)), accountsModel, Lang.TURTLE)
+	//	done on a thread, so the window closes immediately while shutdown goes ahead in the background
 	private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
@@ -227,11 +217,28 @@ class PinkPigMail : Application(), IOldStorageListener
 	{
 		QueryExecutionFactory.create(GET_ACCOUNTS, ModelFactory.createRDFSModel(storage.accounts)).execSelect()
 			.forEach {
-				val id = it.getResource("id").toString()
-				val account = PeerState.construct(id, it.getResource("type").toString()) as IAccount
+				val aid = it.getResource("aid").toString()
+				val account = PeerState.construct(aid, it.getResource("type").toString()) as IAccount
 				account.initialize()
-				accounts[id] = account
+				accounts[aid] = account
 			}
+	}
+
+	//	channel listener events to the per account and global event streams
+	private fun eventHandler(eventModel: Model)
+	{
+		val infModel = ModelFactory.createRDFSModel(eventModel)
+		QueryExecutionFactory.create(EVENT_IDS, infModel).execSelect().forEach {
+			val event = StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel)
+			//	by doing the later it puts the whole event stream on the FX UI thread
+			later {
+				//	push the event to the account's event stream
+				if (event.aid != null)
+					accounts[event.aid]?.events!!.push(event)
+				//	push the event to the all events stream
+				events.push(event)
+			}
+		}
 	}
 
 	//  boot sequence
@@ -243,9 +250,13 @@ class PinkPigMail : Application(), IOldStorageListener
 		//	set up a stream handler to intercept URL loading -- needed to stop loading of images
 		//	in mail messages for example
 		//	TODO -- this should be done via some Service interface nowdays?
-		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(Globals.htmlState))
+		//	and it should only be used in the mail html viewer (do they expose those features yet?)
+		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
 
-		//	initialize the stage with the root pane, icon, height etc, and set a close hook
+		//	get the known accounts
+		buildAccounts()
+
+		//	initialize the stage
 		with(stage) {
 			scene = UIUtils.getScene(root)
 			title = Strings.APP_NAME
@@ -258,42 +269,19 @@ class PinkPigMail : Application(), IOldStorageListener
 		uiSettings.widthProperty.bind(stage.widthProperty())
 		uiSettings.heightProperty.bind(stage.heightProperty())
 
-		//	get the known accounts and create views for each account
-		buildAccounts()
-		accounts.values.forEach { account -> viewCreator[account::class]?.let { it(account) } }
+		//	create views for each account
+		accounts.values.forEach { account -> createAccountView[account::class]?.let { it(account) } }
 
-		Globals.events.subscribe { accounts[it.aid]?.handleEvent(it) }
+		//	add an event listener for storage events
+		storage.addListener(::eventHandler)
 
-		//	channel listener events to the global event stream
-		storage.addListener { event ->
-			val rdfsModel = ModelFactory.createRDFSModel(event)
-			QueryExecutionFactory.create(EVENT_IDS, rdfsModel).execSelect().forEach {
-				val storageEvent = StorageEvent(
-					it.get("eid").toString(), it.get("type").toString(),
-					it.get("aid").toString(), rdfsModel
-				)
-				println(storageEvent)
-				//	by doing the later it puts the whole event stream on the FX UI thread
-				later { Globals.events.push(storageEvent) }
-			}
-		}
+		//	TODO -- need to have some global events -- e.g. lost store connection
+		events.subscribe { }
 
 		//	synch each account
 		accounts.values.forEach { it.sync() }
 
-		//  on adding of a new account, add an account view for it
-//			accounts.addListener { c: ListChangeListener.Change<out IAccount> ->
-//				println("XXXX");
-//				while (c.next())
-//				{
-//					if (c.wasAdded())
-//					{
-//						println("YYY " + c.addedSubList);
-//						c.addedSubList.forEach { later { viewCreator[it::class]?.let { it1 -> it1(stage, it) } } }
-//					}
-//				}
-//			}
-
+		//	show the UI
 		stage.show()
 	}
 }

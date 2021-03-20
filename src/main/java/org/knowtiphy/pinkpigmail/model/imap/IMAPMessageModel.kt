@@ -1,7 +1,7 @@
 package org.knowtiphy.pinkpigmail.model.imap
 
 import org.knowtiphy.babbage.storage.IMAP.Mime
-import org.knowtiphy.babbage.storage.StorageException
+import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage

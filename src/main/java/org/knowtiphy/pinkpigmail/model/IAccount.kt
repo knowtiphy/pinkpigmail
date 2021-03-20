@@ -5,6 +5,7 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.knowtiphy.owlorm.javafx.IPeer
 import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
+import org.reactfx.EventSource
 
 interface IAccount : IPeer
 {
@@ -18,7 +19,7 @@ interface IAccount : IPeer
 
 	fun save(model: Model, name: Resource)
 
-	val nickNameProperty: StringProperty
+	val events: EventSource<StorageEvent>
 
-	fun handleEvent(event: StorageEvent);
+	val nickNameProperty: StringProperty
 }
