@@ -13,30 +13,29 @@ import org.knowtiphy.owlorm.javafx.IPeer
  */
 interface IFolder : IPeer
 {
-    val account: IEmailAccount
+	val account: IEmailAccount
 
-    val messages: ObservableList<IMessage>
+	val nameProperty: StringProperty
 
-    val isArchiveProperty: BooleanProperty
-    val isDraftsProperty: BooleanProperty
-    val isInboxProperty: BooleanProperty
-    val isJunkProperty: BooleanProperty
-    val isSentProperty: BooleanProperty
-    val isTrashProperty: BooleanProperty
+	val messageCountProperty: IntegerProperty
 
-    val nameProperty: StringProperty
+	val unreadMessageCountProperty: IntegerProperty
 
-    val messageCountProperty: IntegerProperty
+	val messages: ObservableList<IMessage>
 
-    val unreadMessageCountProperty: IntegerProperty
+	fun isSpecial(type : String) : Boolean
 
-    fun deleteMessages(targets: Collection<IMessage>)
+	val isJunkProperty: BooleanProperty
 
-    fun markMessagesAsRead(targets: Collection<IMessage>)
+	val isTrashProperty: BooleanProperty
 
-    fun markMessagesAsJunk(targets: Collection<IMessage>)
+	fun deleteMessages(targets: Collection<IMessage>)
 
-    fun markMessagesAsNotJunk(targets: Collection<IMessage>)
+	fun markMessagesAsRead(targets: Collection<IMessage>)
 
-    fun loadAhead(targets : Collection<IMessage>)
+	fun markMessagesAsJunk(targets: Collection<IMessage>)
+
+	fun markMessagesAsNotJunk(targets: Collection<IMessage>)
+
+	fun loadAhead(targets: Collection<IMessage>)
 }

@@ -33,13 +33,15 @@ import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.caldav.*
+import org.knowtiphy.pinkpigmail.model.events.StageShowEvent
+import org.knowtiphy.pinkpigmail.model.events.UIEvent
 import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ErrorHandler
-import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
+import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
@@ -102,8 +104,37 @@ class PinkPigMail : Application()
 
 		val nameSource = NameSource(Vocabulary.NBASE)
 
-		//	all events are posted here
-		val events = EventSource<StorageEvent>()
+		//	all storage related events are posted here
+		//	only parts of the model should subscribe to these events
+		val fromStorage = EventSource<StorageEvent>()
+
+		fun pushEvent(event: StorageEvent)
+		{
+			//	by doing the later it puts the whole event stream on the FX UI thread
+			later {
+				//	push the event to the account's event stream
+				if (event.aid != null)
+					accounts[event.aid]?.fromStorage?.push(event)
+				//	push the event to the all events stream
+				fromStorage.push(event)
+			}
+		}
+
+		//	all UI model related events are posted here
+		//	only parts of the UI should subscribe to these events
+		val fromModel = EventSource<UIEvent>()
+
+		fun pushEvent(event: UIEvent)
+		{
+			//	by doing the later it puts the whole event stream on the FX UI thread
+			later {
+				//	push the event to the account's event stream
+				if (event.account != null)
+					accounts[event.account.id]?.events?.push(event)
+				//	push the event to the all events stream
+				fromModel.push(event)
+			}
+		}
 	}
 
 	private val appToolBar = HBox()
@@ -229,15 +260,7 @@ class PinkPigMail : Application()
 	{
 		val infModel = ModelFactory.createRDFSModel(eventModel)
 		QueryExecutionFactory.create(EVENT_IDS, infModel).execSelect().forEach {
-			val event = StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel)
-			//	by doing the later it puts the whole event stream on the FX UI thread
-			later {
-				//	push the event to the account's event stream
-				if (event.aid != null)
-					accounts[event.aid]?.events!!.push(event)
-				//	push the event to the all events stream
-				events.push(event)
-			}
+			pushEvent(StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel))
 		}
 	}
 
@@ -276,11 +299,13 @@ class PinkPigMail : Application()
 		storage.addListener(::eventHandler)
 
 		//	TODO -- need to have some global events -- e.g. lost store connection
-		events.subscribe { }
+		fromStorage.subscribe { println("Global Storage Event {$it}") }
+		fromModel.subscribe { println("Global UI Event {$it}") }
 
 		//	synch each account
 		accounts.values.forEach { it.sync() }
 
+		later { fromModel.push(StageShowEvent())}
 		//	show the UI
 		stage.show()
 	}

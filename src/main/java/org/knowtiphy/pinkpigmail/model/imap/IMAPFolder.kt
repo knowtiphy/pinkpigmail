@@ -15,19 +15,25 @@ import org.apache.jena.sparql.core.Var
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.PinkPigMail
-import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
-import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
+import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.JenaUtils.P
 import org.knowtiphy.utils.JenaUtils.R
+import javafx.beans.binding.Bindings
+import org.knowtiphy.pinkpigmail.model.events.FolderSyncDoneEvent
+import org.knowtiphy.pinkpigmail.model.events.MessageArrivedEvent
+import java.util.*
+import java.util.concurrent.Callable
+import kotlin.collections.HashMap
+import kotlin.collections.HashSet
 
 /**
  * @author graham
  */
-class IMAPFolder(folderId: String, override val account: IEmailAccount, storage: MailStorage) :
+class IMAPFolder(folderId: String, override val account: IMAPAccount, storage: MailStorage) :
 	StoredPeer<MailStorage>(folderId, storage), IFolder
 {
 	companion object
@@ -52,12 +58,8 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 	override val messageCountProperty = SimpleIntegerProperty()
 	override val unreadMessageCountProperty = SimpleIntegerProperty()
 
-	override val isArchiveProperty = SimpleBooleanProperty(false)
-	override val isDraftsProperty = SimpleBooleanProperty(false)
-	override val isInboxProperty = SimpleBooleanProperty(false)
 	override val isJunkProperty = SimpleBooleanProperty(false)
 	override val isTrashProperty = SimpleBooleanProperty(false)
-	override val isSentProperty = SimpleBooleanProperty(false)
 
 	private val eventHandlers = HashMap<String, (StorageEvent) -> Unit>()
 
@@ -86,6 +88,21 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 		storage.query(account.id, MESSAGE_IDS_IN_FOLDER.buildString()).forEach {
 			addMessage(IMAPMessage(it.get("mid").toString(), this, storage))
 		}
+
+		listOf(Pair(isJunkProperty, Vocabulary.JUNK_FOLDER), Pair(isTrashProperty, Vocabulary.TRASH_FOLDER))
+			.forEach {
+				it.first.bind(
+					Bindings.createBooleanBinding(
+						Callable<Boolean> { account.specials[it.second] == id },
+						Bindings.stringValueAt(account.specials, it.second)
+					)
+				)
+			}
+	}
+
+	override fun isSpecial(type : String) : Boolean
+	{
+		return account.getSpecial(type) == this;
 	}
 
 	fun handleEvent(event: StorageEvent)
@@ -110,7 +127,10 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 		} else
 		{
 			disable(targets)
-			(account as IMAPAccount).getSpecial(Vocabulary.JUNK_FOLDER).id.let { storage.moveMessagesToJunk(account.id, id, ids, it, true) }
+			//	TODO -- huh?
+			account.getSpecial(Vocabulary.JUNK_FOLDER).id.let {
+				storage.moveMessagesToJunk(account.id, id, ids, it, true)
+			}
 		}
 	}
 
@@ -130,7 +150,15 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 		} else
 		{
 			val ids = ids(targets)
-			(account as IMAPAccount).getSpecial(Vocabulary.TRASH_FOLDER).id.let { storage.copyMessages(account.id, id, ids, it, true) }
+			(account as IMAPAccount).getSpecial(Vocabulary.TRASH_FOLDER).id.let {
+				storage.copyMessages(
+					account.id,
+					id,
+					ids,
+					it,
+					true
+				)
+			}
 		}
 	}
 
@@ -179,31 +207,35 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 
 	//	event handling code
 
-	private fun applyOver(event: StorageEvent, property: String, f: (RDFNode) -> Unit)
+	private fun <T> map(event: StorageEvent, property: String, f: (RDFNode) -> T) : Collection<T>
 	{
+		val result = LinkedList<T>()
 		event.model.listObjectsOfProperty(
 			R(event.model, event.eid), P(event.model, property)
 		).forEach {
-			f.invoke(it)
+			result.add(f.invoke(it))
 		}
+		return result
 	}
 
 	private fun flagsChangedHandler(event: StorageEvent)
 	{
-		applyOver(event, Vocabulary.HAS_MESSAGE) { messageMap[it.toString()]?.initialize() }
+		map(event, Vocabulary.HAS_MESSAGE) { messageMap[it.toString()]?.initialize() }
 		update()
 	}
 
 	private fun addMessageHandler(event: StorageEvent)
 	{
-		applyOver(event, Vocabulary.HAS_MESSAGE) { addMessage(IMAPMessage(it.toString(), this, storage)) }
+		val newMessages = map(event, Vocabulary.HAS_MESSAGE) { IMAPMessage(it.toString(), this, storage) }
+		newMessages.forEach { addMessage(it) }
 		update()
+		PinkPigMail.pushEvent(MessageArrivedEvent(account, this))
 	}
 
 	private fun deleteMessageHandler(event: StorageEvent)
 	{
 		println("IN DELETE MESSAGE HANDLER")
-		applyOver(event, Vocabulary.HAS_MESSAGE) { deleteMessage(it.toString()) }
+		map(event, Vocabulary.HAS_MESSAGE) { deleteMessage(it.toString()) }
 		update()
 	}
 
@@ -230,6 +262,8 @@ class IMAPFolder(folderId: String, override val account: IEmailAccount, storage:
 			if (!messageMap.containsKey(it))
 				addMessage(IMAPMessage(it, this, storage))
 		}
+
+		PinkPigMail.pushEvent(FolderSyncDoneEvent(account, this))
 	}
 
 	private fun getOp(type: String): Pair<String, Model>

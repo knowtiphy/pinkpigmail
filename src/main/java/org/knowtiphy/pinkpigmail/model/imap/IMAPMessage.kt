@@ -45,7 +45,6 @@ class IMAPMessage(id: String, override val folder: IFolder, storage: MailStorage
 	override val bcc: ObservableList<EmailAddress> = FXCollections.observableArrayList()
 
 	override val loadRemoteProperty = SimpleBooleanProperty(false)
-	private var future: Future<*>? = null
 
 	init
 	{
@@ -81,24 +80,17 @@ class IMAPMessage(id: String, override val folder: IFolder, storage: MailStorage
 	@Synchronized
 	override fun loadAhead(): Future<*>
 	{
-		if (future == null)
-		{
-			//  TODO probably want to do different things in embedded vs non embedded mode (e.g. cache the future)
-			future = storage.ensureMessageContentLoaded(folder.account.id, folder.id, id)
-		}
-		return future!!
+		return storage.ensureMessageContentLoaded(folder.account.id, folder.id, id)
 	}
 
 	private fun ensureContentLoaded()
 	{
-		loadAhead()!!.get()
+		loadAhead().get()
 	}
 
 	override fun getContent(allowHTML: Boolean): IPart
 	{
-		//println("CALLING CONTENT eNSURE LOADED");
 		ensureContentLoaded()
-		//println("GOT IT");
 		val context = storage.readContext
 		context.start()
 		try

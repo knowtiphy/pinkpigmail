@@ -11,18 +11,15 @@ import javafx.util.Duration
  */
 open class Replacer(private val duration : Double = 3000.0) : StackPane()
 {
-	fun flip(node: Node?)
+	fun flip(node: Node)
 	{
-		assert(node != null)
-		//println("NODE = " + node)
-
 		if (children.isEmpty())
 			children.add(node)
 		else
 		{
-		//	assert(children.size == 1)
+			assert( children.size == 1){ children}
 			val oldNode = children.first()
-			//	not completely sure how this happens
+			//	not completely sure how this happens - but it makes it simpler for others to use
 			if(oldNode != node)
 			{
 

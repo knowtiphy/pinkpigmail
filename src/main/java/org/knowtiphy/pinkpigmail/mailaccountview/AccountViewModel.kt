@@ -1,12 +1,10 @@
 package org.knowtiphy.pinkpigmail.mailaccountview
 
-import javafx.beans.property.SimpleObjectProperty
-import javafx.collections.ListChangeListener
-import javafx.scene.control.TableView
+import javafx.collections.FXCollections
+import javafx.scene.control.MultipleSelectionModel
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.MessageFrame
 import org.knowtiphy.pinkpigmail.util.MatchFunction
-import org.reactfx.Change
 import org.reactfx.EventSource
 import org.reactfx.EventStream
 import org.reactfx.EventStreams
@@ -18,83 +16,76 @@ import org.reactfx.EventStreams
 
 class AccountViewModel<A, C, E>(val account: A)
 {
-	companion object
-	{
-		//	a message has been shown
-		val messageShown = EventSource<IMessage>()
+	//	a message has been shown
+	val messageShown = EventSource<IMessage>()
 
-		val loadAhead = MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages -> MessageFrame(msg, surroundingMessages) }
-
-		init
-		{
-			//	for each message we show that has a matching frame, start a loadhead of the frame
-			messageShown.map(loadAhead).filter { it != null }.subscribe { it!!.loadAhead() }
+	val loadAhead =
+		MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages ->
+			MessageFrame(msg, surroundingMessages)
 		}
+
+	init
+	{
+		//	for each message we show that has a matching frame, start a loadhead of the frame
+		messageShown.map(loadAhead).filter { it != null }.subscribe { it!!.loadAhead() }
 	}
 
-	//  the currently selected category
-	//private val currentCategory = SimpleObjectProperty<C>()
-	//  one tableview selection model per category
-	private val tableViewSelectionModels = HashMap<C, TableView.TableViewSelectionModel<E>>()
-	//	one selection model per categoy
-	private val selectionModels = HashMap<C, EntitySelection<C, E>>()
-	//  one current perspective for each category
-	private val perspectives = HashMap<C, SimpleObjectProperty<String>>()
+	//  the per folder selection models
+	val selectionModels = HashMap<C, MultipleSelectionModel<E>>()
 
-	//  event sources -- the selected category, selection model per category, perspective per category
+	//	the current perspective
+	//	TODO -- change the buttons to use events
+	private var currentPerspective = HashMap<C, String?>()
 
-	val category = EventSource<C>()
-	val selection = HashMap<C, EventSource<EntitySelection<C, E>>>()
-	val perspective = HashMap<C, EventStream<Change<String>>>()
+	//	on event stream per folder for changes in that folder's perspective
+	val perspective = HashMap<C, EventSource<String>>()
 
-	fun currentSelection(category: C) = selectionModels[category]!!
-	fun currentTableViewSelectionModel(category: C) = tableViewSelectionModels[category]!!
-	fun isCurrentPerspective(category: C, name: String) = perspectives[category]!!.get() == name
+	//	event stream for when a folder is selected
+	val folderSelectedEvent = EventSource<C>()
+
+	//	event stream for when a folder's selection indices change
+	//	seems redundant given selectionModels?
+	val selection = HashMap<C, EventStream<MultipleSelectionModel<E>>>()
+
+	//	add a folder to the model making
+	//	- a selecton change event source for the folder
+	//	- perspective change event source for the folder
+	//	- a current perspective property
 
 	fun addCategory(category: C)
 	{
+		assert(!selection.containsKey(category))
+		assert(!perspective.containsKey(category))
+		assert(!currentPerspective.containsKey(category))
+		assert(!selectionModels.containsKey(category))
+
 		selection[category] = EventSource()
-		perspectives[category] = SimpleObjectProperty()
-		perspective[category] = EventStreams.changesOf(perspectives[category])
+		perspective[category] = EventSource()
 	}
 
-	fun changeCategory(c: C)
+	//	change the perspective for a folder
+	fun changePerspective(folder: C, name: String)
 	{
-		category.push(c)
+		assert(perspective.containsKey(folder))
+		currentPerspective[folder] = name
+		perspective[folder]!!.push(name)
 	}
 
-	private fun outputSelection(category: C, sel: EntitySelection<C, E>)
+	fun changeFolder(folder: C)
 	{
-		selectionModels[category] = sel
-		selection[category]!!.push(sel)
+		//currentFolder = folder
+		folderSelectedEvent.push(folder)
 	}
 
 	//	this is nasty -- JavaFX insists on having it's fucking models bundled with its views -- braindead
-	//	so we have to add a listener to the selection model of a table view and propagate changes from it
-	//	through to our per category event stream
-	//	we also have to share the selection model between table views
+	//	so we hve to force it to share the selection model between table views
 
-	fun bindSelectionModel(category: C, model: TableView.TableViewSelectionModel<E>): TableView.TableViewSelectionModel<E>?
+	fun setSelection(folder: C, selectionModel: MultipleSelectionModel<E>)
 	{
-		return if (tableViewSelectionModels[category] == null)
-		{
-			tableViewSelectionModels[category] = model
-			//	TODO -- how do I know that selectedIndices changes in synch with selectedItems?
-			model.selectedIndices.addListener { _: ListChangeListener.Change<out Int> ->
-				outputSelection(category, EntitySelection<C, E>(category, model.selectedIndices, model.selectedItems))
-			}
-			null
-		} else
-			tableViewSelectionModels[category]
+		selectionModels[folder] = selectionModel
+		//Bindings.bindContent(sharedSelection[folder], selectionModel.selectedIndices)
+		selection[folder] = EventStreams.changesOf(selectionModel.selectedIndices).map { selectionModels[folder]!! }
 	}
 
-	fun changePerspective(category: C, name: String)
-	{
-		//	must do these in this order since the change in perspective will cause a perspective to be created,
-		//	and hence the selection model to be created (see the comment in bindSelection)
-		perspectives[category]!!.value = name
-		val es = tableViewSelectionModels[category]!!
-		//	TODO -- this is hacky crap, why "change" selection on a perspective change?
-		outputSelection(category, EntitySelection(category, es.selectedIndices, es.selectedItems))
-	}
+	fun isCurrentPerspective(folder: C, name: String) = name == currentPerspective[folder]
 }

@@ -15,10 +15,12 @@ import org.apache.jena.vocabulary.RDF
 import org.apache.jena.vocabulary.RDFS
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.babbage.storage.exceptions.StorageException
+import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.model.*
+import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.resources.Strings
-import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
+import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.utils.JenaUtils.P
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -60,10 +62,10 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 	private val password = SimpleStringProperty()
 	private val replyMode = EmailReplyMode.MATCH
 	private val sendMode = EmailSendMode.TEXT
-	private val specials = HashMap<String, String>()
+
+	val specials: ObservableMap<String, String> = FXCollections.observableHashMap<String, String>()
 
 	private val setting = AccountSettings()
-	private val eventHandlers = HashMap<String, (StorageEvent) -> Unit>()
 
 	init
 	{
@@ -83,8 +85,6 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		eventHandlers[Vocabulary.MESSAGE_FLAGS_CHANGED] = ::folderBasedEvent
 		eventHandlers[Vocabulary.MESSAGE_ARRIVED] = ::folderBasedEvent
 		eventHandlers[Vocabulary.MESSAGE_DELETED] = ::folderBasedEvent
-
-		events.subscribe(::handleEvent)
 	}
 
 	override fun initialize()
@@ -118,13 +118,9 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		//	sync all relevant folders -- for the moment just the inbox
 		//	for the moment assume the folder structure hasn't changed so just sync the messages
 		val inbox = specials[Vocabulary.INBOX_FOLDER]!!
-		storage.sync(id, inbox)
-	}
 
-	private fun handleEvent(event: StorageEvent)
-	{
-		assert(eventHandlers.containsKey(event.type)) { event.type }
-		eventHandlers[event.type]?.invoke(event)
+		PinkPigMail.pushEvent(FolderSyncStartedEvent(this, folders[inbox]!!))
+		storage.sync(id, inbox)
 	}
 
 	fun getSpecial(type: String): IMAPFolder
@@ -203,10 +199,10 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		trustedSenders.removeAll(addresses)
 	}
 
-	override fun isTrustedSender(addresses: Collection<EmailAddress>)  : Boolean
-		{
-			return trustedSenders.containsAll(addresses)
-		}
+	override fun isTrustedSender(addresses: Collection<EmailAddress>): Boolean
+	{
+		return trustedSenders.containsAll(addresses)
+	}
 
 	override fun trustProvider(url: String)
 	{
@@ -218,7 +214,7 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		trustedContentProviders.remove(url)
 	}
 
-	override fun isTrustedProvider(url: String) : Boolean
+	override fun isTrustedProvider(url: String): Boolean
 	{
 		return trustedContentProviders.contains(url)
 	}

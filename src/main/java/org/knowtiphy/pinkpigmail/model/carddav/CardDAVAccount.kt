@@ -8,12 +8,9 @@ import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.Resource
 import org.apache.jena.vocabulary.RDF
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.BaseAccount
 import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 import org.knowtiphy.pinkpigmail.model.IContactAccount
-import org.knowtiphy.pinkpigmail.util.ui.StorageEvent
-import org.knowtiphy.utils.JenaUtils
 
 /**
  * @author graham

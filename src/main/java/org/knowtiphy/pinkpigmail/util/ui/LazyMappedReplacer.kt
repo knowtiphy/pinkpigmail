@@ -1,14 +1,12 @@
 package org.knowtiphy.pinkpigmail.util.ui
 
 import javafx.scene.Node
-import javafx.scene.layout.StackPane
 import org.reactfx.EventStream
 
 /**
  * @author graham
  */
-open class LazyMappedReplacer<T>(perspective: EventStream<T>, private val duration : Double = 3000.0) :
-		Replacer(duration)
+open class LazyMappedReplacer<T>(perspective: EventStream<T>, duration: Double = 3000.0) : Replacer(duration)
 {
 	private val constructors = HashMap<T, () -> Node>()
 	private val cache = HashMap<T, Node>()
@@ -22,12 +20,12 @@ open class LazyMappedReplacer<T>(perspective: EventStream<T>, private val durati
 		}
 	}
 
-	fun addNode(key: T, constructor: () -> Node)
+	fun <U> addNode(key: U, constructor: () -> Node) where U : T
 	{
 		constructors[key] = constructor
 	}
 
-	fun addNode(key: T, node : Node)
+	fun <U> addNode(key: U, node: Node) where U : T
 	{
 		constructors[key] = { node }
 	}
