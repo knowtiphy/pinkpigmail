@@ -8,29 +8,34 @@ import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
 import org.apache.jena.arq.querybuilder.SelectBuilder
 import org.apache.jena.graph.NodeFactory
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.Resource
 import org.apache.jena.sparql.core.Var
 import org.apache.jena.vocabulary.RDF
 import org.apache.jena.vocabulary.RDFS
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.pinkpigmail.PinkPigMail
-import org.knowtiphy.pinkpigmail.model.*
+import org.knowtiphy.pinkpigmail.model.EmailAccount
+import org.knowtiphy.pinkpigmail.model.EmailAddress
+import org.knowtiphy.pinkpigmail.model.EmailModelType
+import org.knowtiphy.pinkpigmail.model.EmailReplyMode
+import org.knowtiphy.pinkpigmail.model.EmailSendMode
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
+import org.knowtiphy.pinkpigmail.model.IFolder
+import org.knowtiphy.pinkpigmail.model.IMessage
+import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
-import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
+import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.utils.JenaUtils.P
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ExecutionException
-import javax.mail.internet.InternetAddress
 
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailStorage>(accountId, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: MailStorage) : EmailAccount<MailStorage>(accountId, storage), IEmailAccount
 {
 	companion object
 	{
@@ -63,7 +68,7 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 	private val replyMode = EmailReplyMode.MATCH
 	private val sendMode = EmailSendMode.TEXT
 
-	val specials: ObservableMap<String, String> = FXCollections.observableHashMap<String, String>()
+	private val specials: ObservableMap<String, String> = FXCollections.observableHashMap<String, String>()
 
 	private val setting = AccountSettings()
 
@@ -89,26 +94,25 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 
 	override fun initialize()
 	{
-		//	sync the account -- why? it's already been initalized?
 		storage.sync(id)
 
 		val aidR = NodeFactory.createURI(id)
 
 		//	initialize the attributes of this account
 		GET_ACCOUNT_ATTRIBUTES.setVar(Var.alloc("aid"), aidR)
-		storage.query(id, GET_ACCOUNT_ATTRIBUTES.buildString()).forEach {
+		storage.query(GET_ACCOUNT_ATTRIBUTES.buildString()).forEach {
 			initialize(it)
 		}
 
 		//	work out the special folders
 		GET_SPECIAL_IDS.setVar(Var.alloc("aid"), aidR)
-		storage.query(id, GET_SPECIAL_IDS.buildString()).forEach {
+		storage.query(GET_SPECIAL_IDS.buildString()).forEach {
 			specials[it.get("type").toString()] = it.get("fid").toString()
 		}
 
 		//	get the folders in this account
 		GET_FOLDER_IDS.setVar(Var.alloc("aid"), aidR)
-		storage.query(id, GET_FOLDER_IDS.buildString()).forEach {
+		storage.query(GET_FOLDER_IDS.buildString()).forEach {
 			addFolder(it.getResource("fid").toString())
 		}
 	}
@@ -118,7 +122,6 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		//	sync all relevant folders -- for the moment just the inbox
 		//	for the moment assume the folder structure hasn't changed so just sync the messages
 		val inbox = specials[Vocabulary.INBOX_FOLDER]!!
-
 		PinkPigMail.pushEvent(FolderSyncStartedEvent(this, folders[inbox]!!))
 		storage.sync(id, inbox)
 	}
@@ -141,28 +144,6 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 		val folder = IMAPFolder(fid, this, storage)
 		folder.initialize()
 		folders[folder.id] = folder
-	}
-
-	//	todo -- this all needs to be on the server
-	override fun save(model: Model, name: Resource)
-	{
-		model.add(name, model.createProperty(RDF.type.toString()), model.createResource(Vocabulary.IMAP_ACCOUNT))
-		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
-		model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
-		model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), password.get())
-		trustedContentProviders.forEach {
-			model.add(
-				name,
-				model.createProperty(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER),
-				it
-			)
-		}
-		trustedSenders.forEach {
-			model.add(
-				name, model.createProperty(Vocabulary.HAS_TRUSTED_SENDER),
-				InternetAddress(it.address, it.personal).toString()
-			)
-		}
 	}
 
 	override val isMoveDeletedMessagesToTrash: Boolean
@@ -192,11 +173,13 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 	override fun trustSender(addresses: Collection<EmailAddress>)
 	{
 		trustedSenders.addAll(addresses)
+		super.trustSender(addresses)
 	}
 
 	override fun unTrustSender(addresses: Collection<EmailAddress>)
 	{
 		trustedSenders.removeAll(addresses)
+		super.unTrustSender(addresses)
 	}
 
 	override fun isTrustedSender(addresses: Collection<EmailAddress>): Boolean
@@ -207,11 +190,13 @@ class IMAPAccount(accountId: String, storage: MailStorage) : BaseAccount<MailSto
 	override fun trustProvider(url: String)
 	{
 		trustedContentProviders.add(url)
+		super.trustProvider(url)
 	}
 
 	override fun unTrustProvider(url: String)
 	{
 		trustedContentProviders.remove(url)
+		super.unTrustProvider(url)
 	}
 
 	override fun isTrustedProvider(url: String): Boolean

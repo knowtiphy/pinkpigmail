@@ -2,7 +2,6 @@ package org.knowtiphy.pinkpigmail
 
 import javafx.beans.property.SimpleDoubleProperty
 import org.apache.jena.rdf.model.Model
-import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.utils.JenaUtils
 
 class UIAccountSettings
@@ -21,6 +20,6 @@ class UIAccountSettings
 
 	fun read(model: Model, uaid: String)
 	{
-		verticalPos.set(JenaUtils.getD(model, uaid, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_DIVIDER_POSITION))
+		verticalPos.set(JenaUtils.getOD(model, uaid, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_DIVIDER_POSITION))
 	}
 }

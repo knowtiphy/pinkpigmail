@@ -4,9 +4,7 @@ import javafx.beans.value.ObservableValue
 import javafx.concurrent.Worker.State
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority
-import javafx.scene.web.WebErrorEvent
 import javafx.scene.web.WebView
-import org.knowtiphy.pinkpigmail.util.Fail
 import org.knowtiphy.utils.OS
 import org.w3c.dom.Element
 import org.w3c.dom.events.Event
@@ -33,7 +31,8 @@ class MailViewer : GridPane()
                 else
                     (ev.target as Element).getAttribute("href")
 
-                //  not sure why it has to be in a thread, but it hangs on Linux without this
+                //  not sure why it has to be in a thread, but it hangs indefinitely on
+                //  Linux (and maybe other OSes) without this
                 Thread { OS.open(href) }.start()
 
                 //	TODO -- are both necessary?
@@ -80,16 +79,7 @@ class MailViewer : GridPane()
     fun loadContent(content: String, mimeType: String)
     {
         this.content = content
-    //    println(content)
         this.mimeType = mimeType
-        try
-        {
-           reload()
-        }catch (ex : Exception)
-        {
-            ex.printStackTrace()
-        }
+        reload()
     }
-
-    //fun clear() = loadContent("", mimeType)
 }

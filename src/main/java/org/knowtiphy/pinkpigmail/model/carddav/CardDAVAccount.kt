@@ -45,12 +45,23 @@ class CardDAVAccount(id: String, storage: DavStorage) : BaseAccount<DavStorage>(
 		}
 	}
 
-	override fun save(model: Model, name: Resource)
+	override fun initialize()
 	{
-		model.add(name, model.createProperty(RDF.type.toString()), model.createResource(Vocabulary.CALDAV_ACCOUNT))
-		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
-		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_HEADER), serverHeaderProperty.get())
-		model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
-//        model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), passwordProperty.get())
+		TODO("Not yet implemented")
 	}
+
+	override fun sync()
+	{
+		TODO("Not yet implemented")
+	}
+
+
+//	override fun save(model: Model, name: Resource)
+//	{
+//		model.add(name, model.createProperty(RDF.type.toString()), model.createResource(Vocabulary.CALDAV_ACCOUNT))
+//		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_NAME), serverNameProperty.get())
+//		model.add(name, model.createProperty(Vocabulary.HAS_SERVER_HEADER), serverHeaderProperty.get())
+//		model.add(name, model.createProperty(Vocabulary.HAS_EMAIL_ADDRESS), emailAddressProperty.get())
+////        model.add(name, model.createProperty(Vocabulary.HAS_PASSWORD), passwordProperty.get())
+//	}
 }

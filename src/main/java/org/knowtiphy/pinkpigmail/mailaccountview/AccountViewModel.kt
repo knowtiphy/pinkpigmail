@@ -1,91 +1,130 @@
 package org.knowtiphy.pinkpigmail.mailaccountview
 
-import javafx.collections.FXCollections
+import javafx.collections.ListChangeListener
 import javafx.scene.control.MultipleSelectionModel
-import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.MessageFrame
-import org.knowtiphy.pinkpigmail.util.MatchFunction
 import org.reactfx.EventSource
-import org.reactfx.EventStream
-import org.reactfx.EventStreams
 
 //  the view-model for the account view
 //  A is the type of the account (email, caldav, carddav)
 //  C is the type of the accounts entries (folder, calendar, address book)
 //  E is the type of the base entities (messages, events, cards)
+//  P is the type used to identify perspectives
 
-class AccountViewModel<A, C, E>(val account: A)
+class AccountViewModel<A, C, E, P>(val account : A)
 {
+	//	the current perspective -- needed to only deliver events to the current perspective
+	private var currentPerspective = HashMap<C, P?>()
+
 	//	a message has been shown
-	val messageShown = EventSource<IMessage>()
+//	val messageShown = EventSource<IMessage>()
+//
+//	val loadAhead =
+//		MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages ->
+//			MessageFrame(msg, surroundingMessages)
+//		}
 
-	val loadAhead =
-		MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages ->
-			MessageFrame(msg, surroundingMessages)
-		}
-
-	init
-	{
-		//	for each message we show that has a matching frame, start a loadhead of the frame
-		messageShown.map(loadAhead).filter { it != null }.subscribe { it!!.loadAhead() }
-	}
+//	init
+//	{
+//		//	for each message we show that has a matching frame, start a loadhead of the frame
+//		//messageShown.map(loadAhead).filter { println(it);it != null }.subscribe { it!!.loadAhead() }
+//	}
 
 	//  the per folder selection models
 	val selectionModels = HashMap<C, MultipleSelectionModel<E>>()
 
-	//	the current perspective
-	//	TODO -- change the buttons to use events
-	private var currentPerspective = HashMap<C, String?>()
-
-	//	on event stream per folder for changes in that folder's perspective
-	val perspective = HashMap<C, EventSource<String>>()
-
 	//	event stream for when a folder is selected
 	val folderSelectedEvent = EventSource<C>()
 
-	//	event stream for when a folder's selection indices change
-	//	seems redundant given selectionModels?
-	val selection = HashMap<C, EventStream<MultipleSelectionModel<E>>>()
+	//	one event stream per folder for changes in that folder's perspective
+	private val perspective = HashMap<C, EventSource<P>>()
+
+	//	per folder per perspective stream for when a folder's selection indices change
+	//  changes are only delivered to the current perspective
+	private val selection = HashMap<C, HashMap<P, EventSource<MultipleSelectionModel<E>>>>()
+
+	//	per folder per perspective convenience streams giving the actual selected message(s)
+	//	when a folder's selection changes
+	//  changes are only delivered to the current perspective
+	private val newMessage = HashMap<C, HashMap<P, EventSource<E>>>()
+	private val newMessages = HashMap<C, HashMap<P, EventSource<List<E>>>>()
+
+	//  getter methods for event source
+	fun sel(folder : C, persp : P) : EventSource<MultipleSelectionModel<E>> = selection[folder]!![persp]!!
+	fun persp(folder : C) : EventSource<P> = perspective[folder]!!
+	fun newM(folder : C, persp : P) : EventSource<E> = newMessage[folder]!![persp]!!
+	fun newMs(folder : C, persp : P) : EventSource<List<E>> = newMessages[folder]!![persp]!!
 
 	//	add a folder to the model making
-	//	- a selecton change event source for the folder
-	//	- perspective change event source for the folder
-	//	- a current perspective property
-
-	fun addCategory(category: C)
+	fun addFolder(folder : C, pspecs : List<P>)
 	{
-		assert(!selection.containsKey(category))
-		assert(!perspective.containsKey(category))
-		assert(!currentPerspective.containsKey(category))
-		assert(!selectionModels.containsKey(category))
+		assert(!selection.containsKey(folder))
+		assert(!perspective.containsKey(folder))
+		assert(!currentPerspective.containsKey(folder))
+		assert(!selectionModels.containsKey(folder))
+		assert(!newMessage.containsKey(folder))
+		assert(!newMessage.containsKey(folder))
 
-		selection[category] = EventSource()
-		perspective[category] = EventSource()
+		perspective[folder] = EventSource()
+		selection[folder] = HashMap()
+		newMessage[folder] = HashMap()
+		newMessages[folder] = HashMap()
+
+		pspecs.forEach {
+			selection[folder]!![it] = EventSource()
+			newMessage[folder]!![it] = EventSource()
+			newMessages[folder]!![it] = EventSource()
+		}
 	}
 
 	//	change the perspective for a folder
-	fun changePerspective(folder: C, name: String)
+	fun changePerspective(folder : C, persp : P)
 	{
 		assert(perspective.containsKey(folder))
-		currentPerspective[folder] = name
-		perspective[folder]!!.push(name)
+		currentPerspective[folder] = persp
+		persp(folder).push(persp)
+		pushChanges(folder)
 	}
 
-	fun changeFolder(folder: C)
+	//	change the model's current folder
+	fun changeFolder(folder : C)
 	{
-		//currentFolder = folder
 		folderSelectedEvent.push(folder)
 	}
 
-	//	this is nasty -- JavaFX insists on having it's fucking models bundled with its views -- braindead
-	//	so we hve to force it to share the selection model between table views
-
-	fun setSelection(folder: C, selectionModel: MultipleSelectionModel<E>)
+	//  We want to share a selection model between different perspectives
+	//  One way would be to bind each selection model's indices and items lists
+	//  to a list (possibly observable), and then on change of perspective push new
+	//  message events?
+	//  Or we do the hack below -- share the selection model of the first created view
+	//  between all views :)
+	fun setSelectionModel(folder : C, model : MultipleSelectionModel<E>) : Boolean
 	{
-		selectionModels[folder] = selectionModel
-		//Bindings.bindContent(sharedSelection[folder], selectionModel.selectedIndices)
-		selection[folder] = EventStreams.changesOf(selectionModel.selectedIndices).map { selectionModels[folder]!! }
+		if (!selectionModels.containsKey(folder))
+		{
+			selectionModels[folder] = model
+			model.selectedIndices.addListener { _ : ListChangeListener.Change<*> -> pushChanges(folder) }
+			return false
+		}
+
+		return true
 	}
 
-	fun isCurrentPerspective(folder: C, name: String) = name == currentPerspective[folder]
+	//	push changes on various event streams -- have to do this initially when a folder is
+	//	added to setup the initial state of folder view, and when a perspective is changed
+	//	to inform the new perspective of the value of the streams
+	private fun pushChanges(folder : C)
+	{
+		val selectionModel = selectionModels[folder]!!
+
+		if (selectionModel.selectedItems.size == 1)
+		{
+			newM(folder, currentPerspective[folder]!!).push(selectionModel.selectedItem)
+		}
+		else
+		{
+			newMs(folder, currentPerspective[folder]!!).push(selectionModel.selectedItems)
+		}
+
+		sel(folder, currentPerspective[folder]!!).push(selectionModel)
+	}
 }

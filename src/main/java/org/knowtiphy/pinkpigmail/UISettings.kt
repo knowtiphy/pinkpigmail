@@ -34,31 +34,33 @@ class UISettings
 				Files.newInputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), fileName)),
 				Lang.TURTLE
 			)
+			//JenaUtils.printModel(model, "READ UI Model")
 
 			val settings = UISettings()
 
 			val uid: String
 			try
 			{
-				uid = JenaUtils.listTypes(model, UIVocabulary.UI_SETTING).toString()
+				uid = JenaUtils.listSubjectsOfType(model, UIVocabulary.UI_SETTING)
 			} catch (ex: NoSuchElementException)
 			{
 				//  boot with the defaults
 				return settings
 			}
 
-			settings.widthProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH))
-			settings.heightProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT))
+			settings.widthProperty.set(JenaUtils.getOD(model, uid, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH))
+			settings.heightProperty.set(JenaUtils.getOD(model, uid, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT))
 
 			JenaUtils.listObjectsOfProperty(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS).forEach {
 				val uaid = it.toString()
-				val aid = JenaUtils.getR(model, uaid, Vocabulary.HAS_ACCOUNT).toString()
+				val aid = JenaUtils.getOR(model, uaid, Vocabulary.HAS_ACCOUNT).toString()
 				val accountSettings = UIAccountSettings()
 				accountSettings.read(model, uaid)
 				settings.accountSettings[aid] = accountSettings
 			}
 
 			// settings.readFolderPrefs(uiModel, name)
+
 
 			return settings
 		}
@@ -104,6 +106,8 @@ class UISettings
 		JenaUtils.addDP(model, uid, UIVocabulary.HAS_HEIGHT, heightProperty.get())
 
 		accounts.forEach { save(model, uid, it) }
+
+		//JenaUtils.printModel(model, "UI Model")
 
 		return model
 	}
@@ -156,7 +160,7 @@ class UISettings
 		while (it.hasNext())
 		{
 			val pref = it.next().asResource()
-			val folderId = JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(model, pref.toString(), UIVocabulary.FOR))
+			val folderId = JenaUtils.getS(model, pref.toString(), UIVocabulary.FOR)
 			folderSettings[folderId] = UIFolderSettings.read(model, pref)
 		}
 	}

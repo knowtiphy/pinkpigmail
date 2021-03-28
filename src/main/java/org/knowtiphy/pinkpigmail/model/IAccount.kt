@@ -10,15 +10,9 @@ import org.reactfx.EventSource
 
 interface IAccount : IPeer
 {
-	fun initialize()
-	{
-	}
+	fun initialize();
 
-	fun sync()
-	{
-	}
-
-	fun save(model: Model, name: Resource)
+	fun sync();
 
 	val fromStorage: EventSource<StorageEvent>
 

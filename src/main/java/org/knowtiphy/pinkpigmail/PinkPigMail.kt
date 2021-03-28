@@ -38,10 +38,10 @@ import org.knowtiphy.pinkpigmail.model.events.UIEvent
 import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 import org.knowtiphy.pinkpigmail.model.storage.MailStorage
+import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.pinkpigmail.util.ErrorHandler
-import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
@@ -73,34 +73,28 @@ class PinkPigMail : Application()
 		private const val UI_FILE = "ui.ttl"
 		const val STYLE_SHEET = "/styles.css"
 
-		private val GET_ACCOUNTS: String = SelectBuilder()
-			.addVar("*")
-			.addWhere("?aid", "<${RDF.type}>", "?type")
+		private val GET_ACCOUNTS : String = SelectBuilder().addVar("*").addWhere("?aid", "<${RDF.type}>", "?type")
 			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.ACCOUNT}>")
-			.addFilter("?type != <${Vocabulary.ACCOUNT}>")
-			.buildString()
+			.addFilter("?type != <${Vocabulary.ACCOUNT}>").buildString()
 
-		private val EVENT_IDS: String = SelectBuilder()
-			.addVar("*")
-			.addWhere("?eid", "<${RDF.type}>", "?type")
+		private val EVENT_IDS : String = SelectBuilder().addVar("*").addWhere("?eid", "<${RDF.type}>", "?type")
 			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.EVENT}>")
-			.addWhere("?eid", "<${Vocabulary.HAS_ACCOUNT}>", "?aid")
-			.addFilter("?type != <${Vocabulary.EVENT}>")
+			.addWhere("?eid", "<${Vocabulary.HAS_ACCOUNT}>", "?aid").addFilter("?type != <${Vocabulary.EVENT}>")
 			.buildString()
 
-		private val accounts: ObservableMap<String, IAccount> = FXCollections.observableHashMap()
+		private val accounts : ObservableMap<String, IAccount> = FXCollections.observableHashMap()
 
-		private val storage: IStorage by lazy { StorageFactory.getLocal() }
-		private val service: ExecutorService = Executors.newCachedThreadPool()
+		val service : ExecutorService = Executors.newSingleThreadExecutor()
+		private val storage : IStorage by lazy { StorageFactory.getLocal() }
 
 		//	shared globals
 
-		val uiSettings: UISettings by lazy { UISettings.read(UI_FILE) }
+		val uiSettings : UISettings by lazy { UISettings.read(UI_FILE) }
 
 		val htmlState = HTMLState()
 
 		//	executor pool for doing periodic tasks like updating the current time in calendar views
-		val timerService: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
+		val timerService : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
 		val nameSource = NameSource(Vocabulary.NBASE)
 
@@ -108,13 +102,12 @@ class PinkPigMail : Application()
 		//	only parts of the model should subscribe to these events
 		val fromStorage = EventSource<StorageEvent>()
 
-		fun pushEvent(event: StorageEvent)
+		fun pushEvent(event : StorageEvent)
 		{
 			//	by doing the later it puts the whole event stream on the FX UI thread
 			later {
 				//	push the event to the account's event stream
-				if (event.aid != null)
-					accounts[event.aid]?.fromStorage?.push(event)
+				if (event.aid != null) accounts[event.aid]?.fromStorage?.push(event)
 				//	push the event to the all events stream
 				fromStorage.push(event)
 			}
@@ -124,13 +117,12 @@ class PinkPigMail : Application()
 		//	only parts of the UI should subscribe to these events
 		val fromModel = EventSource<UIEvent>()
 
-		fun pushEvent(event: UIEvent)
+		fun pushEvent(event : UIEvent)
 		{
 			//	by doing the later it puts the whole event stream on the FX UI thread
 			later {
 				//	push the event to the account's event stream
-				if (event.account != null)
-					accounts[event.account.id]?.events?.push(event)
+				if (event.account != null) accounts[event.account.id]?.events?.push(event)
 				//	push the event to the all events stream
 				fromModel.push(event)
 			}
@@ -147,7 +139,8 @@ class PinkPigMail : Application()
 		try
 		{
 			LogManager.getLogManager().readConfiguration(stream)
-		} catch (ex: IOException)
+		}
+		catch (ex : IOException)
 		{
 			ex.printStackTrace()
 		}
@@ -158,8 +151,6 @@ class PinkPigMail : Application()
 		PeerState.addConstructor(Vocabulary.CALDAV_ACCOUNT) { CalDAVAccount(it, DavStorage(storage)) }
 		PeerState.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { CardDAVAccount(it, DavStorage(storage)) }
 
-		PeerState.addConstructor(Vocabulary.CALDAV_CALENDAR) { CalDAVCalendar(it, DavStorage(storage)) }
-		PeerState.addConstructor(Vocabulary.CALDAV_EVENT) { CalDAVEvent(it, DavStorage(storage)) }
 		PeerState.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { CardDAVAddressBook(it, DavStorage(storage)) }
 		PeerState.addConstructor(Vocabulary.CARDDAV_GROUP) { CardDAVGroup(it, DavStorage(storage)) }
 		PeerState.addConstructor(Vocabulary.CARDDAV_CARD) { CardDAVCard(it, DavStorage(storage)) }
@@ -168,7 +159,7 @@ class PinkPigMail : Application()
 		VBox.setVgrow(appToolBar, Priority.NEVER)
 	}
 
-	private fun createAccountTab(tabContent: Region, icon: Glyph, label: StringProperty): Tab
+	private fun createAccountTab(tabContent : Region, icon : Glyph, label : StringProperty) : Tab
 	{
 		val tab = Tab()
 		with(tab) {
@@ -181,7 +172,7 @@ class PinkPigMail : Application()
 		return tab
 	}
 
-	private fun addCalendarView(account: ICalendarAccount)
+	private fun addCalendarView(account : ICalendarAccount)
 	{
 		val calendarView = CalendarView()
 		calendarView.calendarSources.add(account.source)
@@ -199,37 +190,31 @@ class PinkPigMail : Application()
 		rootTabPane.tabs.add(createAccountTab(calendarView, Icons.calendar(), account.nickNameProperty))
 	}
 
-	private fun addCardView(account: IContactAccount)
+	private fun addCardView(account : IContactAccount)
 	{
 		rootTabPane.tabs.add(createAccountTab(ContactView(account), Icons.book(), account.nickNameProperty))
 	}
 
-	private fun addMailView(account: IEmailAccount)
+	private fun addMailView(account : IEmailAccount)
 	{
-		rootTabPane.tabs.add(
-			createAccountTab(MailAccountView(service, account), Icons.mail(), account.nickNameProperty)
-		)
+		rootTabPane.tabs.add(createAccountTab(MailAccountView(account), Icons.mail(), account.nickNameProperty))
 	}
 
-	private val createAccountView = mapOf(
-		IMAPAccount::class to { account: IAccount -> addMailView(account as IEmailAccount) },
-		CalDAVAccount::class to { account -> addCalendarView(account as ICalendarAccount) },
-		CardDAVAccount::class to { account -> addCardView(account as IContactAccount) })
+	private val createAccountView =
+		mapOf(IMAPAccount::class to { account : IAccount -> addMailView(account as IEmailAccount) },
+			CalDAVAccount::class to { account -> addCalendarView(account as ICalendarAccount) },
+			CardDAVAccount::class to { account -> addCardView(account as IContactAccount) })
 
 	private fun saveUISettings()
 	{
 		val model = uiSettings.save(accounts.values)
-		RDFDataMgr.write(
-			Files.newOutputStream(
-				Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), UI_FILE)
-			),
-			model, Lang.TURTLE
-		)
+		RDFDataMgr.write(Files.newOutputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(),
+			UI_FILE)), model, Lang.TURTLE)
 	}
 
 	//  shutdown sequence
 	//	done on a thread, so the window closes immediately while shutdown goes ahead in the background
-	private fun shutdown(@Suppress("UNUSED_PARAMETER") event: WindowEvent)
+	private fun shutdown(@Suppress("UNUSED_PARAMETER") event : WindowEvent)
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
@@ -246,9 +231,15 @@ class PinkPigMail : Application()
 	//	build the known accounts
 	private fun buildAccounts()
 	{
-		QueryExecutionFactory.create(GET_ACCOUNTS, ModelFactory.createRDFSModel(storage.accounts)).execSelect()
-			.forEach {
+//		val ACCOUNT_TYPE = """
+//			SELECT *  WHERE {?name <${RDF.type}> ?type
+//			.		?type <${RDFS.subClassOf}> <${Vocabulary.ACCOUNT}>
+//			.		filter(?type != <${Vocabulary.ACCOUNT}>)      }
+//			""".trimIndent()
+
+		storage.query(GET_ACCOUNTS).forEach {
 				val aid = it.getResource("aid").toString()
+				println("$aid ${it.getResource("type").toString()}")
 				val account = PeerState.construct(aid, it.getResource("type").toString()) as IAccount
 				account.initialize()
 				accounts[aid] = account
@@ -256,16 +247,18 @@ class PinkPigMail : Application()
 	}
 
 	//	channel listener events to the per account and global event streams
-	private fun eventHandler(eventModel: Model)
+	private fun eventHandler(eventModel : Model)
 	{
+		println("Have event " + eventModel)
 		val infModel = ModelFactory.createRDFSModel(eventModel)
+		//  TODO -- doesn't close the query model -- OK since in mem?
 		QueryExecutionFactory.create(EVENT_IDS, infModel).execSelect().forEach {
 			pushEvent(StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel))
 		}
 	}
 
 	//  boot sequence
-	override fun start(stage: Stage)
+	override fun start(stage : Stage)
 	{
 		//	set up an error handler for uncaught exceptions
 		Thread.setDefaultUncaughtExceptionHandler(ErrorHandler())
@@ -299,13 +292,13 @@ class PinkPigMail : Application()
 		storage.addListener(::eventHandler)
 
 		//	TODO -- need to have some global events -- e.g. lost store connection
-		fromStorage.subscribe { println("Global Storage Event {$it}") }
-		fromModel.subscribe { println("Global UI Event {$it}") }
+		fromStorage.subscribe { }//println("Global Storage Event {$it}") }
+		fromModel.subscribe { }//println("Global UI Event {$it}") }
 
 		//	synch each account
 		accounts.values.forEach { it.sync() }
 
-		later { fromModel.push(StageShowEvent())}
+		later { fromModel.push(StageShowEvent()) }
 		//	show the UI
 		stage.show()
 	}

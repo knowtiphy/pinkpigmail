@@ -49,27 +49,6 @@
     </orderEntry>
     <orderEntry type="library" name="org.apache.jena:jena-tdb2:3.14.0" level="application" />
     <orderEntry type="module-library">
-      <library name="com.sun.xml.bind:jaxb-impl:2.3.0.1" type="repository">
-        <properties maven-id="com.sun.xml.bind:jaxb-impl:2.3.0.1" />
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/com/sun/xml/bind/jaxb-impl/2.3.0.1/jaxb-impl-2.3.0.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="javax.xml.bind:jaxb-api:2.3.1" type="repository">
-        <properties maven-id="javax.xml.bind:jaxb-api:2.3.1" />
-        <CLASSES>
-          <root url="jar://$MAVEN_REPOSITORY$/javax/xml/bind/jaxb-api/2.3.1/jaxb-api-2.3.1.jar!/" />
-          <root url="jar://$MAVEN_REPOSITORY$/javax/activation/javax.activation-api/1.2.0/javax.activation-api-1.2.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/de/jensd/fontawesomefx-commons/9.1.2/fontawesomefx-commons-9.1.2.jar!/" />
@@ -158,5 +137,8 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="org.webjars:font-awesome:5.15.2" level="project" />
+    <orderEntry type="library" name="com.github.lookfirst:sardine:5.10" level="application" />
+    <orderEntry type="library" name="com.googlecode.ez-vcard:ez-vcard:0.10.5" level="project" />
+    <orderEntry type="library" name="net.sf.biweekly:biweekly:0.6.3" level="project" />
   </component>
 </module>

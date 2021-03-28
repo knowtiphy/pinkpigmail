@@ -19,7 +19,7 @@ class IMAPCIDPart(id: String, val storage: MailStorage) : Entity(id)
             context.start()
             try
             {
-                return JenaUtils.getS(JenaUtils.listObjectsOfPropertyU(context.model, id, Vocabulary.HAS_MIME_TYPE))
+                return JenaUtils.getS(context.model, id, Vocabulary.HAS_MIME_TYPE)
             } finally
             {
                 context.end()

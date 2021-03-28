@@ -25,10 +25,6 @@ interface IFolder : IPeer
 
 	fun isSpecial(type : String) : Boolean
 
-	val isJunkProperty: BooleanProperty
-
-	val isTrashProperty: BooleanProperty
-
 	fun deleteMessages(targets: Collection<IMessage>)
 
 	fun markMessagesAsRead(targets: Collection<IMessage>)
@@ -37,5 +33,5 @@ interface IFolder : IPeer
 
 	fun markMessagesAsNotJunk(targets: Collection<IMessage>)
 
-	fun loadAhead(targets: Collection<IMessage>)
+	fun syncAhead(indices : List<Int>, targets: Collection<IMessage>)
 }

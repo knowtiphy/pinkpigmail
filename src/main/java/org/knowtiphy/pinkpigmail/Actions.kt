@@ -4,6 +4,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.ButtonType
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
+import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.EmailModelType
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
@@ -13,7 +14,6 @@ import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
-import java.util.*
 
 /**
  *
@@ -21,43 +21,6 @@ import java.util.*
  */
 object Actions
 {
-	fun configureAccount(mailAccount: IEmailAccount)
-	{
-//        val root = VBox()
-//
-//        with(root)
-//        {
-//            form {
-//                fieldset("Personal Info") {
-//                    field("First Name") {
-//                        textfield()
-//                    }
-//                    field("Last Name") {
-//                        textfield()
-//                    }
-//                    field("Birthday") {
-//                        datepicker()
-//                    }
-//                }
-//                fieldset("Contact") {
-//                    field("Phone") {
-//                        textfield()
-//                    }
-//                    field("Email") {
-//                        textfield()
-//                    }
-//                }
-//                button("Commit") {
-//                    action { println("Wrote to database!") }
-//                }
-//            }
-//        }
-//
-//        val stage = Stage()
-//        stage.scene = Scene(root)
-//        stage.showAndWait()
-	}
-
 	fun composeMail(mailAccount: IEmailAccount) = perform {
 		ComposeMessage.compose(mailAccount.getSendModel(EmailModelType.COMPOSE)) { it.send() }
 	}
@@ -75,7 +38,7 @@ object Actions
 	fun deleteMessages(messages: Collection<IMessage>)
 	{
 		val folder = messages.first().folder
-		if (folder.isTrashProperty.get())
+		if (folder.isSpecial(Vocabulary.TRASH_FOLDER))
 		{
 			val alert = Alert(Alert.AlertType.CONFIRMATION)
 			with(alert) {
@@ -91,7 +54,6 @@ object Actions
 			}
 		}
 
-		//  make a copy since the msgList is the table currentMessageChanged and deleting changes the currentMessageChanged
 		folder.deleteMessages(messages)
 	}
 
@@ -131,3 +93,40 @@ object Actions
 
 	fun openAttachment(attachment: IAttachment) = perform { attachment.open() }
 }
+
+//fun configureAccount(mailAccount: IEmailAccount)
+//{
+//        val root = VBox()
+//
+//        with(root)
+//        {
+//            form {
+//                fieldset("Personal Info") {
+//                    field("First Name") {
+//                        textfield()
+//                    }
+//                    field("Last Name") {
+//                        textfield()
+//                    }
+//                    field("Birthday") {
+//                        datepicker()
+//                    }
+//                }
+//                fieldset("Contact") {
+//                    field("Phone") {
+//                        textfield()
+//                    }
+//                    field("Email") {
+//                        textfield()
+//                    }
+//                }
+//                button("Commit") {
+//                    action { println("Wrote to database!") }
+//                }
+//            }
+//        }
+//
+//        val stage = Stage()
+//        stage.scene = Scene(root)
+//        stage.showAndWait()
+//}

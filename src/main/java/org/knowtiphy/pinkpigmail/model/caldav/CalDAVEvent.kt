@@ -1,48 +1,38 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
 import com.calendarfx.model.Entry
-import org.apache.jena.rdf.model.Statement
+import org.apache.jena.query.ParameterizedSparqlString
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.storage.DavStorage
-import org.knowtiphy.utils.JenaUtils
-import java.time.ZonedDateTime
+import org.knowtiphy.utils.JenaUtils.getDate
 
-class CalDAVEvent(id: String, storage: DavStorage) : StoredPeer<DavStorage>(id, storage)
+class CalDAVEvent(id : String, storage : DavStorage) : StoredPeer<DavStorage>(id, storage)
 {
-    val event = Entry<String>("")
+	companion object
+	{
+		val GET_ATTRIBUTES = ParameterizedSparqlString("select * where { ?id <" + Vocabulary.HAS_SUMMARY + "> ?o}")
 
-    //  calendarfx can't handle setting the end date before the start date, so store them locally, and update as
-    //  an interval when we have both
-    private var startDate: ZonedDateTime? = null
-    private var endDate: ZonedDateTime? = null
+		//  can an event have a start but no end? or any combination thereof?
+		val GET_DATES =
+			ParameterizedSparqlString("select * where { ?id <" + Vocabulary.HAS_DATE_START + "> ?start. ?id <" + Vocabulary.HAS_DATE_END + "> ?end }")
+	}
 
-    init
-    {
-        declareU(Vocabulary.HAS_SUMMARY) { event.title = it.literal.string }
-        declareU(Vocabulary.HAS_DATE_START, ::setStartDate)
-        declareU(Vocabulary.HAS_DATE_END, ::setEndDate)
-    }
+	val event = Entry<String>("")
 
-    private fun update()
-    {
-        //  calendarfx can't handle setting the end date before the start date
-        //  it also can't handle adding an event with no date
-        if (startDate != null && endDate != null)
-        {
-            event.setInterval(startDate, endDate)
-        }
-    }
+	init
+	{
+		declareU(Vocabulary.HAS_SUMMARY) { event.title = it.literal.string }
+	}
 
-    private fun setStartDate(stmt: Statement)
-    {
-        startDate = JenaUtils.getLDT(stmt.literal)
-        update()
-    }
+	fun initialize()
+	{
+		//	set the simple data properties of this message
+		GET_ATTRIBUTES.setIri("id", id)
+		initialize(storage.query(GET_ATTRIBUTES.toString()), Vocabulary.HAS_SUMMARY)
 
-    private fun setEndDate(stmt: Statement)
-    {
-        endDate = JenaUtils.getLDT(stmt.literal)
-        update()
-    }
+		//  have to handle start and end dates specially because calendarfx can't handle setting the end date before the start date
+		GET_DATES.setIri("id", id)
+		storage.query(GET_DATES.toString()).forEach { event.setInterval(getDate(it, "start"), getDate(it, "end")) }
+	}
 }

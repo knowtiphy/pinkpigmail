@@ -4,5 +4,5 @@ package org.knowtiphy.pinkpigmail.model
 
 class MessageFrame(private val message: IMessage, private val surroundingMessages: Collection<Collection<IMessage>>)
 {
-	fun loadAhead() = surroundingMessages.forEach(message.folder::loadAhead)
+	//fun loadAhead() = { println("LA " +surroundingMessages); surroundingMessages.forEach(message.folder::loadAhead)
 }

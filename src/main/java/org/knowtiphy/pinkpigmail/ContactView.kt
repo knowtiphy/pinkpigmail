@@ -13,6 +13,8 @@ import org.knowtiphy.pinkpigmail.cell.CardCell
 import org.knowtiphy.pinkpigmail.mailaccountview.AccountViewModel
 import org.knowtiphy.pinkpigmail.mailaccountview.CategoryViewModel
 import org.knowtiphy.pinkpigmail.model.IContactAccount
+import org.knowtiphy.pinkpigmail.model.IFolder
+import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAddressBook
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVCard
 import org.knowtiphy.pinkpigmail.model.caldav.CardDAVGroup
@@ -25,7 +27,7 @@ class ContactView(account: IContactAccount) : VBox()
 
     init
     {
-        val pad = AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>(account)
+        val pad = AccountViewModel<IContactAccount, IFolder, IMessage, String>(account)
 
         val accountView = createAccountView(pad)
         val toolBar = createToolBar(pad)
@@ -80,7 +82,7 @@ class ContactView(account: IContactAccount) : VBox()
 //        }
     }
 
-    private fun createToolBar(pad: AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>): Node
+    private fun createToolBar(pad: AccountViewModel<IContactAccount, IFolder, IMessage, String>): Node
     {
 //        val delete = ActionHelper.create(Icons.delete(),
 //                {
@@ -109,7 +111,7 @@ class ContactView(account: IContactAccount) : VBox()
         return toolBar
     }
 
-    private fun createAccountView(pad: AccountViewModel<IContactAccount, CardDAVAddressBook, CardDAVCard>): TreeView<Any>
+    private fun createAccountView(pad: AccountViewModel<IContactAccount, IFolder, IMessage, String>): TreeView<Any>
     {
         val view = resizeable(TreeView(groupsRoot))
         view.isShowRoot = false

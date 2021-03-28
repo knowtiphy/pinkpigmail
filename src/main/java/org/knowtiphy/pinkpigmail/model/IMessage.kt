@@ -47,7 +47,7 @@ interface IMessage : IPeer
 
     val loadRemoteProperty: BooleanProperty
 
-    fun loadAhead() : Future<*>?
+    fun sync() : Future<*>
 
     fun getContent(allowHTML: Boolean): IPart
 }

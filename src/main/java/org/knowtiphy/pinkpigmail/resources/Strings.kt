@@ -49,5 +49,6 @@ object Strings
     const val ADD_ATTACHMENT = "Add attachment"
     const val OUTBOX = "OUTBOX"
     const val SYNCHRONIZING_ACCOUNTS = "Synchronizing Accounts"
+    const val SYNCHRONIZING_Folder = "Synchronizing Folder"
     const val CLOSING_ACCOUNTS = "Closing Accounts"
 }
