@@ -4,18 +4,15 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.Resource
-import org.apache.jena.vocabulary.RDF
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.model.BaseAccount
-import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 
 /**
  * @author graham
  */
-class CardDAVAccount(id: String, storage: DavStorage) : BaseAccount<DavStorage>(id, storage), IContactAccount
+class CardDAVAccount(id: String, storage: IStorage) : BaseAccount(id, Vocabulary.CARDDAV_ACCOUNT, storage), IContactAccount
 {
 	override val addressBooks: ObservableList<CardDAVAddressBook> = FXCollections.observableArrayList()
 	override val nickNameProperty = SimpleStringProperty()
@@ -34,10 +31,10 @@ class CardDAVAccount(id: String, storage: DavStorage) : BaseAccount<DavStorage>(
 		declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
 		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
 		declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
-		declareOU(Vocabulary.CONTAINS, addressBooks)
-		declareD(Vocabulary.CONTAINS, addressBooks)
-		declareOU(Vocabulary.HAS_GROUP, groups)
-		declareD(Vocabulary.HAS_GROUP, groups)
+//		declareOU(Vocabulary.CONTAINS, addressBooks)
+//		declareD(Vocabulary.CONTAINS, addressBooks)
+//		declareOU(Vocabulary.HAS_GROUP, groups)
+//		declareD(Vocabulary.HAS_GROUP, groups)
 
 		emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
 			if (nickNameProperty.get() == null)

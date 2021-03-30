@@ -3,11 +3,11 @@ package org.knowtiphy.pinkpigmail.model.caldav
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
-import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 
-class CardDAVAddressBook(accountId: String, storage: DavStorage) : StoredPeer<DavStorage>(accountId, storage)
+class CardDAVAddressBook(accountId: String, storage: IStorage) : StoredPeer(accountId, Vocabulary.CARDDAV_ADDRESSBOOK, storage)
 {
     val nameProperty = SimpleStringProperty()
 
@@ -16,10 +16,10 @@ class CardDAVAddressBook(accountId: String, storage: DavStorage) : StoredPeer<Da
 
     init
     {
-        declareU(Vocabulary.HAS_NAME) { nameProperty.value = it.literal.string }
-        declareOU(Vocabulary.CONTAINS, cards)
-        declareD(Vocabulary.CONTAINS, cards)
-        declareOU(Vocabulary.HAS_GROUP, groups)
-        declareD(Vocabulary.HAS_GROUP, groups)
+        declareU(Vocabulary.HAS_NAME, nameProperty)
+//        declareOU(Vocabulary.CONTAINS, cards)
+//        declareD(Vocabulary.CONTAINS, cards)
+//        declareOU(Vocabulary.HAS_GROUP, groups)
+//        declareD(Vocabulary.HAS_GROUP, groups)
     }
 }

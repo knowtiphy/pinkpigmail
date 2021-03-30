@@ -13,22 +13,7 @@ class WaitSpinner(message : String) : VBox(35.0)
 	{
 		children.addAll(progressIndicator, Label(message))
 		alignment = Pos.CENTER
-
 		//	if the spinner is added/removed to/from a scence, start/stop it
-		sceneProperty().addListener { _, _, n -> if (n == null) finish() else resume() }
-	}
-
-	private fun finish() : WaitSpinner
-	{
-		println("STOPPING SPINNER $this")
-		progressIndicator.progress = 1.0
-		return this
-	}
-
-	private fun resume() : WaitSpinner
-	{
-		println("STARTING SPINNER $this")
-		progressIndicator.progress = -1.0
-		return this
+		sceneProperty().addListener { _, _, n -> progressIndicator.progress = if (n == null) 1.0 else -1.0 }
 	}
 }

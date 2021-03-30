@@ -10,18 +10,18 @@ import java.nio.file.Path
  *
  * @author graham
  */
-class OutgoingAttachment(override val location: Path) : IAttachment
+class OutgoingAttachment(override val location : Path) : IAttachment
 {
 
-    override val inputStream: InputStream
-        @Throws(IOException::class)
-        get() = FileInputStream(location.toFile())
+	override val inputStream : InputStream
+		@Throws(IOException::class) get() = FileInputStream(location.toFile())
 
-    override val mimeType: String
-        get() = ""
+	override val mimeType : String
+		get() = ""
 
-    override val fileName: String
-        get() = location.toString()
+	override val fileName : String
+		get() = location.toString()
 
-    override fun getId(): String = ""
+	override fun getId() : String = ""
+	override fun getType() : String = ""
 }

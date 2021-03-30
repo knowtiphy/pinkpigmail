@@ -11,9 +11,10 @@ import org.apache.jena.graph.NodeFactory
 import org.apache.jena.sparql.core.Var
 import org.apache.jena.vocabulary.RDF
 import org.apache.jena.vocabulary.RDFS
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.babbage.storage.exceptions.StorageException
-import org.knowtiphy.pinkpigmail.PinkPigMail
+import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.EmailAccount
 import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.EmailModelType
@@ -24,7 +25,6 @@ import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.utils.JenaUtils.P
@@ -35,14 +35,10 @@ import java.util.concurrent.ExecutionException
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: MailStorage) : EmailAccount<MailStorage>(accountId, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: IStorage) : EmailAccount(accountId, Vocabulary.IMAP_ACCOUNT, storage), IEmailAccount
 {
 	companion object
 	{
-		val GET_ACCOUNT_ATTRIBUTES: SelectBuilder = SelectBuilder()
-			.addVar("*")
-			.addWhere("?aid", "?p", "?o")
-
 		val GET_FOLDER_IDS: SelectBuilder = SelectBuilder()
 			.addVar("*")
 			.addWhere("?aid", "<${Vocabulary.CONTAINS}>", "?fid")
@@ -79,7 +75,7 @@ class IMAPAccount(accountId: String, storage: MailStorage) : EmailAccount<MailSt
 		declareU(Vocabulary.HAS_PASSWORD, password)
 		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
 		declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
-		declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.STMT_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
 
 		emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
 			if (nickNameProperty.get() == null)
@@ -99,10 +95,7 @@ class IMAPAccount(accountId: String, storage: MailStorage) : EmailAccount<MailSt
 		val aidR = NodeFactory.createURI(id)
 
 		//	initialize the attributes of this account
-		GET_ACCOUNT_ATTRIBUTES.setVar(Var.alloc("aid"), aidR)
-		storage.query(GET_ACCOUNT_ATTRIBUTES.buildString()).forEach {
-			initialize(it)
-		}
+		initialize(attributes)
 
 		//	work out the special folders
 		GET_SPECIAL_IDS.setVar(Var.alloc("aid"), aidR)
@@ -122,7 +115,7 @@ class IMAPAccount(accountId: String, storage: MailStorage) : EmailAccount<MailSt
 		//	sync all relevant folders -- for the moment just the inbox
 		//	for the moment assume the folder structure hasn't changed so just sync the messages
 		val inbox = specials[Vocabulary.INBOX_FOLDER]!!
-		PinkPigMail.pushEvent(FolderSyncStartedEvent(this, folders[inbox]!!))
+		Globals.push(FolderSyncStartedEvent(this, folders[inbox]!!))
 		storage.sync(id, inbox)
 	}
 

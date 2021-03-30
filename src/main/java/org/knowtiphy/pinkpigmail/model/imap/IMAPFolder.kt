@@ -5,21 +5,20 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
-import javafx.scene.control.TableView
 import org.apache.jena.arq.querybuilder.SelectBuilder
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.rdf.model.RDFNode
 import org.apache.jena.sparql.core.Var
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
-import org.knowtiphy.pinkpigmail.PinkPigMail
+import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.events.FolderSyncDoneEvent
 import org.knowtiphy.pinkpigmail.model.events.MessageArrivedEvent
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.JenaUtils.P
@@ -30,22 +29,17 @@ import kotlin.collections.ArrayList
 /**
  * @author graham
  */
-class IMAPFolder(folderId : String, override val account : IMAPAccount, storage : MailStorage) :
-	StoredPeer<MailStorage>(folderId, storage), IFolder
+class IMAPFolder(folderId : String, override val account : IMAPAccount, storage : IStorage) :
+	StoredPeer(folderId, Vocabulary.IMAP_FOLDER, storage), IFolder
 {
 	companion object
 	{
-		val FOLDER_ATTRIBUTES : SelectBuilder =
-			SelectBuilder().addVar("*").addWhere("?id", "?p", "?o").addFilter("?p != <${Vocabulary.CONTAINS}>")
-
 		val MESSAGE_IDS_IN_FOLDER : SelectBuilder =
 			SelectBuilder().addVar("*").addWhere("?id", "<${Vocabulary.CONTAINS}>", "?mid")
 	}
 
 	override val messages : ObservableList<IMessage> = FXCollections.observableArrayList()
 
-	//	this just replicates PEERS but maybe they are going away
-	//	TODO -- this whole map thing is a hacky mess
 	private val messageMap : ObservableMap<String, IMAPMessage> = FXCollections.observableHashMap()
 
 	override val nameProperty = SimpleStringProperty()
@@ -71,8 +65,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		val uriID = NodeFactory.createURI(id)
 
 		//	initialize the data properties of this folder
-		FOLDER_ATTRIBUTES.setVar(Var.alloc("id"), uriID)
-		initialize(storage.query(FOLDER_ATTRIBUTES.buildString()))
+		initialize(attributes)
 
 		//	initialize the messages in this folder
 		MESSAGE_IDS_IN_FOLDER.setVar(Var.alloc("id"), uriID)
@@ -148,7 +141,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 
 	override fun syncAhead(indices : List<Int>, targets : Collection<IMessage>)
 	{
-		println("syncAhead targets " + targets)
+		//println("syncAhead targets " + targets)
 
 		//  load ahead radially 3 messages either side of the selection
 		//	this needs to be improved for when we have multiple selections
@@ -175,16 +168,13 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 			result.add(disti)
 		}
 
-		println(result)
+		//println(result)
 		result.forEach {
 			//  TODO -- need to save these futures somehow -- maybe not since they will get
 			//	recomputed only once when a message content is fetched the first time
 			val (oid, operation) = getOp(Vocabulary.SYNC_AHEAD)
-			ids(it).forEach { mid ->
-				JenaUtils.addOP(operation, oid, Vocabulary.HAS_MESSAGE, mid)
-			}
+			ids(it).forEach { mid -> JenaUtils.addOP(operation, oid, Vocabulary.HAS_MESSAGE, mid) }
 			storage.doOperation(operation)
-			//storage.loadAhead(account.id, id, ids(it))
 		}
 	}
 
@@ -215,8 +205,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 	//	update the data properties of this folder
 	private fun update()
 	{
-		FOLDER_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-		initialize(storage.query(FOLDER_ATTRIBUTES.buildString()))
+		initialize(attributes)
 	}
 
 	private fun addHasMessage(eid : String, model : Model, targets : Collection<IMessage>)
@@ -246,7 +235,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		val newMessages = map(event, Vocabulary.HAS_MESSAGE) { IMAPMessage(it.toString(), this, storage) }
 		newMessages.forEach { addMessage(it) }
 		update()
-		PinkPigMail.pushEvent(MessageArrivedEvent(account, this))
+		Globals.push(MessageArrivedEvent(account, this))
 	}
 
 	private fun deleteMessageHandler(event : StorageEvent)
@@ -277,12 +266,12 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 			if (!messageMap.containsKey(it)) addMessage(IMAPMessage(it, this, storage))
 		}
 
-		PinkPigMail.pushEvent(FolderSyncDoneEvent(account, this))
+		Globals.push(FolderSyncDoneEvent(account, this))
 	}
 
 	private fun getOp(type : String) : Pair<String, Model>
 	{
-		val opId = PinkPigMail.nameSource.get()
+		val opId = Globals.nameSource.get()
 		val operation = ModelFactory.createDefaultModel()
 		JenaUtils.addType(operation, opId, type)
 		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)

@@ -14,7 +14,7 @@ import javafx.scene.paint.Paint
 import javafx.stage.Stage
 import org.controlsfx.control.action.Action
 import org.controlsfx.control.action.ActionUtils
-import org.knowtiphy.pinkpigmail.PinkPigMail
+import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.StyleSheets
 import org.knowtiphy.pinkpigmail.resources.Icons
 
@@ -76,7 +76,7 @@ object UIUtils
 	fun getScene(root: Parent): Scene
 	{
 		val scene = Scene(root)
-		scene.stylesheets.add(UIUtils::class.java.getResource(PinkPigMail.STYLE_SHEET).toExternalForm())
+		scene.stylesheets.add(UIUtils::class.java.getResource(Globals.STYLE_SHEET)!!.toExternalForm())
 		return scene
 	}
 

@@ -1,52 +1,66 @@
 package org.knowtiphy.pinkpigmail.model.caldav
 
 import com.calendarfx.model.Calendar
+import com.calendarfx.model.CalendarEvent
 import javafx.collections.FXCollections
 import javafx.collections.ObservableMap
-import org.apache.jena.arq.querybuilder.SelectBuilder
-import org.apache.jena.graph.NodeFactory
-import org.apache.jena.sparql.core.Var
+import javafx.event.EventHandler
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
-import org.knowtiphy.pinkpigmail.model.QueryHelper
-import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 
-class CalDAVCalendar(id : String, val account : CalDAVAccount, storage : DavStorage) : StoredPeer<DavStorage>(id, storage)
+class CalDAVCalendar(id : String, val account : CalDAVAccount, storage : IStorage) :
+	StoredPeer(id, Vocabulary.CALDAV_CALENDAR, storage)
 {
-	companion object
-	{
-		val CALENDAR_ATTRIBUTES : SelectBuilder =
-			SelectBuilder().addVar("*").addWhere("?id", "?p", "?o").addFilter("?p != <${Vocabulary.CONTAINS}>")
-
-		val EVENT_IDS_IN_CALENDAR : SelectBuilder =
-			SelectBuilder().addVar("*").addWhere("?id", "<${Vocabulary.CONTAINS}>", "?eid")
-	}
-
 	private val events : ObservableMap<String, CalDAVEvent> = FXCollections.observableHashMap()
 
 	val calendar = Calendar()
 
 	init
 	{
-		declareU(Vocabulary.HAS_NAME) { calendar.name = it.literal.string }
-		calendar.setStyle(Calendar.Style.STYLE2)
+		declareU(Vocabulary.HAS_NAME) { calendar.name = it.asLiteral().string }
+		calendar.setStyle(Calendar.Style.STYLE1)
+
+		//calendar.addEventHandler(CalendarEvent.ANY) {  }
+
+		val handler : EventHandler<CalendarEvent> = EventHandler<CalendarEvent> { evt -> foo(evt) }
+		calendar.addEventHandler(handler)
+	}
+
+	fun foo(event : CalendarEvent)
+	{
+		println("ADD EVENT $event")
+		//println(events.containsKey(it.))
+		//when(it.t)
+		if (event.isEntryAdded)
+		{
+			println("ADDING AN EVENT")
+		}
+
+		when (event.eventType)
+		{
+			CalendarEvent.ENTRY_CHANGED -> println("ENTRY CHANGED")
+			else -> println("SOMETHING ELSE " + event.eventType)
+		}
+
 	}
 
 	fun initialize()
 	{
 		//	initialize the data properties of this calendar
-		CALENDAR_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-		initialize(storage.query(CALENDAR_ATTRIBUTES.buildString()))
+		initialize(attributes)
 
 		//  update the events in the folder
-		val t = QueryHelper.diff(storage.storage, EVENT_IDS_IN_CALENDAR, id, "eid", events)
-		t.first.forEach(::addEvent)
-		t.second.forEach(::deleteEvent)
-		t.third.forEach(::updateEvent)
+		with(diff(Vocabulary.CALDAV_EVENT, events.keys)) {
+			first.forEach(::addEvent)
+			second.forEach(::deleteEvent)
+			third.forEach(::updateEvent)
+		}
 	}
 
 	private fun addEvent(eid : String)
 	{
+		//println("ADD AVENT " + eid)
 		assert(!events.containsKey(eid))
 
 		val event = CalDAVEvent(eid, storage)
@@ -58,6 +72,7 @@ class CalDAVCalendar(id : String, val account : CalDAVAccount, storage : DavStor
 
 	private fun deleteEvent(eid : String)
 	{
+		//println("DELETE AVENT " + eid)
 		//  TODO -- do we need to any more than this?
 		assert(events.containsKey(eid)) { events }
 
@@ -67,6 +82,7 @@ class CalDAVCalendar(id : String, val account : CalDAVAccount, storage : DavStor
 
 	private fun updateEvent(eid : String)
 	{
+		//println("UPDATE AVENT " + eid)
 		assert(events.containsKey(eid)) { events }
 		events[eid]!!.initialize()
 	}

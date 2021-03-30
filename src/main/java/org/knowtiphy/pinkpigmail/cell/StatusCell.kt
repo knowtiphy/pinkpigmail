@@ -55,8 +55,8 @@ class StatusCell : BaseCell()
             junk.visibleProperty().bind(item.junkProperty)
             unread.visibleProperty().bind(item.readProperty.not())
             answered.visibleProperty().bind(item.answeredProperty)
-            deleted.visibleProperty().bind(item.disableProperty())
-            tableRow.disableProperty().bind(item.disableProperty())
+            deleted.visibleProperty().bind(item.disabledProperty())
+            tableRow.disableProperty().bind(item.disabledProperty())
         }
     }
 }

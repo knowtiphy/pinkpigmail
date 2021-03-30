@@ -2,12 +2,13 @@ package org.knowtiphy.pinkpigmail.model
 
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.PinkPigMail
-import org.knowtiphy.pinkpigmail.model.storage.BaseStorage
 import org.knowtiphy.utils.JenaUtils
 
-open class EmailAccount<T>(accountId : String, storage : T) : BaseAccount<T>(accountId, storage) where T : BaseStorage
+open class EmailAccount(accountId : String, type : String, storage : IStorage) : BaseAccount(accountId, type, storage)
 {
 	open fun trustSender(addresses : Collection<EmailAddress>)
 	{
@@ -36,7 +37,7 @@ open class EmailAccount<T>(accountId : String, storage : T) : BaseAccount<T>(acc
 
 	private fun getOp(type : String) : Pair<String, Model>
 	{
-		val opId = PinkPigMail.nameSource.get()
+		val opId = Globals.nameSource.get()
 		val operation = ModelFactory.createDefaultModel()
 		JenaUtils.addType(operation, opId, type)
 		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, accountId)

@@ -1,11 +1,12 @@
 package org.knowtiphy.pinkpigmail.model
 
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.model.events.UIEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.reactfx.EventSource
 
-open class BaseAccount<T>(val accountId: String, storage: T) : StoredPeer<T>(accountId, storage)
+open class BaseAccount(val accountId: String, type : String, storage: IStorage) : StoredPeer(accountId, type, storage)
 {
 	val fromStorage = EventSource<StorageEvent>()
 

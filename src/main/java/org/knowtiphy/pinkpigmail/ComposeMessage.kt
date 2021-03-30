@@ -167,7 +167,7 @@ object ComposeMessage
 				}
 			}
 			graphic = Icons.attach()
-			styleClass.add(PinkPigMail.STYLE_SHEET)
+			styleClass.add(Globals.STYLE_SHEET)
 		}
 
 		perform { Attachments.addRemoveMenu(model.attachments, attachB.items) }

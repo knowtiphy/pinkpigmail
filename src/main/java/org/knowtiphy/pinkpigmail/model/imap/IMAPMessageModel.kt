@@ -1,17 +1,17 @@
 package org.knowtiphy.pinkpigmail.model.imap
 
 import org.knowtiphy.babbage.storage.IMAP.Mime
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.exceptions.StorageException
 import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.model.MessageModel
 import java.io.IOException
 
 /*
  * @author graham
  */
-class IMAPMessageModel(storage: MailStorage, account: IMAPAccount, copyTo: IMAPFolder,
+class IMAPMessageModel(storage: IStorage, account: IMAPAccount, copyTo: IMAPFolder,
                        replyToMessage: IMessage?, sendMode: EmailSendMode,
                        subject: String?, to: String?, content: String?) : MessageModel(storage, account,
         replyToMessage, sendMode, subject, to, content, copyTo)

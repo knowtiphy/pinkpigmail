@@ -2,11 +2,11 @@ package org.knowtiphy.pinkpigmail.model.caldav
 
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
-import org.knowtiphy.pinkpigmail.model.storage.DavStorage
 
-class CardDAVGroup(id: String, storage: DavStorage) : StoredPeer<DavStorage>(id, storage)
+class CardDAVGroup(id: String, storage: IStorage) : StoredPeer(id, Vocabulary.CARDDAV_GROUP, storage)
 {
 	val nameProperty = SimpleStringProperty()
 	val cards = FXCollections.observableArrayList<CardDAVCard>()
@@ -14,8 +14,8 @@ class CardDAVGroup(id: String, storage: DavStorage) : StoredPeer<DavStorage>(id,
 	init
 	{
 		declareU(Vocabulary.HAS_NAME, nameProperty)
-		declareOU(Vocabulary.HAS_CARD, cards)
-		declareD(Vocabulary.HAS_CARD, cards)
+//		declareOU(Vocabulary.HAS_CARD, cards)
+//		declareD(Vocabulary.HAS_CARD, cards)
 	}
 }
 

@@ -99,7 +99,7 @@ class UISettings
 		model.setNsPrefix("n", Vocabulary.NBASE)
 		model.setNsPrefix("o", Vocabulary.TBASE)
 
-		val uid = PinkPigMail.nameSource.get()
+		val uid = Globals.nameSource.get()
 
 		JenaUtils.addType(model, uid, UIVocabulary.UI_SETTING)
 		JenaUtils.addDP(model, uid, UIVocabulary.HAS_WIDTH, widthProperty.get())
@@ -114,7 +114,7 @@ class UISettings
 
 	fun save(model: Model, uid: String, account: IAccount)
 	{
-		val uaid = PinkPigMail.nameSource.get()
+		val uaid = Globals.nameSource.get()
 
 		JenaUtils.addOP(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS, uaid)
 		JenaUtils.addType(model, uaid, UIVocabulary.UI_ACCOUNT_SETTING)

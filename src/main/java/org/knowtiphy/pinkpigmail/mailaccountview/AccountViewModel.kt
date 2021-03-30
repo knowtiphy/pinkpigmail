@@ -15,20 +15,6 @@ class AccountViewModel<A, C, E, P>(val account : A)
 	//	the current perspective -- needed to only deliver events to the current perspective
 	private var currentPerspective = HashMap<C, P?>()
 
-	//	a message has been shown
-//	val messageShown = EventSource<IMessage>()
-//
-//	val loadAhead =
-//		MatchFunction<IMessage, Collection<Collection<IMessage>>, MessageFrame> { msg, surroundingMessages ->
-//			MessageFrame(msg, surroundingMessages)
-//		}
-
-//	init
-//	{
-//		//	for each message we show that has a matching frame, start a loadhead of the frame
-//		//messageShown.map(loadAhead).filter { println(it);it != null }.subscribe { it!!.loadAhead() }
-//	}
-
 	//  the per folder selection models
 	val selectionModels = HashMap<C, MultipleSelectionModel<E>>()
 
@@ -52,7 +38,8 @@ class AccountViewModel<A, C, E, P>(val account : A)
 	fun sel(folder : C, persp : P) : EventSource<MultipleSelectionModel<E>> = selection[folder]!![persp]!!
 	fun persp(folder : C) : EventSource<P> = perspective[folder]!!
 	fun newM(folder : C, persp : P) : EventSource<E> = newMessage[folder]!![persp]!!
-	fun newMs(folder : C, persp : P) : EventSource<List<E>> = newMessages[folder]!![persp]!!
+
+	private fun newMs(folder : C, persp : P) : EventSource<List<E>> = newMessages[folder]!![persp]!!
 
 	//	add a folder to the model making
 	fun addFolder(folder : C, pspecs : List<P>)
@@ -82,6 +69,7 @@ class AccountViewModel<A, C, E, P>(val account : A)
 		assert(perspective.containsKey(folder))
 		currentPerspective[folder] = persp
 		persp(folder).push(persp)
+		//  this is a little clumsy .. but in the event way of things its necessary ...
 		pushChanges(folder)
 	}
 
@@ -111,7 +99,8 @@ class AccountViewModel<A, C, E, P>(val account : A)
 
 	//	push changes on various event streams -- have to do this initially when a folder is
 	//	added to setup the initial state of folder view, and when a perspective is changed
-	//	to inform the new perspective of the value of the streams
+	//	to inform the new perspective of the value of the streams (since we don't push changes
+	//  in stuff to anything other than the current perspective)
 	private fun pushChanges(folder : C)
 	{
 		val selectionModel = selectionModels[folder]!!

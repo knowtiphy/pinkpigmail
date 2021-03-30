@@ -5,18 +5,21 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import org.apache.jena.arq.querybuilder.SelectBuilder
-import org.apache.jena.graph.NodeFactory
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.sparql.core.Var
 import org.knowtiphy.babbage.storage.IMAP.Mime
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
+import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.PinkPigMail
-import org.knowtiphy.pinkpigmail.model.*
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
+import org.knowtiphy.pinkpigmail.model.EmailAddress
+import org.knowtiphy.pinkpigmail.model.IAttachment
+import org.knowtiphy.pinkpigmail.model.IEmailAccount
+import org.knowtiphy.pinkpigmail.model.IFolder
+import org.knowtiphy.pinkpigmail.model.IMessage
+import org.knowtiphy.pinkpigmail.model.IPart
 import org.knowtiphy.utils.JenaUtils
 import java.net.URL
 import java.time.ZonedDateTime
@@ -25,13 +28,12 @@ import java.util.concurrent.Future
 /**
  * @author graham
  */
-class IMAPMessage(id : String, override val folder : IFolder, storage : MailStorage) :
-	StoredPeer<MailStorage>(id, storage), IMessage
+class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage) : StoredPeer(id, Vocabulary.IMAP_MESSAGE, storage), IMessage
 {
 	companion object
 	{
 		//val GET_ATTRIBUTES = "SELECT ?p ?o WHERE { <${id}> ?p ?o . }"
-		val GET_ATTRIBUTES : SelectBuilder = SelectBuilder().addVar("*").addWhere("?id", "?p", "?o")
+	//	val GET_ATTRIBUTES : SelectBuilder = SelectBuilder().addVar("*").addWhere("?id", "?p", "?o")
 	}
 
 	override val readProperty = SimpleBooleanProperty()
@@ -55,24 +57,26 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : MailStor
 		declareU(Vocabulary.HAS_SUBJECT, subjectProperty)
 		declareU(Vocabulary.RECEIVED_ON, receivedOnProperty)
 		declareU(Vocabulary.SENT_ON, sentOnProperty)
-		declareU(Vocabulary.FROM, from, Funcs.STMT_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.TO, to, Funcs.STMT_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.HAS_CC, cc, Funcs.STMT_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.HAS_BCC, bcc, Funcs.STMT_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.FROM, from, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.TO, to, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.HAS_CC, cc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		declareU(Vocabulary.HAS_BCC, bcc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
 	}
 
 	fun initialize()
 	{
 		//	build the data properties of this message
-		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-		initialize(storage.query(GET_ATTRIBUTES.buildString()))
+		initialize(attributes)
+//		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
+//		initialize(storage.query(GET_ATTRIBUTES.buildString()))
 	}
 
 	fun update()
 	{
 		//	build the data properties of this message
-		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-		initialize(storage.query(GET_ATTRIBUTES.buildString()))
+		initialize(attributes)
+//		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
+//		initialize(storage.query(GET_ATTRIBUTES.buildString()))
 	}
 
 	override val account : IEmailAccount
@@ -174,7 +178,7 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : MailStor
 
 	private fun getOp(type : String) : Pair<String, Model>
 	{
-		val opId = PinkPigMail.nameSource.get()
+		val opId = Globals.nameSource.get()
 		val operation = ModelFactory.createDefaultModel()
 		JenaUtils.addType(operation, opId, type)
 		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)

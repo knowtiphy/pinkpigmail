@@ -4,13 +4,13 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
+import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.exceptions.StorageException
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 
 /**
  * @author graham
  */
-abstract class MessageModel(val storage: MailStorage, override val mailAccount: IEmailAccount,
+abstract class MessageModel(val storage: IStorage, override val mailAccount: IEmailAccount,
                             val replyToMessage: IMessage?, override val sendMode: EmailSendMode,
                             subject: String?, to: String?, content: String?, override val copyTo: IFolder) : IMessageModel
 {

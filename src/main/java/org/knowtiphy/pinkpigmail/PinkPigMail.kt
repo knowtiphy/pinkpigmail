@@ -16,28 +16,21 @@ import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import org.apache.jena.arq.querybuilder.SelectBuilder
 import org.apache.jena.query.QueryExecutionFactory
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.Lang
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.vocabulary.RDF
 import org.apache.jena.vocabulary.RDFS
 import org.controlsfx.glyphfont.Glyph
 import org.knowtiphy.babbage.storage.*
-import org.knowtiphy.owlorm.javafx.PeerState
 import org.knowtiphy.pinkpigmail.mailaccountview.MailAccountView
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
-import org.knowtiphy.pinkpigmail.mailview.HTMLState
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.caldav.*
 import org.knowtiphy.pinkpigmail.model.events.StageShowEvent
-import org.knowtiphy.pinkpigmail.model.events.UIEvent
 import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
-import org.knowtiphy.pinkpigmail.model.storage.DavStorage
-import org.knowtiphy.pinkpigmail.model.storage.MailStorage
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.resources.Icons
 import org.knowtiphy.pinkpigmail.resources.Strings
@@ -46,18 +39,13 @@ import org.knowtiphy.pinkpigmail.util.ui.UIUtils
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.pinkpigmail.util.ui.UIUtils.resizeable
 import org.knowtiphy.utils.IProcedure.doAndIgnore
-import org.knowtiphy.utils.NameSource
+import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.OS
-import org.reactfx.EventSource
-import java.io.IOException
 import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.LocalTime
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.logging.LogManager
 import kotlin.system.exitProcess
@@ -70,9 +58,6 @@ class PinkPigMail : Application()
 {
 	companion object
 	{
-		private const val UI_FILE = "ui.ttl"
-		const val STYLE_SHEET = "/styles.css"
-
 		private val GET_ACCOUNTS : String = SelectBuilder().addVar("*").addWhere("?aid", "<${RDF.type}>", "?type")
 			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.ACCOUNT}>")
 			.addFilter("?type != <${Vocabulary.ACCOUNT}>").buildString()
@@ -82,81 +67,42 @@ class PinkPigMail : Application()
 			.addWhere("?eid", "<${Vocabulary.HAS_ACCOUNT}>", "?aid").addFilter("?type != <${Vocabulary.EVENT}>")
 			.buildString()
 
-		private val accounts : ObservableMap<String, IAccount> = FXCollections.observableHashMap()
-
-		val service : ExecutorService = Executors.newSingleThreadExecutor()
 		private val storage : IStorage by lazy { StorageFactory.getLocal() }
 
-		//	shared globals
-
-		val uiSettings : UISettings by lazy { UISettings.read(UI_FILE) }
-
-		val htmlState = HTMLState()
-
-		//	executor pool for doing periodic tasks like updating the current time in calendar views
-		val timerService : ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
-
-		val nameSource = NameSource(Vocabulary.NBASE)
-
-		//	all storage related events are posted here
-		//	only parts of the model should subscribe to these events
-		val fromStorage = EventSource<StorageEvent>()
-
-		fun pushEvent(event : StorageEvent)
-		{
-			//	by doing the later it puts the whole event stream on the FX UI thread
-			later {
-				//	push the event to the account's event stream
-				if (event.aid != null) accounts[event.aid]?.fromStorage?.push(event)
-				//	push the event to the all events stream
-				fromStorage.push(event)
-			}
-		}
-
-		//	all UI model related events are posted here
-		//	only parts of the UI should subscribe to these events
-		val fromModel = EventSource<UIEvent>()
-
-		fun pushEvent(event : UIEvent)
-		{
-			//	by doing the later it puts the whole event stream on the FX UI thread
-			later {
-				//	push the event to the account's event stream
-				if (event.account != null) accounts[event.account.id]?.events?.push(event)
-				//	push the event to the all events stream
-				fromModel.push(event)
-			}
-		}
+		//  account constructors
+		private val ACCOUNT_CONSTRUCTORS =
+			mapOf<String, (String) -> IAccount>(Vocabulary.IMAP_ACCOUNT to { id : String -> IMAPAccount(id, storage) },
+				Vocabulary.CALDAV_ACCOUNT to { id -> CalDAVAccount(id, storage) },
+				Vocabulary.CARDDAV_ACCOUNT to { id -> CardDAVAccount(id, storage) })
 	}
 
+	private val accounts : ObservableMap<String, IAccount> = FXCollections.observableHashMap()
+
+	//  TODO -- why do we have this -- we have no global tool bar buttons
 	private val appToolBar = HBox()
 	private val rootTabPane = resizeable(TabPane())
 	private val root = resizeable(VBox(appToolBar, rootTabPane))
 
 	init
 	{
-		val stream = PinkPigMail::class.java.getResource("/logging.properties")!!.openStream()
-		try
-		{
-			LogManager.getLogManager().readConfiguration(stream)
-		}
-		catch (ex : IOException)
-		{
-			ex.printStackTrace()
-		}
-
-		//  peer constructors for roots -- this goes away with the event handling framework
-		//	only need roots
-		PeerState.addConstructor(Vocabulary.IMAP_ACCOUNT) { IMAPAccount(it, MailStorage(storage)) }
-		PeerState.addConstructor(Vocabulary.CALDAV_ACCOUNT) { CalDAVAccount(it, DavStorage(storage)) }
-		PeerState.addConstructor(Vocabulary.CARDDAV_ACCOUNT) { CardDAVAccount(it, DavStorage(storage)) }
-
-		PeerState.addConstructor(Vocabulary.CARDDAV_ADDRESSBOOK) { CardDAVAddressBook(it, DavStorage(storage)) }
-		PeerState.addConstructor(Vocabulary.CARDDAV_GROUP) { CardDAVGroup(it, DavStorage(storage)) }
-		PeerState.addConstructor(Vocabulary.CARDDAV_CARD) { CardDAVCard(it, DavStorage(storage)) }
+		LogManager.getLogManager().readConfiguration(
+			PinkPigMail::class.java.getResource("/logging.properties")!!.openStream()
+		)
 
 		VBox.setVgrow(rootTabPane, Priority.ALWAYS)
 		VBox.setVgrow(appToolBar, Priority.NEVER)
+	}
+
+	//  push storage events to both the global from storage stream and the per account from storage streams
+	private fun pushEvent(event : StorageEvent)
+	{
+		//	by doing the later it puts the whole event stream on the FX UI thread
+		later {
+			//	push the event to the account's event stream
+			if (event.aid != null) accounts[event.aid]?.fromStorage?.push(event)
+			//	push the event to the all events stream
+			Globals.fromStorage.push(event)
+		}
 	}
 
 	private fun createAccountTab(tabContent : Region, icon : Glyph, label : StringProperty) : Tab
@@ -179,7 +125,7 @@ class PinkPigMail : Application()
 		val now = LocalTime.now()
 		val initialDelay = 60L - now.second
 		calendarView.requestedTime = now
-		timerService.scheduleAtFixedRate({
+		Globals.timerService.scheduleAtFixedRate({
 			later {
 				val dateTime = LocalDateTime.now()
 				calendarView.today = dateTime.toLocalDate()
@@ -187,6 +133,7 @@ class PinkPigMail : Application()
 			}
 		}, initialDelay, 60L, TimeUnit.SECONDS)
 
+		calendarView.setDefaultCalendarProvider { account.getDefaultCalendar() }
 		rootTabPane.tabs.add(createAccountTab(calendarView, Icons.calendar(), account.nickNameProperty))
 	}
 
@@ -207,9 +154,14 @@ class PinkPigMail : Application()
 
 	private fun saveUISettings()
 	{
-		val model = uiSettings.save(accounts.values)
-		RDFDataMgr.write(Files.newOutputStream(Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(),
-			UI_FILE)), model, Lang.TURTLE)
+		val model = Globals.uiSettings.save(accounts.values)
+		RDFDataMgr.write(
+			Files.newOutputStream(
+				Paths.get(
+					OS.getSettingsDir(PinkPigMail::class.java).toString(), Globals.UI_FILE
+				)
+			), model, Lang.TURTLE
+		)
 	}
 
 	//  shutdown sequence
@@ -218,10 +170,10 @@ class PinkPigMail : Application()
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
-			doAndIgnore { timerService.shutdown() }
-			doAndIgnore { timerService.awaitTermination(10, TimeUnit.SECONDS) }
-			doAndIgnore { service.shutdown() }
-			doAndIgnore { service.awaitTermination(10, TimeUnit.SECONDS) }
+			doAndIgnore { Globals.timerService.shutdown() }
+			doAndIgnore { Globals.timerService.awaitTermination(10, TimeUnit.SECONDS) }
+			doAndIgnore { Globals.service.shutdown() }
+			doAndIgnore { Globals.service.awaitTermination(10, TimeUnit.SECONDS) }
 			doAndIgnore(::saveUISettings)
 			doAndIgnore(storage::close)
 			exitProcess(1)
@@ -231,29 +183,11 @@ class PinkPigMail : Application()
 	//	build the known accounts
 	private fun buildAccounts()
 	{
-//		val ACCOUNT_TYPE = """
-//			SELECT *  WHERE {?name <${RDF.type}> ?type
-//			.		?type <${RDFS.subClassOf}> <${Vocabulary.ACCOUNT}>
-//			.		filter(?type != <${Vocabulary.ACCOUNT}>)      }
-//			""".trimIndent()
-
 		storage.query(GET_ACCOUNTS).forEach {
-				val aid = it.getResource("aid").toString()
-				println("$aid ${it.getResource("type").toString()}")
-				val account = PeerState.construct(aid, it.getResource("type").toString()) as IAccount
-				account.initialize()
-				accounts[aid] = account
-			}
-	}
-
-	//	channel listener events to the per account and global event streams
-	private fun eventHandler(eventModel : Model)
-	{
-		println("Have event " + eventModel)
-		val infModel = ModelFactory.createRDFSModel(eventModel)
-		//  TODO -- doesn't close the query model -- OK since in mem?
-		QueryExecutionFactory.create(EVENT_IDS, infModel).execSelect().forEach {
-			pushEvent(StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel))
+			val aid = it.getResource("aid").toString()
+			val account = ACCOUNT_CONSTRUCTORS[it.getResource("type").toString()]!!.invoke(aid)
+			account.initialize()
+			accounts[aid] = account
 		}
 	}
 
@@ -267,7 +201,7 @@ class PinkPigMail : Application()
 		//	in mail messages for example
 		//	TODO -- this should be done via some Service interface nowdays?
 		//	and it should only be used in the mail html viewer (do they expose those features yet?)
-		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(htmlState))
+		URL.setURLStreamHandlerFactory(CustomURLStreamHandlerFactory(Globals.htmlState))
 
 		//	get the known accounts
 		buildAccounts()
@@ -277,28 +211,35 @@ class PinkPigMail : Application()
 			scene = UIUtils.getScene(root)
 			title = Strings.APP_NAME
 			icons.add(Image(Icons.thePig128()))
-			width = uiSettings.widthProperty.get()
-			height = uiSettings.heightProperty.get()
+			width = Globals.uiSettings.widthProperty.get()
+			height = Globals.uiSettings.heightProperty.get()
 			setOnCloseRequest(::shutdown)
 		}
 
-		uiSettings.widthProperty.bind(stage.widthProperty())
-		uiSettings.heightProperty.bind(stage.heightProperty())
+		with(Globals.uiSettings) {
+			widthProperty.bind(stage.widthProperty())
+			heightProperty.bind(stage.heightProperty())
+		}
 
 		//	create views for each account
 		accounts.values.forEach { account -> createAccountView[account::class]?.let { it(account) } }
 
 		//	add an event listener for storage events
-		storage.addListener(::eventHandler)
-
-		//	TODO -- need to have some global events -- e.g. lost store connection
-		fromStorage.subscribe { }//println("Global Storage Event {$it}") }
-		fromModel.subscribe { }//println("Global UI Event {$it}") }
+		storage.addListener { event ->
+			val infModel = JenaUtils.createRDFSModel(event, Vocabulary.eventSubClasses)
+			//  TODO -- doesn't close the query model -- OK since in mem?
+			QueryExecutionFactory.create(EVENT_IDS, infModel).execSelect().forEach {
+				pushEvent(StorageEvent(it.get("eid"), it.get("type"), it.get("aid"), infModel))
+			}
+		}
 
 		//	synch each account
 		accounts.values.forEach { it.sync() }
 
-		later { fromModel.push(StageShowEvent()) }
+		//  voodoo nonsense - see comments in subscribers -- should also probably do it with an actual JavaFX
+		//  stage shown event
+		later { Globals.fromModel.push(StageShowEvent()) }
+
 		//	show the UI
 		stage.show()
 	}
