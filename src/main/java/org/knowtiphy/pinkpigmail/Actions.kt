@@ -14,6 +14,7 @@ import org.knowtiphy.pinkpigmail.util.Operation.Companion.perform
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
+import java.util.*
 
 /**
  *
@@ -21,18 +22,20 @@ import java.nio.file.StandardCopyOption
  */
 object Actions
 {
-	fun composeMail(mailAccount: IEmailAccount) = perform {
-		ComposeMessage.compose(mailAccount.getSendModel(EmailModelType.COMPOSE)) { it.send() }
+	fun composeMail(account: IEmailAccount) = perform {
+		ComposeMessage.compose(account.getSendModel(EmailModelType.COMPOSE))
 	}
 
 	fun markMessagesAsJunk(messages: Collection<IMessage>)
 	{
-		messages.first().folder.markMessagesAsJunk(messages)
+		//  we have to copy here in case messages is the actual selected messages
+		messages.first().folder.markMessagesAsJunk(LinkedList(messages))
 	}
 
 	fun markMessagesAsNotJunk(messages: Collection<IMessage>)
 	{
-		messages.first().folder.markMessagesAsNotJunk(messages)
+		//  we have to copy here in case messages is the actual selected messages
+		messages.first().folder.markMessagesAsNotJunk(LinkedList(messages))
 	}
 
 	fun deleteMessages(messages: Collection<IMessage>)
@@ -54,16 +57,18 @@ object Actions
 			}
 		}
 
-		folder.deleteMessages(messages)
+		//  we have to copy here in case messages is the actual selected messages
+		messages.forEach { it.disabledProperty().set(true)}
+		folder.deleteMessages(LinkedList(messages))
 	}
 
 	fun replyToMessage(message: IMessage, all: Boolean = false) = perform {
 		ComposeMessage.compose(message.account.getReplyModel(message,
-				if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY)) { it.send() }
+				if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY))
 	}
 
 	fun forwardMail(message: IMessage) = perform {
-		ComposeMessage.compose(message.account.getReplyModel(message, EmailModelType.FORWARD)) { it.send() }
+		ComposeMessage.compose(message.account.getReplyModel(message, EmailModelType.FORWARD))
 	}
 
 	fun saveAttachment(attachment: IAttachment)
@@ -73,7 +78,7 @@ object Actions
 		val f = chooser.showSaveDialog(null)
 		if (f != null)
 		{
-			perform { Files.copy(attachment.inputStream, f.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+		//	perform { Files.copy(attachment.inputStream, f.toPath(), StandardCopyOption.REPLACE_EXISTING) }
 		}
 	}
 
@@ -85,7 +90,7 @@ object Actions
 		{
 			perform {
 				attachments.forEach {
-					Files.copy(it.inputStream, Paths.get(f.absolutePath, it.fileName), StandardCopyOption.REPLACE_EXISTING)
+				//	Files.copy(it.inputStream, Paths.get(f.absolutePath, it.fileName), StandardCopyOption.REPLACE_EXISTING)
 				}
 			}
 		}

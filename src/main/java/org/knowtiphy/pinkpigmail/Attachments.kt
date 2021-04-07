@@ -27,8 +27,8 @@ class Attachments : HBox()
 				attachments.remove(attachment)
 				items.remove(item)
 			}, Strings.REMOVE_ATTACHMENT, false))
-			val showButton = button(action(Mime.glyph(attachment.mimeType, Icons.SMALL_SIZE), { Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
-					!(Mime.isSafe(attachment.mimeType) || Mime.isSafeFileEnding(attachment.fileName))))
+			val showButton = button(action(Mime.glyph(attachment.mimeType!!, Icons.SMALL_SIZE), { Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
+					!(Mime.isSafe(attachment.mimeType!!) || Mime.isSafeFileEnding(attachment.fileName))))
 
 			val box = HBox(removeButton, showButton, nameLabel)
 			box.spacing = 5.0
@@ -65,9 +65,9 @@ class Attachments : HBox()
 				val label = Label(attachment.fileName)
 
 				val openButton = button(
-						action(Mime.glyph(attachment.mimeType, Icons.SMALL_SIZE),
+						action(Mime.glyph(attachment.mimeType!!, Icons.SMALL_SIZE),
 								{ Actions.openAttachment(attachment) }, Strings.OPEN_ATTACHMENT,
-								!(Mime.isSafe(attachment.mimeType) || Mime.isSafeFileEnding(attachment.fileName))))
+								!(Mime.isSafe(attachment.mimeType!!) || Mime.isSafeFileEnding(attachment.fileName))))
 
 				val box = HBox(saveButton, openButton, label)
 				box.spacing = 5.0

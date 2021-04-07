@@ -7,4 +7,6 @@ import org.knowtiphy.pinkpigmail.model.IPart
 /**
  * @author graham
  */
-class IMAPPart(id: String, override val mimeType: String, override val content: String) : Entity(id, Vocabulary.IMAP_MESSAGE_PART), IPart
+class IMAPPart(id: String, mimeType: String, override val content: String) :
+	Entity(id, Vocabulary.IMAP_MESSAGE_PART), IPart, IHasMimeType by HasMimeType(mimeType)
+{}

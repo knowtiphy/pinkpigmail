@@ -18,8 +18,10 @@ import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.events.FolderSyncDoneEvent
+import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
 import org.knowtiphy.pinkpigmail.model.events.MessageArrivedEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
+import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.JenaUtils.P
 import org.knowtiphy.utils.JenaUtils.R
@@ -74,6 +76,12 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		}
 	}
 
+	override fun sync()
+	{
+		Globals.push(FolderSyncStartedEvent(account, this))
+		storage.sync(account.id, id)
+	}
+
 	override fun isSpecial(type : String) : Boolean
 	{
 		return account.getSpecial(type) == this
@@ -84,23 +92,32 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		eventHandlers[event.type]?.invoke(event)
 	}
 
-	override fun markMessagesAsRead(targets : Collection<IMessage>)
+	private fun markMessages(targets : Collection<IMessage>, op : String, flag : Boolean?)
 	{
-		val (eid, model) = getOp(Vocabulary.MARK_READ)
-		addHasMessage(eid, model, targets)
-		JenaUtils.addDP(model, eid, Vocabulary.HAS_FLAG, true)
+		val (eid, model) = getOp(op)
+		ids(targets).forEach { JenaUtils.addOP(model, eid, Vocabulary.HAS_MESSAGE, it) }
+		if (flag != null)
+		{
+			JenaUtils.addDP(model, eid, Vocabulary.HAS_FLAG, true)
+		}
 		storage.doOperation(model)
 	}
 
+	override fun markMessagesAsRead(targets : Collection<IMessage>)
+	{
+		markMessages(targets, Vocabulary.MARK_READ, true)
+	}
+
+	//  warning - you may have needed to copy targets in case targets is actually part of a selection model
+	//  which can change before calling this message
 	override fun markMessagesAsJunk(targets : Collection<IMessage>)
 	{
-		val ids = ids(targets)
 		if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveJunkMessagesToJunk)
 		{
-			storage.markMessagesAsJunk(account.id, id, ids, true)
-		}
-		else
+			markMessages(targets, Vocabulary.MARK_JUNK, true)
+		} else
 		{
+			val ids = ids(targets)
 			disable(targets)
 			//	TODO -- huh?
 			account.getSpecial(Vocabulary.JUNK_FOLDER).id.let {
@@ -111,22 +128,32 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 
 	override fun markMessagesAsNotJunk(targets : Collection<IMessage>)
 	{
-		storage.markMessagesAsJunk(account.id, id, ids(targets), false)
+		markMessages(targets, Vocabulary.MARK_JUNK, false)
 	}
 
+	override fun markMessagesAsAnswered(targets : Collection<IMessage>)
+	{
+		markMessages(targets, Vocabulary.MARK_ANSWERED, true)
+	}
+
+	//  warning - you may have needed to copy targets in case targets is actually part of a selection model
+	//  which can change before calling this message
 	override fun deleteMessages(targets : Collection<IMessage>)
 	{
 		disable(targets)
-		if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveDeletedMessagesToTrash)
-		{
-			val (eid, model) = getOp(Vocabulary.DELETE_MESSAGE)
-			addHasMessage(eid, model, targets)
-			storage.doOperation(model)
-		}
-		else
-		{
-			account.getSpecial(Vocabulary.TRASH_FOLDER).id.let {
-				storage.copyMessages(account.id, id, ids(targets), it, true)
+		println("deleteMessages")
+		println(targets)
+		later {
+			if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveDeletedMessagesToTrash)
+			{
+				markMessages(targets, Vocabulary.DELETE_MESSAGE, null)
+			} else
+			{
+				println("SPECIAL CASE")
+				println(targets)
+				account.getSpecial(Vocabulary.TRASH_FOLDER).id.let {
+					storage.copyMessages(account.id, id, ids(targets), it, true)
+				}
 			}
 		}
 
@@ -208,11 +235,6 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		initialize(attributes)
 	}
 
-	private fun addHasMessage(eid : String, model : Model, targets : Collection<IMessage>)
-	{
-		ids(targets).forEach { JenaUtils.addOP(model, eid, Vocabulary.HAS_MESSAGE, it) }
-	}
-
 	//	event handling code
 
 	private fun <T> map(event : StorageEvent, property : String, f : (RDFNode) -> T) : Collection<T>
@@ -241,7 +263,9 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 	private fun deleteMessageHandler(event : StorageEvent)
 	{
 		println("IN DELETE MESSAGE HANDLER")
-		map(event, Vocabulary.HAS_MESSAGE) { deleteMessage(it.toString()) }
+		//  note: there may be no deleted messages in the event since in some cases the server may
+		//  inadvertently batch deletes
+		map(event, Vocabulary.HAS_MESSAGE) { println(it); deleteMessage(it.toString()) }
 		update()
 	}
 

@@ -5,7 +5,7 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
-import org.apache.jena.query.QueryExecutionFactory
+import org.apache.jena.query.ParameterizedSparqlString
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.knowtiphy.babbage.storage.IMAP.Mime
@@ -13,7 +13,6 @@ import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.Globals
-import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IAttachment
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
@@ -28,12 +27,18 @@ import java.util.concurrent.Future
 /**
  * @author graham
  */
-class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage) : StoredPeer(id, Vocabulary.IMAP_MESSAGE, storage), IMessage
+class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage) :
+	StoredPeer(id, Vocabulary.IMAP_MESSAGE, storage), IMessage, IHasMimeType by HasMimeType()
 {
 	companion object
 	{
-		//val GET_ATTRIBUTES = "SELECT ?p ?o WHERE { <${id}> ?p ?o . }"
-	//	val GET_ATTRIBUTES : SelectBuilder = SelectBuilder().addVar("*").addWhere("?id", "?p", "?o")
+		private val GET_CONTENT = ParameterizedSparqlString(
+			"select * where { ?s <" + Vocabulary.HAS_MIME_TYPE + "> ?mimeType. ?s <" + Vocabulary.HAS_CONTENT + "> ?content}"
+		)
+
+		private val GET_MIME_TYPE = ParameterizedSparqlString(
+			"select * where { ?s <" + Vocabulary.HAS_MIME_TYPE + "> ?mimeType. }"
+		)
 	}
 
 	override val readProperty = SimpleBooleanProperty()
@@ -48,6 +53,8 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 	override val bcc : ObservableList<EmailAddress> = FXCollections.observableArrayList()
 
 	override val loadRemoteProperty = SimpleBooleanProperty(false)
+
+	//private var mimeType : String? = null
 
 	init
 	{
@@ -65,115 +72,97 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 
 	fun initialize()
 	{
-		//	build the data properties of this message
 		initialize(attributes)
-//		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-//		initialize(storage.query(GET_ATTRIBUTES.buildString()))
 	}
 
-	fun update()
-	{
-		//	build the data properties of this message
-		initialize(attributes)
-//		GET_ATTRIBUTES.setVar(Var.alloc("id"), NodeFactory.createURI(id))
-//		initialize(storage.query(GET_ATTRIBUTES.buildString()))
-	}
+	override val account : IEmailAccount get() = folder.account
 
-	override val account : IEmailAccount
-		get() = folder.account
-
+	//  start a synch of a message to make sure the server has it
 	override fun sync() : Future<*>
 	{
 		return storage.doOperation(getOp(Vocabulary.SYNC).second)
 	}
 
-	private fun ensureContentLoaded()
-	{
-		sync().get()
-	}
-
+	//  don't call this unless you have previously synched and waited on the future it returns
 	override fun getContent(allowHTML : Boolean) : IPart
 	{
-		ensureContentLoaded()
-		val context = storage.readContext
-		context.start()
-		try
-		{
-			val mimeType = JenaUtils.getS(context.model, id, Vocabulary.HAS_MIME_TYPE)
-			//  TODO this replace stuff should be done in the database
-			val content = JenaUtils.getS(context.model, id, Vocabulary.HAS_CONTENT)
-				.replace("\\\"", "\"")
-			return IMAPPart(id, mimeType, content)
-		}
-		finally
-		{
-			context.end()
-		}
+		//  TODO -- close the in mem result set?
+		GET_CONTENT.setIri("s", id)
+		val resultSet = storage.query(GET_CONTENT.toString())
+		val soln = JenaUtils.single(resultSet) { it }
+
+		//  TODO this replace stuff should be done in the database
+		val content = JenaUtils.getS(soln, "content").replace("\\\"", "\"")
+		val mimeType = JenaUtils.getS(soln, "mimeType")
+
+		return IMAPPart(id, mimeType, content)
 	}
 
+	//  don't call this unless you have previously synched and waited on the future it returns
 	override val attachments : ObservableList<IAttachment>
 		get()
 		{
-			ensureContentLoaded()
 			val result = FXCollections.observableArrayList<IAttachment>()
-			val context = storage.readContext
-			context.start()
-			try
-			{
-				val resultSet = QueryExecutionFactory.create(Fetch.attachments(id), context.model).execSelect()
-				resultSet.forEach {
-					result.add(IMAPAttachment(it.get(Fetch.VAR_ATTACHMENT_ID).asResource().toString(),
-						storage,
-						it.get(Fetch.VAR_FILE_NAME).asLiteral().toString(),
-						it.get(Fetch.VAR_MIME_TYPE).asLiteral().toString()))
-				}
-			}
-			finally
-			{
-				context.end()
-			}
+//			val context = storage.readContext
+//			context.start()
+//			try
+//			{
+//				//	TODO -- doesnt close query context
+//				val resultSet = QueryExecutionFactory.create(Fetch.attachments(id), context.model).execSelect()
+//				resultSet.forEach {
+//					result.add(
+//						IMAPAttachment(
+//							it.get(Fetch.VAR_ATTACHMENT_ID).asResource().toString(),
+//							storage,
+//							it.get(Fetch.VAR_FILE_NAME).asLiteral().toString(),
+//							it.get(Fetch.VAR_MIME_TYPE).asLiteral().toString()
+//						)
+//					)
+//				}
+//			} finally
+//			{
+//				context.end()
+//			}
 
 			return result
 		}
 
+	//  don't call this unless you have previously synched and waited on the future it returns
 	override val cidMap : Map<URL, IMAPCIDPart>
 		get()
 		{
-			ensureContentLoaded()
 			val result = HashMap<URL, IMAPCIDPart>()
-			val context = storage.readContext
-			context.start()
-			try
-			{
-				val resultSet = QueryExecutionFactory.create(Fetch.cidLocalNames(id), context.model).execSelect()
-				//  the local CID is a string not a URI -- it is unique within a message, but not across messages
-				resultSet.forEach {
-					result[URL(it.get(Fetch.VAR_LOCAL_CID_PART_ID).toString())] =
-						IMAPCIDPart(it.get(Fetch.VAR_CID_PART_ID).asResource().toString(), storage)
-				}
-			}
-			finally
-			{
-				context.end()
-			}
+//			val context = storage.readContext
+//			context.start()
+//			try
+//			{
+//				//	TODO -- doesnt close query context .
+//				val resultSet = QueryExecutionFactory.create(Fetch.cidLocalNames(id), context.model).execSelect()
+//				//  the local CID is a string not a URI -- it is unique within a message, but not across messages
+//				resultSet.forEach {
+//					result[URL(it.get(Fetch.VAR_LOCAL_CID_PART_ID).toString())] =
+//						IMAPCIDPart(it.get(Fetch.VAR_CID_PART_ID).asResource().toString(), storage)
+//				}
+//			} finally
+//			{
+//				context.end()
+//			}
 
 			return result
 		}
 
+	//  don't call this unless you have previously synched and waited on the future it returns
 	override val isHTML : Boolean
 		get()
 		{
-			ensureContentLoaded()
-			val context = storage.readContext
-			context.start()
-			try
+			if (mimeType == null)
 			{
-				return JenaUtils.getS(context.model, id, Vocabulary.HAS_MIME_TYPE) == Mime.HTML
+				GET_MIME_TYPE.setIri("s", id)
+				val resultSet = storage.query(GET_MIME_TYPE.toString())
+				mimeType = JenaUtils.single(resultSet) { JenaUtils.getS(it, "mimeType") }
 			}
-			finally
-			{
-				context.end()
-			}
+
+			return mimeType == Mime.HTML
 		}
 
 	private fun getOp(type : String) : Pair<String, Model>

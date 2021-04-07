@@ -22,7 +22,7 @@ class CustomCIDConnection(private val state: HTMLState, url: URL) : URLConnectio
         try
         {
             val part = state.message!!.cidMap[getURL()]
-            return if (part != null && Mime.isImage(part.mimeType)) part.inputStream else Icons.thePig32()
+            return if (part != null && Mime.isImage(part.mimeType!!)) part.inputStream else Icons.thePig32()
         } catch (ex: Exception)
         {
             ex.printStackTrace(System.err)

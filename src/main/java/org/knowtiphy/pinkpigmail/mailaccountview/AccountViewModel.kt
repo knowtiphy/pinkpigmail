@@ -69,7 +69,7 @@ class AccountViewModel<A, C, E, P>(val account : A)
 		assert(perspective.containsKey(folder))
 		currentPerspective[folder] = persp
 		persp(folder).push(persp)
-		//  this is a little clumsy .. but in the event way of things its necessary ...
+		//  this is a little clumsy .. but in the event way of things its necessary ... maybe its not clumsy?
 		pushChanges(folder)
 	}
 

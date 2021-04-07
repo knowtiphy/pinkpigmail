@@ -12,7 +12,6 @@ import javafx.scene.paint.Color
 import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.Actions
 import org.knowtiphy.pinkpigmail.Globals
-import org.knowtiphy.pinkpigmail.PinkPigMail
 import org.knowtiphy.pinkpigmail.cell.*
 import org.knowtiphy.pinkpigmail.cell.DateCell
 import org.knowtiphy.pinkpigmail.model.EmailAddress
@@ -113,6 +112,7 @@ class MailAccountView(account : IEmailAccount) : VBox()
 			}
 		}
 
+		model.folderSelectedEvent.subscribe { it.sync() }
 		val compose = action(Icons.compose(), { Actions.composeMail(model.account) }, Strings.COMPOSE, false)
 
 		val toolBar = maxSizeable(HBox(button(compose)))

@@ -7,7 +7,6 @@ import javafx.scene.control.Label
 import javafx.scene.control.SplitMenuButton
 import javafx.scene.control.TextArea
 import javafx.scene.control.TextField
-import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
@@ -15,6 +14,8 @@ import javafx.scene.layout.VBox
 import javafx.scene.web.HTMLEditor
 import javafx.stage.FileChooser
 import javafx.stage.Stage
+import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.ModelFactory
 import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.resources.Icons
@@ -32,7 +33,7 @@ object ComposeMessage
 {
 	private val INSETS = Insets(2.0, 2.0, 2.0, 3.0)
 
-	private fun header(model: IMessageModel): GridPane
+	private fun header(model : IMessageModel) : GridPane
 	{
 		val subject = Label(Strings.SUBJECT)
 		val cc = Label(Strings.CC)
@@ -58,43 +59,25 @@ object ComposeMessage
 		return grid
 	}
 
-	private fun attachFile(stage: Stage): List<File>?
+	private fun attachFile(stage : Stage) : List<File>?
 	{
 		val fileChooser = FileChooser()
 		fileChooser.title = Strings.ATTACH_FILE
 		return fileChooser.showOpenMultipleDialog(stage)
 	}
 
-	private fun foo(ke: KeyEvent)
+	fun compose(model : IMessageModel)
 	{
-		println("START EVENT")
-		println(ke.character)
-		println(ke.code)
-		println(ke.isAltDown)
-		println(ke.isControlDown)
-		println(ke.isMetaDown)
-		println(ke.isShiftDown)
-		println(ke.isShiftDown)
-		println(ke.text)
-		println(ke.source)
-		println(ke.target)
-		println(ke.eventType)
-		println("END EVENT")
-	}
-
-	fun compose(model: IMessageModel, send: (IMessageModel) -> Unit)
-	{
-		val stage = UIUtils.getStage(Strings.FROM + ": " + model.mailAccount.emailAddressProperty.get(), 800.0, 700.0)
-
 		val toolBar = HBox(1.0)
 		val root = VBox(5.0, header(model), toolBar)
 
 		val scene = UIUtils.getScene(root)
 
-		var sendAction: ((ActionEvent) -> Unit)? = null
-		var saveAction: ((ActionEvent) -> Unit)? = null
-		var editor: Node? = null
+		var sendAction : ((ActionEvent) -> Unit)? = null
+		var saveAction : ((ActionEvent) -> Unit)? = null
+		var editor : Node? = null
 
+		val stage = UIUtils.getStage(Strings.FROM + ": " + model.account.emailAddressProperty.get(), 800.0, 700.0)
 		when (model.sendMode)
 		{
 			EmailSendMode.TEXT ->
@@ -103,47 +86,15 @@ object ComposeMessage
 				editor.text = model.contentProperty().get()
 				model.contentProperty().bind(editor.textProperty())
 				editor.positionCaret(1)
-				sendAction = { stage.close(); send.invoke(model) }
+				sendAction = { stage.close(); model.send() }
 				saveAction = { perform { model.saveToDrafts() } }
 			}
 			EmailSendMode.HTML ->
 			{
 				editor = HTMLEditor()
 				editor.htmlText = model.contentProperty().get()
-//				//	TODO -- initialize the insert cursor at the beginning?
-//				val filter = EventHandler<KeyEvent>() {
-//					println("Filtering out event " + it.eventType)
-//					println("ORIGINAL")
-//					foo(it)
-//					println(":" + it.character + ":")
-//					println(":" + it.character.length + ":")
-//					println(":" + (it.character.equals(KeyCode.CONTROL.toString())) + ":")
-//
-//					//	TODO -- why does this not detect ctrl-m????
-//					if (it.character == "m" && it.isControlDown)
-//					{
-//						println("CCCC CONSUMING CTRL-M")
-//						//xxx = it
-//						//it.consume()
-//					}
-//
-//					if (it.code == KeyCode.ENTER)
-//					{
-//						println("TRANSFORMING")
-//						//  pretty sure this is the right key-event
-////                        val ke = KeyEvent(it.source, it.target, it.eventType,
-////                                xxx!!.character, xxx!!.text, xxx!!.code, xxx!!.isShiftDown, xxx!!.isControlDown,
-////								xxx!!.isAltDown, xxx!!.isMetaDown);
-//						val ke = KeyEvent(it.source, it.target, it.eventType,
-//								"m", "m", null, false, true, false, false)
-//						foo(ke)
-//						later { root.scene.processKeyEvent(ke) }
-//					}
-//				}
-//
-//				root.addEventFilter(KeyEvent.KEY_TYPED, filter)
-//
-				sendAction = { stage.close(); model.contentProperty().set(editor.htmlText); send.invoke(model) }
+
+				sendAction = { stage.close(); model.contentProperty().set(editor.htmlText); model.send() }
 				saveAction = { model.contentProperty().set(editor.htmlText); model.saveToDrafts() }
 			}
 		}
@@ -179,4 +130,61 @@ object ComposeMessage
 		stage.scene = scene
 		stage.show()
 	}
+
+	private fun createRDFModel(sModel : IMessageModel) : Model
+	{
+		val model = ModelFactory.createDefaultModel();
+
+		return model
+	}
 }
+
+//				//	TODO -- initialize the insert cursor at the beginning?
+//				val filter = EventHandler<KeyEvent>() {
+//					println("Filtering out event " + it.eventType)
+//					println("ORIGINAL")
+//					foo(it)
+//					println(":" + it.character + ":")
+//					println(":" + it.character.length + ":")
+//					println(":" + (it.character.equals(KeyCode.CONTROL.toString())) + ":")
+//
+//					//	TODO -- why does this not detect ctrl-m????
+//					if (it.character == "m" && it.isControlDown)
+//					{
+//						println("CCCC CONSUMING CTRL-M")
+//						//xxx = it
+//						//it.consume()
+//					}
+//
+//					if (it.code == KeyCode.ENTER)
+//					{
+//						println("TRANSFORMING")
+//						//  pretty sure this is the right key-event
+////                        val ke = KeyEvent(it.source, it.target, it.eventType,
+////                                xxx!!.character, xxx!!.text, xxx!!.code, xxx!!.isShiftDown, xxx!!.isControlDown,
+////								xxx!!.isAltDown, xxx!!.isMetaDown);
+//						val ke = KeyEvent(it.source, it.target, it.eventType,
+//								"m", "m", null, false, true, false, false)
+//						foo(ke)
+//						later { root.scene.processKeyEvent(ke) }
+//					}
+//				}
+//
+//				root.addEventFilter(KeyEvent.KEY_TYPED, filter)
+//
+//private fun foo(ke: KeyEvent)
+//{
+//	println("START EVENT")
+//	println(ke.character)
+//	println(ke.code)
+//	println(ke.isAltDown)
+//	println(ke.isControlDown)
+//	println(ke.isMetaDown)
+//	println(ke.isShiftDown)
+//	println(ke.isShiftDown)
+//	println(ke.text)
+//	println(ke.source)
+//	println(ke.target)
+//	println(ke.eventType)
+//	println("END EVENT")
+//}

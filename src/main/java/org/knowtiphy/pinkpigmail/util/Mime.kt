@@ -3,7 +3,6 @@ package org.knowtiphy.pinkpigmail.util
 import javafx.scene.Node
 import org.controlsfx.glyphfont.FontAwesome
 import org.knowtiphy.pinkpigmail.resources.Icons.style
-import java.util.*
 
 /**
  *
@@ -11,6 +10,12 @@ import java.util.*
  */
 object Mime
 {
+	const val TEXT = "text/*"
+	const val HTML = "text/html"
+	const val PLAIN = "text/plain"
+	const val MULTIPART = "multipart/*"
+	const val MULTIPART_ALTERNATIVE = "multipart/alternative"
+
 	private val GLYPHS: MutableMap<String, (Int) -> Node> = HashMap()
 
 	//	TODO -- move all the sizing into the CSS

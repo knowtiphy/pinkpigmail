@@ -13,11 +13,11 @@ import java.nio.file.Path
  */
 interface IAttachment : IEntity, Comparable<IAttachment>
 {
-    val inputStream: InputStream
+  //  val inputStream: InputStream
 
     val location: Path
 
-    val mimeType: String
+    val mimeType: String?
 
     val fileName: String
 

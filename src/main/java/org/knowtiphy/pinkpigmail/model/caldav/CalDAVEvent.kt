@@ -11,11 +11,14 @@ class CalDAVEvent(id : String, storage : IStorage) : StoredPeer(id, Vocabulary.C
 {
 	companion object
 	{
-		val GET_ATTRIBUTES = ParameterizedSparqlString("select * where { ?s <" + Vocabulary.HAS_SUMMARY + "> ?o}")
-
 		//  can an event have a start but no end? or any combination thereof?
-		val GET_DATES =
-			ParameterizedSparqlString("select * where { ?id <" + Vocabulary.HAS_DATE_START + "> ?start. ?id <" + Vocabulary.HAS_DATE_END + "> ?end }")
+		// @formatter:off
+		val GET_DATES = ParameterizedSparqlString(
+			"select * " + "where { " +
+					"?id <" + Vocabulary.HAS_DATE_START + "> ?start. " +
+					"?id <" + Vocabulary.HAS_DATE_END + "> ?end }"
+			// @formatter:on
+		)
 	}
 
 	val event = Entry<String>("")
@@ -28,10 +31,9 @@ class CalDAVEvent(id : String, storage : IStorage) : StoredPeer(id, Vocabulary.C
 	fun initialize()
 	{
 		//	set the simple data properties of this message
-		GET_ATTRIBUTES.setIri("s", id)
-		initialize(storage.query(GET_ATTRIBUTES.toString()), Vocabulary.HAS_SUMMARY)
+		initialize(attributes)
 
-		//  have to handle start and end dates specially because calendarfx can't handle setting the end date before the start date
+		//  handle start and end dates specially because Calendarfx can't handle setting the end date before the start date
 		GET_DATES.setIri("id", id)
 		storage.query(GET_DATES.toString()).forEach { event.setInterval(getDate(it, "start"), getDate(it, "end")) }
 	}

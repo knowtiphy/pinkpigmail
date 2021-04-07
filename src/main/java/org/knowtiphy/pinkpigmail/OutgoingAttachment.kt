@@ -13,8 +13,8 @@ import java.nio.file.Path
 class OutgoingAttachment(override val location : Path) : IAttachment
 {
 
-	override val inputStream : InputStream
-		@Throws(IOException::class) get() = FileInputStream(location.toFile())
+//	override val inputStream : InputStream
+//		@Throws(IOException::class) get() = FileInputStream(location.toFile())
 
 	override val mimeType : String
 		get() = ""

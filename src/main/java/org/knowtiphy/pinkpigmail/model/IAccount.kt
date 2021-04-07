@@ -18,5 +18,5 @@ interface IAccount : IPeer
 
 	val events: EventSource<UIEvent>
 
-	val nickNameProperty: StringProperty
+	val nickNameProperty : StringProperty
 }

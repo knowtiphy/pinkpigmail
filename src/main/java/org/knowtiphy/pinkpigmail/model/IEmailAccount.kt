@@ -4,6 +4,7 @@ import javafx.beans.property.ReadOnlyBooleanProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
 import javafx.collections.ObservableMap
+import org.apache.jena.rdf.model.Model
 
 /**
  * @author graham

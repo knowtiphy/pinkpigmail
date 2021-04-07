@@ -157,25 +157,24 @@ class PinkPigMail : Application()
 		val model = Globals.uiSettings.save(accounts.values)
 		RDFDataMgr.write(
 			Files.newOutputStream(
-				Paths.get(
-					OS.getSettingsDir(PinkPigMail::class.java).toString(), Globals.UI_FILE
-				)
+				Paths.get(OS.getSettingsDir(PinkPigMail::class.java).toString(), Globals.UI_FILE)
 			), model, Lang.TURTLE
 		)
 	}
 
 	//  shutdown sequence
 	//	done on a thread, so the window closes immediately while shutdown goes ahead in the background
-	private fun shutdown(@Suppress("UNUSED_PARAMETER") event : WindowEvent)
+	@Suppress("UNUSED_PARAMETER")
+	private fun shutdown(event : WindowEvent)
 	{
 		Thread.setDefaultUncaughtExceptionHandler { _, _ -> }
 		Thread {
+			doAndIgnore(storage::close)
 			doAndIgnore { Globals.timerService.shutdown() }
 			doAndIgnore { Globals.timerService.awaitTermination(10, TimeUnit.SECONDS) }
 			doAndIgnore { Globals.service.shutdown() }
 			doAndIgnore { Globals.service.awaitTermination(10, TimeUnit.SECONDS) }
 			doAndIgnore(::saveUISettings)
-			doAndIgnore(storage::close)
 			exitProcess(1)
 		}.start()
 	}
@@ -240,7 +239,6 @@ class PinkPigMail : Application()
 		//  stage shown event
 		later { Globals.fromModel.push(StageShowEvent()) }
 
-		//	show the UI
 		stage.show()
 	}
 }

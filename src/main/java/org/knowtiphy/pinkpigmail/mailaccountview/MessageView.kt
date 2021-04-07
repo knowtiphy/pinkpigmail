@@ -138,6 +138,7 @@ class MessageView(messageStream : EventStream<IMessage>) : GridPane()
 		}
 
 		viewer.webView.engine.documentProperty().addListener(listener)
+		//  it is assumed that when a message arrives on the stream it has already been synched
 		messageStream.subscribe { newMessage(it) }
 	}
 
@@ -176,7 +177,7 @@ class MessageView(messageStream : EventStream<IMessage>) : GridPane()
 					message.account.trustedSenders).or(Bindings.isEmpty(externalRefs))))
 
 		val part = message.getContent(account.allowHTMLProperty.get())
-		viewer.loadContent(part.content, part.mimeType)
+		viewer.loadContent(part.content, part.mimeType!!)
 	}
 }
 

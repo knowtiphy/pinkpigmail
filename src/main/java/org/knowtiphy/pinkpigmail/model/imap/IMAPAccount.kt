@@ -28,6 +28,7 @@ import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.utils.JenaUtils.P
+import org.knowtiphy.utils.JenaUtils.getS
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ExecutionException
@@ -35,7 +36,8 @@ import java.util.concurrent.ExecutionException
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: IStorage) : EmailAccount(accountId, Vocabulary.IMAP_ACCOUNT, storage), IEmailAccount
+class IMAPAccount(accountId: String, storage: IStorage) :
+	EmailAccount(accountId, Vocabulary.IMAP_ACCOUNT, storage), IEmailAccount
 {
 	companion object
 	{
@@ -114,9 +116,8 @@ class IMAPAccount(accountId: String, storage: IStorage) : EmailAccount(accountId
 	{
 		//	sync all relevant folders -- for the moment just the inbox
 		//	for the moment assume the folder structure hasn't changed so just sync the messages
-		val inbox = specials[Vocabulary.INBOX_FOLDER]!!
-		Globals.push(FolderSyncStartedEvent(this, folders[inbox]!!))
-		storage.sync(id, inbox)
+		val inbox = getSpecial(Vocabulary.INBOX_FOLDER)
+		inbox.sync()
 	}
 
 	fun getSpecial(type: String): IMAPFolder
@@ -297,7 +298,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : EmailAccount(accountId
 //	old way of computing specials -- may go back to it
 //		GET_SPECIAL_IDS.setVar(Var.alloc("aid"), NodeFactory.createURI(id))
 //		val query = QueryFactory.create(GET_SPECIAL_IDS.buildString())
-//		QueryExecutionFactory.create(query, model).execSelect().forEachRemaining {
+//		QueryExecutionFactory.create(query, model).exeSelect().forEachRemaining {
 //			specials[it.get("type").toString()] = it.get("fid").toString()
 //		}
 
@@ -362,7 +363,7 @@ class IMAPAccount(accountId: String, storage: IStorage) : EmailAccount(accountId
 //            context.start();
 //            try
 //            {
-//                var resultSet = QueryExecutionFactory.create(Queries.fetchOutboxMessage(messageName), context.getModel()).execSelect();
+//                var resultSet = QueryExecutionFactory.create(Queries.fetchOutboxMessage(messageName), context.getModel()).exeSelect();
 //                QuerySolution s = resultSet.next();
 //                recipients = s.getAttr(VAR_TO).asLiteral().getString();
 //                ccs = s.getAttr("cc") == null ? null : s.getAttr("cc").asLiteral().getString();
