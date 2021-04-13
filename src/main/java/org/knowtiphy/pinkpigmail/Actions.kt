@@ -22,23 +22,16 @@ import java.util.*
  */
 object Actions
 {
-	fun composeMail(account: IEmailAccount) = perform {
-		ComposeMessage.compose(account.getSendModel(EmailModelType.COMPOSE))
-	}
+	fun composeMail(account : IEmailAccount) = ComposeMessage.compose(account.getSendModel(EmailModelType.COMPOSE))
 
-	fun markMessagesAsJunk(messages: Collection<IMessage>)
+	fun markMessagesAsJunk(messages : Collection<IMessage>)
 	{
-		//  we have to copy here in case messages is the actual selected messages
-		messages.first().folder.markMessagesAsJunk(LinkedList(messages))
+		messages.first().folder.markMessagesAsJunk(messages)
 	}
 
-	fun markMessagesAsNotJunk(messages: Collection<IMessage>)
-	{
-		//  we have to copy here in case messages is the actual selected messages
-		messages.first().folder.markMessagesAsNotJunk(LinkedList(messages))
-	}
+	fun markMessagesAsNotJunk(messages : Collection<IMessage>) = messages.first().folder.markMessagesAsNotJunk(messages)
 
-	fun deleteMessages(messages: Collection<IMessage>)
+	fun deleteMessages(messages : Collection<IMessage>)
 	{
 		val folder = messages.first().folder
 		if (folder.isSpecial(Vocabulary.TRASH_FOLDER))
@@ -57,32 +50,31 @@ object Actions
 			}
 		}
 
-		//  we have to copy here in case messages is the actual selected messages
-		messages.forEach { it.disabledProperty().set(true)}
-		folder.deleteMessages(LinkedList(messages))
+		messages.forEach { it.disabledProperty.set(true) }
+		folder.deleteMessages(messages)
 	}
 
-	fun replyToMessage(message: IMessage, all: Boolean = false) = perform {
-		ComposeMessage.compose(message.account.getReplyModel(message,
-				if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY))
-	}
+	fun replyToMessage(message : IMessage, all : Boolean = false) = ComposeMessage.compose(
+		message.account.getReplyModel(
+			message, if (all) EmailModelType.REPLY_ALL else EmailModelType.REPLY
+		)
+	)
 
-	fun forwardMail(message: IMessage) = perform {
+	fun forwardMail(message : IMessage) =
 		ComposeMessage.compose(message.account.getReplyModel(message, EmailModelType.FORWARD))
-	}
 
-	fun saveAttachment(attachment: IAttachment)
+	fun saveAttachment(attachment : IAttachment)
 	{
 		val chooser = FileChooser()
 		chooser.initialFileName = attachment.fileName
 		val f = chooser.showSaveDialog(null)
 		if (f != null)
 		{
-		//	perform { Files.copy(attachment.inputStream, f.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+			//	perform { Files.copy(attachment.inputStream, f.toPath(), StandardCopyOption.REPLACE_EXISTING) }
 		}
 	}
 
-	fun saveAttachments(attachments: List<IAttachment>)
+	fun saveAttachments(attachments : List<IAttachment>)
 	{
 		val chooser = DirectoryChooser()
 		val f = chooser.showDialog(null)
@@ -90,13 +82,13 @@ object Actions
 		{
 			perform {
 				attachments.forEach {
-				//	Files.copy(it.inputStream, Paths.get(f.absolutePath, it.fileName), StandardCopyOption.REPLACE_EXISTING)
+					//	Files.copy(it.inputStream, Paths.get(f.absolutePath, it.fileName), StandardCopyOption.REPLACE_EXISTING)
 				}
 			}
 		}
 	}
 
-	fun openAttachment(attachment: IAttachment) = perform { attachment.open() }
+	fun openAttachment(attachment : IAttachment) = attachment.open()
 }
 
 //fun configureAccount(mailAccount: IEmailAccount)

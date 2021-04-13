@@ -54,7 +54,7 @@ class IMAPMessageModel(
 		val operation = ModelFactory.createDefaultModel()
 
 		JenaUtils.addType(operation, opId, Vocabulary.SEND_MESSAGE)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)
+		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.uri)
 		JenaUtils.addOP(operation, opId, Vocabulary.HAS_MESSAGE, mid)
 
 		JenaUtils.addDPN(operation, mid, Vocabulary.HAS_SUBJECT, subjectProperty().get())

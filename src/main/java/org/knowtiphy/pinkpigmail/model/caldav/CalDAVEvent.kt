@@ -2,12 +2,15 @@ package org.knowtiphy.pinkpigmail.model.caldav
 
 import com.calendarfx.model.Entry
 import org.apache.jena.query.ParameterizedSparqlString
+import org.apache.jena.query.QuerySolution
+import org.apache.jena.query.ResultSet
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.owlorm.javafx.IStoredPeer
 import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.utils.JenaUtils.getDate
 
-class CalDAVEvent(id : String, storage : IStorage) : StoredPeer(id, Vocabulary.CALDAV_EVENT, storage)
+class CalDAVEvent(uri : String, storage : IStorage) : StoredPeer(uri, Vocabulary.CALDAV_EVENT, storage)
 {
 	companion object
 	{
@@ -34,7 +37,7 @@ class CalDAVEvent(id : String, storage : IStorage) : StoredPeer(id, Vocabulary.C
 		initialize(attributes)
 
 		//  handle start and end dates specially because Calendarfx can't handle setting the end date before the start date
-		GET_DATES.setIri("id", id)
+		GET_DATES.setIri("id", uri)
 		storage.query(GET_DATES.toString()).forEach { event.setInterval(getDate(it, "start"), getDate(it, "end")) }
 	}
 }

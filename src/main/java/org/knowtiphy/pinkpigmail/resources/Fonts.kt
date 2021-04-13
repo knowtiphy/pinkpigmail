@@ -1,5 +1,6 @@
 package org.knowtiphy.pinkpigmail.resources
 
+import javafx.scene.text.Font
 import org.controlsfx.glyphfont.GlyphFont
 import org.controlsfx.glyphfont.GlyphFontRegistry
 
@@ -7,12 +8,9 @@ import org.controlsfx.glyphfont.GlyphFontRegistry
  *
  * @author graham
  */
-interface Fonts
+object Fonts
 {
-    companion object
-    {
-        private val FONT_AWESOME = GlyphFontRegistry.font("FontAwesome") as GlyphFont
+	val FONT_AWESOME : GlyphFont = GlyphFontRegistry.font("FontAwesome")
 
-        val FONT = FONT_AWESOME
-    }
+	val DEFAULT_FONT : Font = Font.getDefault()
 }

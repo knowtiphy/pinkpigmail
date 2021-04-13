@@ -78,7 +78,7 @@ class UISettings
 
 	private fun saveFolderSettings(model: Model, ui: Resource, names: NameSource, folder: IFolder)
 	{
-		val fSettings = folderSettings[folder.id]
+		val fSettings = folderSettings[folder.uri]
 		if (fSettings != null)
 		{
 			val pref = model.createResource(names.get())
@@ -88,7 +88,7 @@ class UISettings
 				model.createProperty(RDF.type.toString()),
 				model.createResource(UIVocabulary.FOLDER_PREFERENCE)
 			)
-			model.add(pref, model.createProperty(UIVocabulary.FOR), model.createTypedLiteral(folder.id))
+			model.add(pref, model.createProperty(UIVocabulary.FOR), model.createTypedLiteral(folder.uri))
 			fSettings.save(model, pref)
 		}
 	}
@@ -118,7 +118,7 @@ class UISettings
 
 		JenaUtils.addOP(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS, uaid)
 		JenaUtils.addType(model, uaid, UIVocabulary.UI_ACCOUNT_SETTING)
-		JenaUtils.addOP(model, uaid, Vocabulary.HAS_ACCOUNT, account.id)
+		JenaUtils.addOP(model, uaid, Vocabulary.HAS_ACCOUNT, account.uri)
 		getAccountSettings(account).save(model, uaid)
 
 //        if (account is IEmailAccount)
@@ -131,19 +131,19 @@ class UISettings
 
 	fun getAccountSettings(account: IAccount): UIAccountSettings
 	{
-		if (!accountSettings.containsKey(account.id))
-			accountSettings[account.id] = UIAccountSettings()
-		return accountSettings.get(account.id)!!
+		if (!accountSettings.containsKey(account.uri))
+			accountSettings[account.uri] = UIAccountSettings()
+		return accountSettings[account.uri]!!
 	}
 
 	fun getFolderSettings(folder: IFolder): UIFolderSettings
 	{
-		val fSettings = folderSettings[folder.id]
+		val fSettings = folderSettings[folder.uri]
 		if (fSettings == null)
 		{
-			folderSettings[folder.id] = UIFolderSettings()
+			folderSettings[folder.uri] = UIFolderSettings()
 		}
-		return folderSettings[folder.id]!!
+		return folderSettings[folder.uri]!!
 	}
 
 //	//  accounts view width I guess

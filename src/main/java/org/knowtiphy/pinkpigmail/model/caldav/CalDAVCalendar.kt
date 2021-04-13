@@ -54,23 +54,23 @@ class CalDAVCalendar(id : String, val account : CalDAVAccount, storage : IStorag
 	{
 		if (event.isEntryAdded)
 		{
-			println("ADDING AN EVENT")
-			println(event.entry.userObject == FROM_BABBAGE)
-			println(event.entry.userObject == null)
+//			println("ADDING AN EVENT")
+//			println(event.entry.userObject == FROM_BABBAGE)
+//			println(event.entry.userObject == null)
 		}
 
-		when (event.eventType)
-		{
-			CalendarEvent.CALENDAR_CHANGED -> println("CALENDAR_CHANGED")
-			CalendarEvent.ENTRY_CHANGED -> println("ENTRY CHANGED")
-			CalendarEvent.ENTRY_CALENDAR_CHANGED -> println("ENTRY_CALENDAR_CHANGED")
-			CalendarEvent.ENTRY_FULL_DAY_CHANGED -> println("ENTRY_FULL_DAY_CHANGED")
-			CalendarEvent.ENTRY_RECURRENCE_RULE_CHANGED -> println("ENTRY_RECURRENCE_RULE_CHANGED")
-			CalendarEvent.ENTRY_USER_OBJECT_CHANGED -> println("ENTRY_USER_OBJECT_CHANGED")
-			CalendarEvent.ENTRY_LOCATION_CHANGED -> println("ENTRY_LOCATION_CHANGED")
-			CalendarEvent.ENTRY_INTERVAL_CHANGED -> println("ENTRY_INTERVAL_CHANGED")
-			else -> println("SOMETHING ELSE " + event.eventType)
-		}
+//		when (event.eventType)
+//		{
+//			CalendarEvent.CALENDAR_CHANGED -> println("CALENDAR_CHANGED")
+//			CalendarEvent.ENTRY_CHANGED -> println("ENTRY CHANGED")
+//			CalendarEvent.ENTRY_CALENDAR_CHANGED -> println("ENTRY_CALENDAR_CHANGED")
+//			CalendarEvent.ENTRY_FULL_DAY_CHANGED -> println("ENTRY_FULL_DAY_CHANGED")
+//			CalendarEvent.ENTRY_RECURRENCE_RULE_CHANGED -> println("ENTRY_RECURRENCE_RULE_CHANGED")
+//			CalendarEvent.ENTRY_USER_OBJECT_CHANGED -> println("ENTRY_USER_OBJECT_CHANGED")
+//			CalendarEvent.ENTRY_LOCATION_CHANGED -> println("ENTRY_LOCATION_CHANGED")
+//			CalendarEvent.ENTRY_INTERVAL_CHANGED -> println("ENTRY_INTERVAL_CHANGED")
+//			else -> println("SOMETHING ELSE " + event.eventType)
+//		}
 	}
 
 	private fun addEvent(eid : String)

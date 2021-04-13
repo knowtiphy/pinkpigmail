@@ -18,8 +18,7 @@ import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.events.FolderSyncEvent
-import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
+import org.knowtiphy.pinkpigmail.model.events.FinishSyncEvent
 import org.knowtiphy.pinkpigmail.model.events.MessageArrivedEvent
 import org.knowtiphy.pinkpigmail.model.events.StageShowEvent
 import org.knowtiphy.pinkpigmail.resources.Beep
@@ -42,6 +41,8 @@ import org.reactfx.EventStreams
 import tornadofx.SmartResize
 import tornadofx.remainingWidth
 import java.time.ZonedDateTime
+import java.util.*
+import kotlin.collections.HashMap
 
 //TODO -- review for this
 //All the adapters and combinators above subscribe lazily to their inputs - they don't subscribe
@@ -78,9 +79,16 @@ class MailAccountView(account : IEmailAccount) : VBox()
 		//  show the folders in the list on the left
 		account.folders.values.forEach { addFolder(it) }
 
-		//	beep on new mail in the inbox
+		//	beep on new mail arriving in the inbox
 		account.events.filter(MessageArrivedEvent::class.java).cast(MessageArrivedEvent::class.java)
 			.filter { it.folder.isSpecial(Vocabulary.INBOX_FOLDER) }.subscribe { Beep.beep() }
+
+		//	beep on a sync that reveals new mail in the inbox
+//		account.events.filter(FinishSyncEvent::class.java).cast(FinishSyncEvent::class.java)
+//			.filter { it.synced is IFolder }.map { it.synced as IFolder }
+//			.filter { it.isSpecial(Vocabulary.INBOX_FOLDER) }.subscribe {
+//				if (it.unreadMessageCountProperty.get() > 0) Beep.beep()
+//			}
 
 		//	the voodoo below is to work around a JavaFX bug in setting split pane positions
 		//	start with the folderList having a max width that is small
@@ -136,21 +144,23 @@ class MailAccountView(account : IEmailAccount) : VBox()
 
 		//  TODO -- should the events actually post on the folder event stream not the account one?
 		//  the replacer listens on a stream of true/false -- true means the account is synching
-		val syncView = LazyReplacer(folder.account.events.filter(FolderSyncEvent::class.java).map {
-			it.folder == folder && it::class.java.isAssignableFrom(FolderSyncStartedEvent::class.java)
-		})
+//		val syncView = LazyReplacer(folder.account.events.filter(FolderSyncEvent::class.java).map {
+//			it.folder == folder && it::class.java.isAssignableFrom(FolderSyncStartedEvent::class.java)
+//		})
 
-		val syncSpinner = WaitSpinner(Strings.SYNCHRONIZING_Folder)
+		//val syncSpinner = WaitSpinner(Strings.SYNCHRONIZING_Folder)
 
-		with(syncView) {
-			addNode(true, syncSpinner)
-			addNode(false) {
-				later { model.changePerspective(folder, VERTICAL_P) }
-				folderView(folder)
-			}
-		}
+//		with(syncView) {
+//			//addNode(true, syncSpinner)
+//			addNode(false) {
+//				later { model.changePerspective(folder, VERTICAL_P) }
+//				folderView(folder)
+//			}
+//		}
 
+		val syncView = folderView(folder)
 		folderViews.addNode(folder, syncView)
+		later { model.changePerspective(folder, VERTICAL_P) }
 	}
 
 	//  create a view of one folder -- a flipper of different folder perspectives
@@ -207,6 +217,19 @@ class MailAccountView(account : IEmailAccount) : VBox()
 
 	//  TODO -- FIX THE BUTTONS WHERE WE CHANGE SELECTION!!!!
 
+	private fun selectNext(folder : IFolder) : LinkedList<IMessage>
+	{
+		val messages = LinkedList(MIS(folder))
+		if (messages.size == 1)
+		{
+			//  not sure why I can't clear and then select next ..
+			//  TODO -- what happens if we select off the end? seems to just be ignored
+			M(folder).clearAndSelect(M(folder).selectedIndices.first() + 1)
+		}
+
+		return messages
+	}
+
 	private fun toolBar(folder : IFolder, orientation : Orientation, name : String) : HBox
 	{
 		val layout = action(Icons.switchHorizontal(), {
@@ -216,16 +239,17 @@ class MailAccountView(account : IEmailAccount) : VBox()
 		val reply = action(Icons.reply(), { Actions.replyToMessage(MI(folder)) }, Strings.REPLY)
 		val replyAll = action(Icons.replyAll(), { Actions.replyToMessage(MI(folder), true) }, Strings.REPLY_ALL)
 		val forward = action(Icons.forward(), { Actions.forwardMail(MI(folder)) }, Strings.FORWARD)
-		val delete = action(Icons.delete(), {
-			//  move to the next message -- by default JavaFX goes back to the previous message
-			Actions.deleteMessages(MIS(folder))
-			M(folder).selectNext()
-		}, Strings.DELETE)
+		val delete = action(Icons.delete(), { Actions.deleteMessages(selectNext(folder)) }, Strings.DELETE)
 		val markJunk = action(Icons.markJunk(), {
 			//  move to the next message -- by default JavaFX goes back to the previous message
-			Actions.markMessagesAsJunk(MIS(folder))
-			M(folder).selectNext()
+			Actions.markMessagesAsJunk(
+				if (folder.isSpecial(Vocabulary.JUNK_FOLDER) || !folder.account.isMoveJunkMessagesToJunk) MIS(folder) else selectNext(
+					folder
+				)
+			)
 		}, Strings.MARK_JUNK)
+
+		//  not junk? move the messages back to inbox?
 		val markNotJunk =
 			action(Icons.markNotJunk(), { Actions.markMessagesAsNotJunk(MIS(folder)) }, Strings.MARK_NOT_JUNK)
 
@@ -336,31 +360,45 @@ class MailAccountView(account : IEmailAccount) : VBox()
 		//	if the selection on the folder changes to a new single message display  it
 		model.newM(folder, persp).subscribe {
 
-			//	mark the message as read (don't mark junk as read)
-			if (it.account.isDisplayMessageMarksAsRead && !it.folder.isSpecial(Vocabulary.JUNK_FOLDER))
+			if (it == null)
 			{
-				it.folder.markMessagesAsRead(listOf(it))
-			}
+				println("CLEAR")
+			} else
+			{
+				println("SELECTION CHANGE ")
+				println(it.account)
+				println(it.account.isDisplayMessageMarksAsRead)
+				println(it.folder)
+				println(it.folder.isSpecial(Vocabulary.JUNK_FOLDER))
+				println("SELECTION CHANGE ")
+				//	mark the message as read (don't mark junk as read)
+				if (it.account.isDisplayMessageMarksAsRead && !it.folder.isSpecial(Vocabulary.JUNK_FOLDER))
+				{
+					it.folder.markMessagesAsRead(listOf(it))
+				}
 
-			messageFlipper.flip(loadSpinner)
+				messageFlipper.flip(loadSpinner)
 
-			//  start a sync on the message
-			val loadMessage = it.sync()
+				//  start a sync on the message
+				val loadMessage = it.sync()
 
-			//  start load aheads around the message
-			folder.syncAhead(model.selectionModels[folder]!!.selectedIndices,
-				(model.selectionModels[folder]!! as TableView.TableViewSelectionModel).tableView.items)
+				//  start load aheads around the message
+				folder.syncAhead(
+					model.selectionModels[folder]!!.selectedIndices,
+					(model.selectionModels[folder]!! as TableView.TableViewSelectionModel).tableView.items
+				)
 
-			//  start content loading -- single threaded executor and the use of later should ensure good
-			//  behaviour if we push a new message while doing this
-			//  TODO - do I believe the above comment? Probably ...
-			Globals.htmlState.message = it
-			Globals.service.submit {
-				loadMessage.get()
-				//  when the load has finished switch to the message stream view
-				later {
-					messageStream.push(it)
-					messageFlipper.flip(messageView)
+				//  start content loading -- single threaded executor and the use of later should ensure good
+				//  behaviour if we push a new message while doing this
+				//  TODO - do I believe the above comment? Probably ...
+				Globals.htmlState.message = it
+				Globals.service.submit {
+					loadMessage.get()
+					//  when the load has finished switch to the message stream view
+					later {
+						messageStream.push(it)
+						messageFlipper.flip(messageView)
+					}
 				}
 			}
 		}

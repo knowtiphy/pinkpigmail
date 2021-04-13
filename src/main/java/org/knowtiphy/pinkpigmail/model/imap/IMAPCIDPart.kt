@@ -33,7 +33,7 @@ class IMAPCIDPart(id : String, val storage : IStorage) : Entity(id, Vocabulary.I
 		{
 			if (mt == null)
 			{
-				GET_MIME_TYPE.setIri("s", id)
+				GET_MIME_TYPE.setIri("s", uri)
 				val resultSet = storage.query(GET_MIME_TYPE.toString())
 				mt = JenaUtils.single(resultSet) { JenaUtils.getS(it, "mimeType") }
 			}
@@ -46,7 +46,7 @@ class IMAPCIDPart(id : String, val storage : IStorage) : Entity(id, Vocabulary.I
 		get()
 		{
 			println("CALLONG CID IStream")
-			GET_CONTENT.setIri("s", id)
+			GET_CONTENT.setIri("s", uri)
 			val resultSet = storage.query(GET_CONTENT.toString())
 			return ByteArrayInputStream(JenaUtils.single(resultSet) { JenaUtils.getBA(it, "content") })
 		}

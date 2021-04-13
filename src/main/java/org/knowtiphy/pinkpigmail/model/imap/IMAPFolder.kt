@@ -13,26 +13,26 @@ import org.apache.jena.rdf.model.RDFNode
 import org.apache.jena.sparql.core.Var
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
-import org.knowtiphy.pinkpigmail.model.events.FolderSyncDoneEvent
-import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
+import org.knowtiphy.pinkpigmail.model.Synchable
+import org.knowtiphy.pinkpigmail.model.events.FinishSyncEvent
 import org.knowtiphy.pinkpigmail.model.events.MessageArrivedEvent
+import org.knowtiphy.pinkpigmail.model.events.StartSyncEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
-import org.knowtiphy.pinkpigmail.util.ui.UIUtils.later
 import org.knowtiphy.utils.JenaUtils
 import org.knowtiphy.utils.JenaUtils.P
 import org.knowtiphy.utils.JenaUtils.R
 import java.util.*
+import java.util.concurrent.Future
 import kotlin.collections.ArrayList
 
 /**
  * @author graham
  */
 class IMAPFolder(folderId : String, override val account : IMAPAccount, storage : IStorage) :
-	StoredPeer(folderId, Vocabulary.IMAP_FOLDER, storage), IFolder
+	Synchable(folderId, Vocabulary.IMAP_FOLDER, storage), IFolder
 {
 	companion object
 	{
@@ -64,7 +64,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 
 	fun initialize()
 	{
-		val uriID = NodeFactory.createURI(id)
+		val uriID = NodeFactory.createURI(uri)
 
 		//	initialize the data properties of this folder
 		initialize(attributes)
@@ -76,10 +76,10 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		}
 	}
 
-	override fun sync()
+	override fun sync() : Future<*>
 	{
-		Globals.push(FolderSyncStartedEvent(account, this))
-		storage.sync(account.id, id)
+		Globals.push(StartSyncEvent(this, account))
+		return super.sync()
 	}
 
 	override fun isSpecial(type : String) : Boolean
@@ -110,6 +110,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 
 	//  warning - you may have needed to copy targets in case targets is actually part of a selection model
 	//  which can change before calling this message
+	//  I dont think you should have to do that unless you are doing a later {} call here
 	override fun markMessagesAsJunk(targets : Collection<IMessage>)
 	{
 		if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveJunkMessagesToJunk)
@@ -117,11 +118,10 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 			markMessages(targets, Vocabulary.MARK_JUNK, true)
 		} else
 		{
-			val ids = ids(targets)
-			disable(targets)
+			//disable(targets)
 			//	TODO -- huh?
-			account.getSpecial(Vocabulary.JUNK_FOLDER).id.let {
-				storage.moveMessagesToJunk(account.id, id, ids, it, true)
+			account.getSpecial(Vocabulary.JUNK_FOLDER).uri.let {
+				storage.moveMessagesToJunk(account.uri, uri, ids(targets), it, true)
 			}
 		}
 	}
@@ -136,35 +136,28 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		markMessages(targets, Vocabulary.MARK_ANSWERED, true)
 	}
 
-	//  warning - you may have needed to copy targets in case targets is actually part of a selection model
-	//  which can change before calling this message
 	override fun deleteMessages(targets : Collection<IMessage>)
 	{
-		disable(targets)
-		println("deleteMessages")
+		//disable(targets)
+		println("deleteMessages -- START")
 		println(targets)
-		later {
-			if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveDeletedMessagesToTrash)
-			{
-				markMessages(targets, Vocabulary.DELETE_MESSAGE, null)
-			} else
-			{
-				println("SPECIAL CASE")
-				println(targets)
-				account.getSpecial(Vocabulary.TRASH_FOLDER).id.let {
-					storage.copyMessages(account.id, id, ids(targets), it, true)
-				}
-			}
+		if (isSpecial(Vocabulary.JUNK_FOLDER) || !account.isMoveDeletedMessagesToTrash)
+		{
+			markMessages(targets, Vocabulary.DELETE_MESSAGE, null)
+		} else
+		{
+			println("deleteMessages --- SPECIAL CASE")
+			println(targets)
+			val trash = account.getSpecial(Vocabulary.TRASH_FOLDER)
+			storage.copyMessages(account.uri, uri, ids(targets), trash.uri, true)
 		}
-
-		println("DONE DELETE")
 	}
 
-	//  NOT REALLY SURE THIS FUNCTION SHOULD BE HERE
-	//  allows each folder to choose a loadAhead strategy;
-	//  load ahead radially 3 messages either side of the selection
-	//	this needs to be improved for when we have multiple selections
-	//  Note: selection model indices are on the sorted list, not the folder.messages
+//  NOT REALLY SURE THIS FUNCTION SHOULD BE HERE
+//  allows each folder to choose a loadAhead strategy;
+//  load ahead radially 3 messages either side of the selection
+//	this needs to be improved for when we have multiple selections
+//  Note: selection model indices are on the sorted list, not the folder.messages
 
 	override fun syncAhead(indices : List<Int>, targets : Collection<IMessage>)
 	{
@@ -210,15 +203,15 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		return "IMAPFolder(nameProperty=" + nameProperty.get() + ")"
 	}
 
-	//	private methods
+//	private methods
 
-	private fun ids(targets : Collection<IMessage>) = targets.map { it.id }
+	private fun ids(targets : Collection<IMessage>) = targets.map { it.uri }
 
 	private fun addMessage(message : IMAPMessage)
 	{
-		assert(!messageMap.containsKey(message.id))
+		assert(!messageMap.containsKey(message.uri))
 		message.initialize()
-		messageMap[message.id] = message
+		messageMap[message.uri] = message
 		messages.add(message)
 	}
 
@@ -235,7 +228,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		initialize(attributes)
 	}
 
-	//	event handling code
+//	event handling code
 
 	private fun <T> map(event : StorageEvent, property : String, f : (RDFNode) -> T) : Collection<T>
 	{
@@ -275,13 +268,13 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		update()
 		//	initialize the messages in this folder
 
-		MESSAGE_IDS_IN_FOLDER.setVar(Var.alloc("id"), NodeFactory.createURI(id))
+		MESSAGE_IDS_IN_FOLDER.setVar(Var.alloc("id"), NodeFactory.createURI(uri))
 		val stored = HashSet<String>()
 		storage.query(MESSAGE_IDS_IN_FOLDER.buildString()).forEach { stored.add(it.get("mid").toString()) }
 
 		val toDelete = HashSet<IMessage>()
 		messages.forEach {
-			if (!stored.contains(it.id)) toDelete.add(it)
+			if (!stored.contains(it.uri)) toDelete.add(it)
 		}
 
 		messages.removeAll(toDelete)
@@ -290,7 +283,7 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 			if (!messageMap.containsKey(it)) addMessage(IMAPMessage(it, this, storage))
 		}
 
-		Globals.push(FolderSyncDoneEvent(account, this))
+		Globals.push(FinishSyncEvent(this,account))
 	}
 
 	private fun getOp(type : String) : Pair<String, Model>
@@ -298,8 +291,8 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 		val opId = Globals.nameSource.get()
 		val operation = ModelFactory.createDefaultModel()
 		JenaUtils.addType(operation, opId, type)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_FOLDER, id)
+		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.uri)
+		JenaUtils.addOP(operation, opId, Vocabulary.HAS_FOLDER, uri)
 		return Pair(opId, operation)
 	}
 }

@@ -14,9 +14,10 @@ import org.knowtiphy.babbage.storage.Vocabulary
 import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.BaseAccount
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
-import org.knowtiphy.pinkpigmail.model.events.AccountSyncDoneEvent
-import org.knowtiphy.pinkpigmail.model.events.AccountSyncStartedEvent
+import org.knowtiphy.pinkpigmail.model.events.FinishSyncEvent
+import org.knowtiphy.pinkpigmail.model.events.StartSyncEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
+import java.util.concurrent.Future
 
 /**
  * @author graham
@@ -57,14 +58,14 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 		//	initialize the attributes of this account
 		initialize(attributes)
 
-		GET_CALENDAR_IDS.setVar(Var.alloc("id"), NodeFactory.createURI(id))
+		GET_CALENDAR_IDS.setVar(Var.alloc("id"), NodeFactory.createURI(uri))
 		storage.query(GET_CALENDAR_IDS.buildString()).forEach { addCalendar(it.getResource("cid").toString()) }
 	}
 
-	override fun sync()
+	override fun sync() : Future<*>
 	{
-		Globals.push(AccountSyncStartedEvent(this))
-		storage.sync(id)
+		Globals.push(StartSyncEvent(this, this))
+		return super.sync()
 	}
 
 	@Suppress("UNUSED_PARAMETER")
@@ -76,7 +77,7 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 			third.forEach(::updateCalendar)
 		}
 
-		Globals.push(AccountSyncDoneEvent(this))
+		Globals.push(FinishSyncEvent(this, this))
 	}
 
 	override fun getDefaultCalendar() : Calendar?

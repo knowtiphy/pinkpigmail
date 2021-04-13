@@ -22,6 +22,6 @@ class OutgoingAttachment(override val location : Path) : IAttachment
 	override val fileName : String
 		get() = location.toString()
 
-	override fun getId() : String = ""
+	override fun getUri() : String = ""
 	override fun getType() : String = ""
 }

@@ -1,17 +1,15 @@
 package org.knowtiphy.pinkpigmail.model
 
-import javafx.beans.property.BooleanProperty
 import javafx.beans.property.IntegerProperty
-import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import javafx.collections.ObservableMap
-import org.knowtiphy.owlorm.javafx.IPeer
+import org.knowtiphy.owlorm.javafx.IEntity
+import java.util.concurrent.Future
 
 /**
  * @author graham
  */
-interface IFolder : IPeer
+interface IFolder : IEntity
 {
 	val account : IEmailAccount
 
@@ -35,7 +33,7 @@ interface IFolder : IPeer
 
 	fun markMessagesAsAnswered(targets : Collection<IMessage>)
 
-	fun sync()
+	fun sync() : Future<*>
 
 	fun syncAhead(indices : List<Int>, targets : Collection<IMessage>)
 }

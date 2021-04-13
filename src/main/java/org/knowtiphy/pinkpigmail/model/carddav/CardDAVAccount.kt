@@ -47,12 +47,6 @@ class CardDAVAccount(id: String, storage: IStorage) : BaseAccount(id, Vocabulary
 		TODO("Not yet implemented")
 	}
 
-	override fun sync()
-	{
-		TODO("Not yet implemented")
-	}
-
-
 //	override fun save(model: Model, name: Resource)
 //	{
 //		model.add(name, model.createProperty(RDF.type.toString()), model.createResource(Vocabulary.CALDAV_ACCOUNT))

@@ -6,12 +6,9 @@ import javafx.beans.property.SimpleStringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.apache.jena.query.ParameterizedSparqlString
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
 import org.knowtiphy.babbage.storage.IMAP.Mime
 import org.knowtiphy.babbage.storage.IStorage
 import org.knowtiphy.babbage.storage.Vocabulary
-import org.knowtiphy.owlorm.javafx.StoredPeer
 import org.knowtiphy.pinkpigmail.Globals
 import org.knowtiphy.pinkpigmail.model.EmailAddress
 import org.knowtiphy.pinkpigmail.model.IAttachment
@@ -19,6 +16,8 @@ import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.IPart
+import org.knowtiphy.pinkpigmail.model.Synchable
+import org.knowtiphy.pinkpigmail.model.events.StartSyncEvent
 import org.knowtiphy.utils.JenaUtils
 import java.net.URL
 import java.time.ZonedDateTime
@@ -28,7 +27,7 @@ import java.util.concurrent.Future
  * @author graham
  */
 class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage) :
-	StoredPeer(id, Vocabulary.IMAP_MESSAGE, storage), IMessage, IHasMimeType by HasMimeType()
+	Synchable(id, Vocabulary.IMAP_MESSAGE, storage), IMessage, IHasMimeType by HasMimeType()
 {
 	companion object
 	{
@@ -51,10 +50,9 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 	override val to : ObservableList<EmailAddress> = FXCollections.observableArrayList()
 	override val cc : ObservableList<EmailAddress> = FXCollections.observableArrayList()
 	override val bcc : ObservableList<EmailAddress> = FXCollections.observableArrayList()
+	override val disabledProperty = SimpleBooleanProperty(false)
 
 	override val loadRemoteProperty = SimpleBooleanProperty(false)
-
-	//private var mimeType : String? = null
 
 	init
 	{
@@ -80,14 +78,15 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 	//  start a synch of a message to make sure the server has it
 	override fun sync() : Future<*>
 	{
-		return storage.doOperation(getOp(Vocabulary.SYNC).second)
+		Globals.push(StartSyncEvent(this, account))
+		return super.sync()
 	}
 
 	//  don't call this unless you have previously synched and waited on the future it returns
 	override fun getContent(allowHTML : Boolean) : IPart
 	{
 		//  TODO -- close the in mem result set?
-		GET_CONTENT.setIri("s", id)
+		GET_CONTENT.setIri("s", uri)
 		val resultSet = storage.query(GET_CONTENT.toString())
 		val soln = JenaUtils.single(resultSet) { it }
 
@@ -95,7 +94,7 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 		val content = JenaUtils.getS(soln, "content").replace("\\\"", "\"")
 		val mimeType = JenaUtils.getS(soln, "mimeType")
 
-		return IMAPPart(id, mimeType, content)
+		return IMAPPart(uri, mimeType, content)
 	}
 
 	//  don't call this unless you have previously synched and waited on the future it returns
@@ -157,22 +156,23 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 		{
 			if (mimeType == null)
 			{
-				GET_MIME_TYPE.setIri("s", id)
+				GET_MIME_TYPE.setIri("s", uri)
 				val resultSet = storage.query(GET_MIME_TYPE.toString())
 				mimeType = JenaUtils.single(resultSet) { JenaUtils.getS(it, "mimeType") }
 			}
 
 			return mimeType == Mime.HTML
 		}
-
-	private fun getOp(type : String) : Pair<String, Model>
-	{
-		val opId = Globals.nameSource.get()
-		val operation = ModelFactory.createDefaultModel()
-		JenaUtils.addType(operation, opId, type)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_FOLDER, folder.id)
-		JenaUtils.addOP(operation, opId, Vocabulary.HAS_MESSAGE, id)
-		return Pair(opId, operation)
-	}
 }
+
+//
+//private fun getOp(type : String) : Pair<String, Model>
+//{
+//	val opId = Globals.nameSource.get()
+//	val operation = ModelFactory.createDefaultModel()
+//	JenaUtils.addType(operation, opId, type)
+//	JenaUtils.addOP(operation, opId, Vocabulary.HAS_ACCOUNT, account.id)
+//	JenaUtils.addOP(operation, opId, Vocabulary.HAS_FOLDER, folder.id)
+//	JenaUtils.addOP(operation, opId, Vocabulary.HAS_MESSAGE, id)
+//	return Pair(opId, operation)
+//}

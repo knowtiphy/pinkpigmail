@@ -6,7 +6,7 @@ import org.knowtiphy.pinkpigmail.model.events.UIEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.reactfx.EventSource
 
-open class BaseAccount(val accountId: String, type : String, storage: IStorage) : StoredPeer(accountId, type, storage)
+open class BaseAccount(val accountId: String, type : String, storage: IStorage) : Synchable(accountId, type, storage)
 {
 	val fromStorage = EventSource<StorageEvent>()
 

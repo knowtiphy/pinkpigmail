@@ -4,7 +4,7 @@ import javafx.beans.property.BooleanProperty
 import javafx.beans.property.ObjectProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.ObservableList
-import org.knowtiphy.owlorm.javafx.IPeer
+import org.knowtiphy.owlorm.javafx.IEntity
 import org.knowtiphy.pinkpigmail.model.imap.IMAPCIDPart
 import java.net.URL
 import java.time.ZonedDateTime
@@ -13,41 +13,43 @@ import java.util.concurrent.Future
 /**
  * @author graham
  */
-interface IMessage : IPeer
+interface IMessage : IEntity
 {
-    val account: IEmailAccount
+	val account : IEmailAccount
 
-    val folder: IFolder
+	val folder : IFolder
 
-    val from: ObservableList<EmailAddress>
+	val from : ObservableList<EmailAddress>
 
-    val to: ObservableList<EmailAddress>
+	val to : ObservableList<EmailAddress>
 
-    val cc: ObservableList<EmailAddress>
+	val cc : ObservableList<EmailAddress>
 
-    val bcc: ObservableList<EmailAddress>
+	val bcc : ObservableList<EmailAddress>
 
-    val attachments: ObservableList<IAttachment>
+	val attachments : ObservableList<IAttachment>
 
-    val isHTML: Boolean
+	val isHTML : Boolean
 
-    val cidMap: Map<URL, IMAPCIDPart>
+	val cidMap : Map<URL, IMAPCIDPart>
 
-    val readProperty: BooleanProperty
+	val readProperty : BooleanProperty
 
-    val answeredProperty: BooleanProperty
+	val answeredProperty : BooleanProperty
 
-    val junkProperty: BooleanProperty
+	val junkProperty : BooleanProperty
 
-    val subjectProperty: StringProperty
+	val subjectProperty : StringProperty
 
-    val sentOnProperty: ObjectProperty<ZonedDateTime>
+	val sentOnProperty : ObjectProperty<ZonedDateTime>
 
-    val receivedOnProperty: ObjectProperty<ZonedDateTime>
+	val receivedOnProperty : ObjectProperty<ZonedDateTime>
 
-    val loadRemoteProperty: BooleanProperty
+	val loadRemoteProperty : BooleanProperty
 
-    fun sync() : Future<*>
+	val disabledProperty : BooleanProperty
 
-    fun getContent(allowHTML: Boolean): IPart
+	fun sync() : Future<*>
+
+	fun getContent(allowHTML : Boolean) : IPart
 }

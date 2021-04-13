@@ -24,41 +24,39 @@ import org.knowtiphy.pinkpigmail.model.IEmailAccount
 import org.knowtiphy.pinkpigmail.model.IFolder
 import org.knowtiphy.pinkpigmail.model.IMessage
 import org.knowtiphy.pinkpigmail.model.IMessageModel
-import org.knowtiphy.pinkpigmail.model.events.FolderSyncStartedEvent
+import org.knowtiphy.pinkpigmail.model.events.StartSyncEvent
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
 import org.knowtiphy.pinkpigmail.resources.Strings
 import org.knowtiphy.utils.JenaUtils.P
-import org.knowtiphy.utils.JenaUtils.getS
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.Future
 
 /**
  * @author graham
  */
-class IMAPAccount(accountId: String, storage: IStorage) :
-	EmailAccount(accountId, Vocabulary.IMAP_ACCOUNT, storage), IEmailAccount
+class IMAPAccount(accountId : String, storage : IStorage) : EmailAccount(accountId, Vocabulary.IMAP_ACCOUNT, storage),
+	IEmailAccount
 {
 	companion object
 	{
-		val GET_FOLDER_IDS: SelectBuilder = SelectBuilder()
-			.addVar("*")
-			.addWhere("?aid", "<${Vocabulary.CONTAINS}>", "?fid")
-			.addWhere("?fid", "<${RDF.type}>", "<${Vocabulary.IMAP_FOLDER}>")
+		val GET_FOLDER_IDS : SelectBuilder =
+			SelectBuilder().addVar("*").addWhere("?aid", "<${Vocabulary.CONTAINS}>", "?fid")
+				.addWhere("?fid", "<${RDF.type}>", "<${Vocabulary.IMAP_FOLDER}>")
 
-		val GET_SPECIAL_IDS: SelectBuilder = SelectBuilder()
-			.addVar("*")
-			.addWhere("?aid", "<${Vocabulary.HAS_SPECIAL}>", "?fid")
-			.addWhere("?fid", "<${RDF.type}>", "?type")
-			.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.IMAP_FOLDER}>")
-			.addFilter("?type != <${Vocabulary.IMAP_FOLDER}>")
+		val GET_SPECIAL_IDS : SelectBuilder =
+			SelectBuilder().addVar("*").addWhere("?aid", "<${Vocabulary.HAS_SPECIAL}>", "?fid")
+				.addWhere("?fid", "<${RDF.type}>", "?type")
+				.addWhere("?type", "<${RDFS.subClassOf}>", "<${Vocabulary.IMAP_FOLDER}>")
+				.addFilter("?type != <${Vocabulary.IMAP_FOLDER}>")
 	}
 
 	override val nickNameProperty = SimpleStringProperty()
 	override val allowHTMLProperty = SimpleBooleanProperty(true)
-	override val folders: ObservableMap<String, IFolder> = FXCollections.observableHashMap()
-	override val trustedContentProviders: ObservableList<String> = FXCollections.observableArrayList()
-	override val trustedSenders: ObservableList<EmailAddress> = FXCollections.observableArrayList()
+	override val folders : ObservableMap<String, IFolder> = FXCollections.observableHashMap()
+	override val trustedContentProviders : ObservableList<String> = FXCollections.observableArrayList()
+	override val trustedSenders : ObservableList<EmailAddress> = FXCollections.observableArrayList()
 	override val serverNameProperty = SimpleStringProperty()
 	override val emailAddressProperty = SimpleStringProperty()
 
@@ -66,7 +64,7 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 	private val replyMode = EmailReplyMode.MATCH
 	private val sendMode = EmailSendMode.TEXT
 
-	private val specials: ObservableMap<String, String> = FXCollections.observableHashMap<String, String>()
+	private val specials : ObservableMap<String, String> = FXCollections.observableHashMap<String, String>()
 
 	private val setting = AccountSettings()
 
@@ -79,9 +77,8 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 		declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
 		declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
 
-		emailAddressProperty.addListener { _: ObservableValue<out String?>, _: String?, newValue: String? ->
-			if (nickNameProperty.get() == null)
-				nickNameProperty.set(newValue)
+		emailAddressProperty.addListener { _ : ObservableValue<out String?>, _ : String?, newValue : String? ->
+			if (nickNameProperty.get() == null) nickNameProperty.set(newValue)
 		}
 
 		eventHandlers[Vocabulary.FOLDER_SYNCED] = ::folderBasedEvent
@@ -92,9 +89,7 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 
 	override fun initialize()
 	{
-		storage.sync(id)
-
-		val aidR = NodeFactory.createURI(id)
+		val aidR = NodeFactory.createURI(uri)
 
 		//	initialize the attributes of this account
 		initialize(attributes)
@@ -112,106 +107,110 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 		}
 	}
 
-	override fun sync()
+	override fun sync() : Future<*>
 	{
+		Globals.push(StartSyncEvent(this, this))
 		//	sync all relevant folders -- for the moment just the inbox
 		//	for the moment assume the folder structure hasn't changed so just sync the messages
 		val inbox = getSpecial(Vocabulary.INBOX_FOLDER)
-		inbox.sync()
+		return inbox.sync()
 	}
 
-	fun getSpecial(type: String): IMAPFolder
+	fun getSpecial(type : String) : IMAPFolder
 	{
 		return folders[specials[type]!!] as IMAPFolder
 	}
 
-	private fun folderBasedEvent(event: StorageEvent)
+	private fun folderBasedEvent(event : StorageEvent)
 	{
 		event.model.listObjectsOfProperty(P(event.model, Vocabulary.HAS_FOLDER)).forEach {
 			(folders[it.toString()] as IMAPFolder).handleEvent(event)
 		}
 	}
 
-	private fun addFolder(fid: String)
+	private fun addFolder(fid : String)
 	{
 		assert(!folders.contains(fid)) { fid }
 		val folder = IMAPFolder(fid, this, storage)
 		folder.initialize()
-		folders[folder.id] = folder
+		folders[folder.uri] = folder
 	}
 
-	override val isMoveDeletedMessagesToTrash: Boolean
+	override val isMoveDeletedMessagesToTrash : Boolean
 		get()
 		{
 			return setting.isMoveDeletedMessagesToTrash
 		}
 
-	override val isMoveJunkMessagesToJunk: Boolean
+	override val isMoveJunkMessagesToJunk : Boolean
 		get()
 		{
 			return setting.isMoveJunkMessagesToJunk
 		}
 
-	override val isCopySentMessagesToSent: Boolean
+	override val isCopySentMessagesToSent : Boolean
 		get()
 		{
 			return setting.isCopySentMessagesToSent
 		}
 
-	override val isDisplayMessageMarksAsRead: Boolean
+	override val isDisplayMessageMarksAsRead : Boolean
 		get()
 		{
 			return setting.isDisplayMessageMarksAsRead
 		}
 
-	override fun trustSender(addresses: Collection<EmailAddress>)
+	override fun trustSender(addresses : Collection<EmailAddress>)
 	{
 		trustedSenders.addAll(addresses)
 		super.trustSender(addresses)
 	}
 
-	override fun unTrustSender(addresses: Collection<EmailAddress>)
+	override fun unTrustSender(addresses : Collection<EmailAddress>)
 	{
 		trustedSenders.removeAll(addresses)
 		super.unTrustSender(addresses)
 	}
 
-	override fun isTrustedSender(addresses: Collection<EmailAddress>): Boolean
+	override fun isTrustedSender(addresses : Collection<EmailAddress>) : Boolean
 	{
 		return trustedSenders.containsAll(addresses)
 	}
 
-	override fun trustProvider(url: String)
+	override fun trustProvider(url : String)
 	{
 		trustedContentProviders.add(url)
 		super.trustProvider(url)
 	}
 
-	override fun unTrustProvider(url: String)
+	override fun unTrustProvider(url : String)
 	{
 		trustedContentProviders.remove(url)
 		super.unTrustProvider(url)
 	}
 
-	override fun isTrustedProvider(url: String): Boolean
+	override fun isTrustedProvider(url : String) : Boolean
 	{
 		return trustedContentProviders.contains(url)
 	}
 
-	override fun getSendModel(modelType: EmailModelType): IMessageModel
+	override fun getSendModel(modelType : EmailModelType) : IMessageModel
 	{
 		return IMAPMessageModel(
-			storage, this, getSpecial(Vocabulary.SENT_FOLDER),
-			null, sendMode, null, null, null
+			storage, this, getSpecial(Vocabulary.SENT_FOLDER), null, sendMode, null, null, null
 		)
 	}
 
 	@Throws(StorageException::class, ExecutionException::class, InterruptedException::class)
-	override fun getReplyModel(message: IMessage, modelType: EmailModelType): IMessageModel
+	override fun getReplyModel(message : IMessage, modelType : EmailModelType) : IMessageModel
 	{
 		val sendMode = sendMode(message, modelType)
 		return IMAPMessageModel(
-			storage, this, getSpecial(Vocabulary.SENT_FOLDER), message, sendMode,
+			storage,
+			this,
+			getSpecial(Vocabulary.SENT_FOLDER),
+			message,
+			sendMode,
 			(if (modelType == EmailModelType.FORWARD) Strings.FWD else Strings.RE) + message.subjectProperty.get(),
 			if (modelType == EmailModelType.FORWARD) null else EmailAddress.format(this, message.from),
 			quote(message, sendMode)
@@ -219,7 +218,7 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 	}
 
 	@Throws(StorageException::class)
-	private fun quote(message: IMessage, sendMode: EmailSendMode): String
+	private fun quote(message : IMessage, sendMode : EmailSendMode) : String
 	{
 		val builder = StringBuilder()
 		if (sendMode == EmailSendMode.HTML)
@@ -270,7 +269,7 @@ class IMAPAccount(accountId: String, storage: IStorage) :
 	}
 
 	@Throws(ExecutionException::class, InterruptedException::class, StorageException::class)
-	private fun sendMode(message: IMessage, modelType: EmailModelType): EmailSendMode
+	private fun sendMode(message : IMessage, modelType : EmailModelType) : EmailSendMode
 	{
 		return when (modelType)
 		{

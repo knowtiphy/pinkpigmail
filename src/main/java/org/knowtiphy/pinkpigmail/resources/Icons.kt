@@ -17,12 +17,12 @@ object Icons
 	const val SMALL_SIZE = 8
 
 	//  cache the pigs
-	private val cachedPig32 = Icons::class.java.getResource("/cubed_piggy-32.png").readBytes()
-	private val cachedPig128 = Icons::class.java.getResource("/cubed_piggy-128.png").readBytes()
+	private val cachedPig32 = Icons::class.java.getResource("/cubed_piggy-32.png")!!.readBytes()
+	private val cachedPig128 = Icons::class.java.getResource("/cubed_piggy-128.png")!!.readBytes()
 
 	fun style(glyph: FontAwesome.Glyph, styleClass: String = STD_ICON_STYLE_CLASS): Glyph
 	{
-		val result = Fonts.FONT.create(glyph)
+		val result = Fonts.FONT_AWESOME.create(glyph)
 //		result.styleClass.remove("label");
 		result.styleClass.add(styleClass)
 		return result
@@ -53,6 +53,7 @@ object Icons
 	fun unread(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.CIRCLE, styleClass).size(8.0)
 	fun answered(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.REPLY, styleClass).size(8.0)
 	fun deleted(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.CLOSE, styleClass).size(8.0)
+	fun refresh(styleClass: String = SMALL_ICON_STYLE_CLASS): Glyph = style(FontAwesome.Glyph.REFRESH, styleClass).size(8.0)
 
 	fun thePig128(): InputStream = ByteArrayInputStream(cachedPig128)
 	fun thePig32(): InputStream = ByteArrayInputStream(cachedPig32)
