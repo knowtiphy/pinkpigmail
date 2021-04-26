@@ -13,7 +13,7 @@ class CardDAVGroup(id: String, storage: IStorage) : StoredPeer(id, Vocabulary.CA
 
 	init
 	{
-		declareU(Vocabulary.HAS_NAME, nameProperty)
+		addUpdater(Vocabulary.HAS_NAME, nameProperty)
 //		declareOU(Vocabulary.HAS_CARD, cards)
 //		declareD(Vocabulary.HAS_CARD, cards)
 	}

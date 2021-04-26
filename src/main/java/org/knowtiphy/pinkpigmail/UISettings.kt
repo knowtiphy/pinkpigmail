@@ -48,8 +48,8 @@ class UISettings
 				return settings
 			}
 
-			settings.widthProperty.set(JenaUtils.getOD(model, uid, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH))
-			settings.heightProperty.set(JenaUtils.getOD(model, uid, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT))
+			settings.widthProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_WIDTH, DEFAULT_WIDTH))
+			settings.heightProperty.set(JenaUtils.getD(model, uid, UIVocabulary.HAS_HEIGHT, DEFAULT_HEIGHT))
 
 			JenaUtils.listObjectsOfProperty(model, uid, UIVocabulary.HAS_ACCOUNT_SETTINGS).forEach {
 				val uaid = it.toString()

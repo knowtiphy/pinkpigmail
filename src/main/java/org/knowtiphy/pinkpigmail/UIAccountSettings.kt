@@ -20,6 +20,6 @@ class UIAccountSettings
 
 	fun read(model: Model, uaid: String)
 	{
-		verticalPos.set(JenaUtils.getOD(model, uaid, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_DIVIDER_POSITION))
+		verticalPos.set(JenaUtils.getD(model, uaid, UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_DIVIDER_POSITION))
 	}
 }

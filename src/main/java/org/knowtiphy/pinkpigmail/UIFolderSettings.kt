@@ -39,8 +39,8 @@ class UIFolderSettings(val viewType: String = DEFAULT_VIEW,
         fun read(model: Model, pref: Resource): UIFolderSettings
         {
             val viewType = DEFAULT_VIEW//JenaUtils.getI(JenaUtils.listObjectsOfPropertyU(model, pref.toString(), UIVocabulary.HAS_VIEW_TYPE));
-            val hPos = makeDivider(JenaUtils.getOD(model, pref.toString(), UIVocabulary.HAS_HORIZONTAL_POSITION, DEFAULT_HORIZONTAL_POSITION))
-            val vPos = makeDivider(JenaUtils.getOD(model, pref.toString(), UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_POSITION))
+            val hPos = makeDivider(JenaUtils.getD(model, pref.toString(), UIVocabulary.HAS_HORIZONTAL_POSITION, DEFAULT_HORIZONTAL_POSITION))
+            val vPos = makeDivider(JenaUtils.getD(model, pref.toString(), UIVocabulary.HAS_VERTICAL_POSITION, DEFAULT_VERTICAL_POSITION))
             return UIFolderSettings(viewType, hPos, vPos)
         }
     }

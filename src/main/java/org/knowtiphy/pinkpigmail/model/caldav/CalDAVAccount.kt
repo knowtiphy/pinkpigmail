@@ -44,11 +44,11 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 
 	init
 	{
-		declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
-		declareU(Vocabulary.HAS_SERVER_HEADER, serverHeaderProperty)
-		declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
-		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
-		declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
+		addUpdater(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
+		addUpdater(Vocabulary.HAS_SERVER_HEADER, serverHeaderProperty)
+		addUpdater(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
+		addUpdater(Vocabulary.HAS_NICK_NAME, nickNameProperty)
+		addUpdater(Vocabulary.HAS_PASSWORD, passwordProperty)
 
 		eventHandlers[Vocabulary.ACCOUNT_SYNCED] = ::synced
 	}
@@ -86,8 +86,8 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 		println(calendars)
 		for (cal in calendars.values)
 		{
-			if(cal.calendar.name == "Calendar")
-				return cal.calendar
+			if(cal.name == "Calendar")
+				return cal
 		}
 		return null
 	}
@@ -102,11 +102,11 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 
 		//  TODO -- this is a little crappy since we create the inbox and then say nah!
 		//  TODO -- what are these wierd ass inbox and outbox calendars
-		if (calendar.calendar.name != "Outbox" && calendar.calendar.name != "Inbox")
+		if (calendar.name != "Outbox" && calendar.name != "Inbox")
 		{
 			calendars[cid] = calendar
 			println("ADDING CAL TO SOURCE")
-			source.calendars.add(calendar.calendar)
+			source.calendars.add(calendar)
 			println(source.calendars)
 		}
 	}
@@ -117,7 +117,7 @@ class CalDAVAccount(id : String, storage : IStorage) : BaseAccount(id, Vocabular
 		//  TODO -- do we need to any more than this?
 		assert(calendars.containsKey(cid)) { calendars }
 		val calendar = calendars.remove(cid)
-		source.calendars.remove(calendar!!.calendar)
+		source.calendars.remove(calendar!!)
 	}
 
 	private fun updateCalendar(cid : String)

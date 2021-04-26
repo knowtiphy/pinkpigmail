@@ -52,9 +52,9 @@ class IMAPFolder(folderId : String, override val account : IMAPAccount, storage 
 
 	init
 	{
-		declareU(Vocabulary.HAS_MESSAGE_COUNT, messageCountProperty)
-		declareU(Vocabulary.HAS_UNREAD_MESSAGE_COUNT, unreadMessageCountProperty)
-		declareU(Vocabulary.HAS_NAME, nameProperty)
+		addUpdater(Vocabulary.HAS_MESSAGE_COUNT, messageCountProperty)
+		addUpdater(Vocabulary.HAS_UNREAD_MESSAGE_COUNT, unreadMessageCountProperty)
+		addUpdater(Vocabulary.HAS_NAME, nameProperty)
 
 		eventHandlers[Vocabulary.FOLDER_SYNCED] = ::folderSyncHandler
 		eventHandlers[Vocabulary.MESSAGE_FLAGS_CHANGED] = ::flagsChangedHandler

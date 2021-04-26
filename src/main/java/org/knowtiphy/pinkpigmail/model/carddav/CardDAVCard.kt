@@ -12,7 +12,7 @@ class CardDAVCard(id: String, storage: IStorage) : StoredPeer(id, Vocabulary.CAR
 
     init
     {
-        declareU(Vocabulary.HAS_NAME, hasNameProperty)
+        addUpdater(Vocabulary.HAS_NAME, hasNameProperty)
 //        declareU(Vocabulary.HAS_DATE_START, ::setStartDate)
 //        declareU(Vocabulary.HAS_DATE_END, ::setEndDate)
     }

@@ -16,7 +16,7 @@ class CardDAVAddressBook(accountId: String, storage: IStorage) : StoredPeer(acco
 
     init
     {
-        declareU(Vocabulary.HAS_NAME, nameProperty)
+        addUpdater(Vocabulary.HAS_NAME, nameProperty)
 //        declareOU(Vocabulary.CONTAINS, cards)
 //        declareD(Vocabulary.CONTAINS, cards)
 //        declareOU(Vocabulary.HAS_GROUP, groups)

@@ -14,8 +14,6 @@ import javafx.scene.layout.VBox
 import javafx.scene.web.HTMLEditor
 import javafx.stage.FileChooser
 import javafx.stage.Stage
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
 import org.knowtiphy.pinkpigmail.model.EmailSendMode
 import org.knowtiphy.pinkpigmail.model.IMessageModel
 import org.knowtiphy.pinkpigmail.resources.Icons
@@ -129,13 +127,6 @@ object ComposeMessage
 
 		stage.scene = scene
 		stage.show()
-	}
-
-	private fun createRDFModel(sModel : IMessageModel) : Model
-	{
-		val model = ModelFactory.createDefaultModel();
-
-		return model
 	}
 }
 

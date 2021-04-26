@@ -32,6 +32,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.Future
+import org.knowtiphy.utils.JenaUtils
 
 /**
  * @author graham
@@ -70,12 +71,12 @@ class IMAPAccount(accountId : String, storage : IStorage) : EmailAccount(account
 
 	init
 	{
-		declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
-		declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
-		declareU(Vocabulary.HAS_PASSWORD, password)
-		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
-		declareU(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders)
-		declareU(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		addUpdater(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
+		addUpdater(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
+		addUpdater(Vocabulary.HAS_PASSWORD, password)
+		addUpdater(Vocabulary.HAS_NICK_NAME, nickNameProperty)
+		addUpdater(Vocabulary.HAS_TRUSTED_CONTENT_PROVIDER, trustedContentProviders, JenaUtils::getS)
+		addUpdater(Vocabulary.HAS_TRUSTED_SENDER, trustedSenders, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
 
 		emailAddressProperty.addListener { _ : ObservableValue<out String?>, _ : String?, newValue : String? ->
 			if (nickNameProperty.get() == null) nickNameProperty.set(newValue)

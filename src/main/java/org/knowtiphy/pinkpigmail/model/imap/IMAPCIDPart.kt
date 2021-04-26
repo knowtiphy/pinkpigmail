@@ -34,8 +34,9 @@ class IMAPCIDPart(id : String, val storage : IStorage) : Entity(id, Vocabulary.I
 			if (mt == null)
 			{
 				GET_MIME_TYPE.setIri("s", uri)
-				val resultSet = storage.query(GET_MIME_TYPE.toString())
-				mt = JenaUtils.single(resultSet) { JenaUtils.getS(it, "mimeType") }
+				mt = JenaUtils.unique(storage.query(GET_MIME_TYPE.toString())) {
+					JenaUtils.getS(it, "mimeType")
+				}
 			}
 
 			//  TODO -- why do I need the !! here? Didn't in IMAPMessage
@@ -47,7 +48,8 @@ class IMAPCIDPart(id : String, val storage : IStorage) : Entity(id, Vocabulary.I
 		{
 			println("CALLONG CID IStream")
 			GET_CONTENT.setIri("s", uri)
-			val resultSet = storage.query(GET_CONTENT.toString())
-			return ByteArrayInputStream(JenaUtils.single(resultSet) { JenaUtils.getBA(it, "content") })
+			return ByteArrayInputStream(JenaUtils.unique(storage.query(GET_CONTENT.toString())) {
+				JenaUtils.getBA(it, "content")
+			})
 		}
 }

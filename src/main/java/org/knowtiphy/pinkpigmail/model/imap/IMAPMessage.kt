@@ -56,16 +56,16 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 
 	init
 	{
-		declareU(Vocabulary.IS_READ, readProperty)
-		declareU(Vocabulary.IS_ANSWERED, answeredProperty)
-		declareU(Vocabulary.IS_JUNK, junkProperty)
-		declareU(Vocabulary.HAS_SUBJECT, subjectProperty)
-		declareU(Vocabulary.RECEIVED_ON, receivedOnProperty)
-		declareU(Vocabulary.SENT_ON, sentOnProperty)
-		declareU(Vocabulary.FROM, from, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.TO, to, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.HAS_CC, cc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
-		declareU(Vocabulary.HAS_BCC, bcc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		addUpdater(Vocabulary.IS_READ, readProperty)
+		addUpdater(Vocabulary.IS_ANSWERED, answeredProperty)
+		addUpdater(Vocabulary.IS_JUNK, junkProperty)
+		addUpdater(Vocabulary.HAS_SUBJECT, subjectProperty)
+		addUpdater(Vocabulary.RECEIVED_ON, receivedOnProperty)
+		addUpdater(Vocabulary.SENT_ON, sentOnProperty)
+		addUpdater(Vocabulary.FROM, from, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		addUpdater(Vocabulary.TO, to, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		addUpdater(Vocabulary.HAS_CC, cc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
+		addUpdater(Vocabulary.HAS_BCC, bcc, Funcs.RDF_NODE_TO_EMAIL_ADDRESS)
 	}
 
 	fun initialize()
@@ -88,7 +88,7 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 		//  TODO -- close the in mem result set?
 		GET_CONTENT.setIri("s", uri)
 		val resultSet = storage.query(GET_CONTENT.toString())
-		val soln = JenaUtils.single(resultSet) { it }
+		val soln = JenaUtils.unique(resultSet) { it }
 
 		//  TODO this replace stuff should be done in the database
 		val content = JenaUtils.getS(soln, "content").replace("\\\"", "\"")
@@ -158,7 +158,7 @@ class IMAPMessage(id : String, override val folder : IFolder, storage : IStorage
 			{
 				GET_MIME_TYPE.setIri("s", uri)
 				val resultSet = storage.query(GET_MIME_TYPE.toString())
-				mimeType = JenaUtils.single(resultSet) { JenaUtils.getS(it, "mimeType") }
+				mimeType = JenaUtils.unique(resultSet) { JenaUtils.getS(it, "mimeType") }
 			}
 
 			return mimeType == Mime.HTML

@@ -1,6 +1,7 @@
 package org.knowtiphy.pinkpigmail
 
 import com.calendarfx.view.CalendarView
+import com.calendarfx.view.DateControl
 import javafx.application.Application
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
@@ -8,12 +9,14 @@ import javafx.collections.ObservableMap
 import javafx.scene.control.Tab
 import javafx.scene.control.TabPane
 import javafx.scene.image.Image
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
+import javafx.util.Callback
 import org.apache.jena.arq.querybuilder.SelectBuilder
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.riot.Lang
@@ -21,14 +24,20 @@ import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.vocabulary.RDF
 import org.apache.jena.vocabulary.RDFS
 import org.controlsfx.glyphfont.Glyph
-import org.knowtiphy.babbage.storage.*
+import org.knowtiphy.babbage.storage.IStorage
+import org.knowtiphy.babbage.storage.StorageFactory
+import org.knowtiphy.babbage.storage.Vocabulary
+import org.knowtiphy.pinkpigmail.calendarview.Popover
 import org.knowtiphy.pinkpigmail.mailaccountview.MailAccountView
 import org.knowtiphy.pinkpigmail.mailview.CustomURLStreamHandlerFactory
 import org.knowtiphy.pinkpigmail.model.IAccount
 import org.knowtiphy.pinkpigmail.model.ICalendarAccount
 import org.knowtiphy.pinkpigmail.model.IContactAccount
 import org.knowtiphy.pinkpigmail.model.IEmailAccount
-import org.knowtiphy.pinkpigmail.model.caldav.*
+import org.knowtiphy.pinkpigmail.model.caldav.CalDAVAccount
+import org.knowtiphy.pinkpigmail.model.caldav.CalDavEventFactory
+import org.knowtiphy.pinkpigmail.model.caldav.CardDAVAccount
+import org.knowtiphy.pinkpigmail.model.caldav.EventState
 import org.knowtiphy.pinkpigmail.model.events.StageShowEvent
 import org.knowtiphy.pinkpigmail.model.imap.IMAPAccount
 import org.knowtiphy.pinkpigmail.model.storage.StorageEvent
@@ -70,11 +79,22 @@ class PinkPigMail : Application()
 		private val storage : IStorage by lazy { StorageFactory.getLocal() }
 
 		//  account constructors
-		private val ACCOUNT_CONSTRUCTORS =
-			mapOf<String, (String) -> IAccount>(Vocabulary.IMAP_ACCOUNT to { id : String -> IMAPAccount(id, storage) },
-				Vocabulary.CALDAV_ACCOUNT to { id -> CalDAVAccount(id, storage) },
-				Vocabulary.CARDDAV_ACCOUNT to { id -> CardDAVAccount(id, storage) })
+		//  @formatter:off
+		private val ACCOUNT_CONSTRUCTORS = mapOf<String, (String) -> IAccount>(
+			Vocabulary.IMAP_ACCOUNT to { uri : String -> IMAPAccount(uri, storage) },
+			Vocabulary.CALDAV_ACCOUNT to { uri -> CalDAVAccount(uri, storage) },
+			Vocabulary.CARDDAV_ACCOUNT to { uri -> CardDAVAccount(uri, storage) }
+		)
+		//  @formatter:on
 	}
+
+	//  @formatter:off
+	private val createAccountView = mapOf(
+		IMAPAccount::class to { account : IAccount -> addMailView(account as IEmailAccount) },
+		CalDAVAccount::class to { account -> addCalendarView(account as ICalendarAccount) },
+		CardDAVAccount::class to { account -> addCardView(account as IContactAccount) }
+	)
+	//  @formatter:on
 
 	private val accounts : ObservableMap<String, IAccount> = FXCollections.observableHashMap()
 
@@ -118,13 +138,36 @@ class PinkPigMail : Application()
 		return tab
 	}
 
+	private fun showEntryDetails(param : DateControl.EntryDetailsParameter) : Boolean
+	{
+		val saved = Popover().call(param)
+		if (!saved && param.entry.userObject == EventState.NEW) param.entry.calendar.removeEntry(param.entry)
+		return saved
+	}
+
 	private fun addCalendarView(account : ICalendarAccount)
 	{
 		val calendarView = CalendarView()
 		calendarView.calendarSources.add(account.source)
+
+		calendarView.entryDetailsCallback = Callback { param ->
+			val evt = param.inputEvent
+			//  this one for double clicking an entry
+			if (evt is MouseEvent)
+			{
+				if (evt.clickCount == 2) showEntryDetails(param) else false
+			}
+			//  this one for things like invoking from a menu
+			else
+			{
+				showEntryDetails(param)
+			}
+		}
+
 		val now = LocalTime.now()
 		val initialDelay = 60L - now.second
 		calendarView.requestedTime = now
+		calendarView.entryFactory = CalDavEventFactory(storage)
 		Globals.timerService.scheduleAtFixedRate({
 			later {
 				val dateTime = LocalDateTime.now()
@@ -146,11 +189,6 @@ class PinkPigMail : Application()
 	{
 		rootTabPane.tabs.add(createAccountTab(MailAccountView(account), Icons.mail(), account.nickNameProperty))
 	}
-
-	private val createAccountView =
-		mapOf(IMAPAccount::class to { account : IAccount -> addMailView(account as IEmailAccount) },
-			CalDAVAccount::class to { account -> addCalendarView(account as ICalendarAccount) },
-			CardDAVAccount::class to { account -> addCardView(account as IContactAccount) })
 
 	private fun saveUISettings()
 	{
@@ -242,3 +280,56 @@ class PinkPigMail : Application()
 		stage.show()
 	}
 }
+
+//	private fun showEntryDetails(control : DateControl, entry : Entry<*>, owner : Node, screenY : Double)
+//	{
+//		val contentCallback : Callback<EntryDetailsPopOverContentParameter, Node> =
+//			control.entryDetailsPopOverContentCallback
+//		//checkNotNull(contentCallback) { "No content callback found for entry popover" }
+//		val entryPopOver = PopOver()
+//		val param = EntryDetailsPopOverContentParameter(entryPopOver, control, owner, entry)
+//		var content : Node? = contentCallback.call(param) as Node
+//		if (content == null)
+//		{
+//			content = Label(Messages.getString("DateControl.NO_CONTENT"))
+//		}
+//		entryPopOver.contentNode = content
+//		val location = ViewHelper.findPopOverArrowLocation(owner)
+//		entryPopOver.arrowLocation = location
+//		val position = ViewHelper.findPopOverArrowPosition(owner, screenY, entryPopOver.arrowSize, location)
+//		entry.userObject = EventState.EDITING
+//		entryPopOver.onHidden = EventHandler<WindowEvent> { println("CLOSED")}
+//		entryPopOver.show(owner, position.x, position.y)
+//	}
+//
+//	fun showDateDetails(control : DateControl, owner : Node, date : LocalDate)
+//	{
+//		val datePopOver : PopOver = DatePopOver(control, date)
+//		datePopOver.show(owner)
+//	}
+//		calendarView.entryDetailsPopOverContentCallback =
+//			Callback<EntryDetailsPopOverContentParameter, Node> { param : EntryDetailsPopOverContentParameter ->
+//				val foo = EntryPopOverContentPane(param.popOver, param.dateControl, param.entry)
+////				foo.bottom = Label("XXXX")
+//				VBox(foo, Label("XXX"))
+//			}
+
+//		calendarView.entryDetailsCallback = Callback<DateControl.EntryDetailsParameter, Boolean> { param ->
+//			val evt : InputEvent = param.inputEvent
+//			if (evt is MouseEvent)
+//			{
+//				if (evt.clickCount == 2)
+//				{
+//					this.showEntryDetails(param.dateControl, param.entry, param.owner, param.screenY)
+//					true
+//				} else
+//				{
+//					false
+//				}
+//			} else
+//			{
+//				println("XXXX " + evt)
+//				this.showEntryDetails(param.dateControl, param.entry, param.owner, param.screenY)
+//				true
+//			}
+//		}

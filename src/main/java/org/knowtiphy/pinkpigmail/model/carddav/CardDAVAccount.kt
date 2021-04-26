@@ -26,11 +26,11 @@ class CardDAVAccount(id: String, storage: IStorage) : BaseAccount(id, Vocabulary
 
 	init
 	{
-		declareU(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
-		declareU(Vocabulary.HAS_SERVER_HEADER, serverHeaderProperty)
-		declareU(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
-		declareU(Vocabulary.HAS_NICK_NAME, nickNameProperty)
-		declareU(Vocabulary.HAS_PASSWORD, passwordProperty)
+		addUpdater(Vocabulary.HAS_SERVER_NAME, serverNameProperty)
+		addUpdater(Vocabulary.HAS_SERVER_HEADER, serverHeaderProperty)
+		addUpdater(Vocabulary.HAS_EMAIL_ADDRESS, emailAddressProperty)
+		addUpdater(Vocabulary.HAS_NICK_NAME, nickNameProperty)
+		addUpdater(Vocabulary.HAS_PASSWORD, passwordProperty)
 //		declareOU(Vocabulary.CONTAINS, addressBooks)
 //		declareD(Vocabulary.CONTAINS, addressBooks)
 //		declareOU(Vocabulary.HAS_GROUP, groups)
